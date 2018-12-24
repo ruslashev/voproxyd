@@ -1,6 +1,7 @@
 #include "errors.h"
 #include "daemonize.h"
 #include "log.h"
+#include "worker.h"
 
 #include <assert.h>
 #include <getopt.h>
@@ -51,8 +52,6 @@ static void parse_arguments(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    int err = 0;
-
     parse_arguments(argc, argv);
 
 #ifdef DAEMONIZE
@@ -63,7 +62,6 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    log("asdf");
-
-    return err;
+    start_worker();
 }
+

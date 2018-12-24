@@ -8,3 +8,5 @@
 #define log(...) do { printf(__VA_ARGS__); puts(""); } while (0)
 #endif
 
+#define die(X, ...) do { log(__VA_ARGS__); exit(X); } while (0)
+

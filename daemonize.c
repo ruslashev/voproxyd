@@ -55,7 +55,7 @@ int daemonize(void)
         return ERR_CHDIR_ROOT;
     }
 
-    fd = open("/dev/null", O_RDWR | O_CLOEXEC);
+    fd = open("/dev/null", (unsigned)O_RDWR | (unsigned)O_CLOEXEC);
     if (fd == -1) {
         log("Failed to open(\"/dev/null\"): %s", strerror(errno));
         return ERR_OPEN_DEVNULL;
