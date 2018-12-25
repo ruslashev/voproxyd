@@ -1,7 +1,9 @@
 #define _GNU_SOURCE
 
+#include "epoll.h"
 #include "errors.h"
 #include "log.h"
+#include "socket.h"
 #include "tempconfig.h"
 #include "worker.h"
 
@@ -17,135 +19,8 @@
 #define VOPROXYD_MAX_EPOLL_EVENTS 128
 #define VOPROXYD_MAX_RX_MESSAGE_LENGTH 4096
 
-struct ap_state
-{
-    int epoll_fd;
-    int sock_fd;
-    int current;
-    int close_after_read;
-};
-
-static void create_listening_socket(int *sock_fd)
-{
-    struct addrinfo ai_hint = { 0 }, *ai_result;
-    int err;
-
-    ai_hint.ai_family = AF_INET;
-    ai_hint.ai_socktype = SOCK_STREAM;
-    ai_hint.ai_flags = AI_PASSIVE;
-
-    err = getaddrinfo(NULL, VOPROXYD_PORT, &ai_hint, &ai_result);
-    if (err != 0) {
-        die(ERR_GETADDRINFO, "gettaddrinfo() failed: %s", gai_strerror(err));
-    }
-
-    *sock_fd = socket(ai_result->ai_family,
-            (unsigned)ai_result->ai_socktype | (unsigned)SOCK_NONBLOCK,
-            ai_result->ai_protocol);
-    if (*sock_fd == -1) {
-        freeaddrinfo(ai_result);
-        die(ERR_SOCKET, "socket() failed: %s", strerror(errno));
-    }
-
-    if (bind(*sock_fd, ai_result->ai_addr, ai_result->ai_addrlen) == -1) {
-        freeaddrinfo(ai_result);
-        close(*sock_fd);
-        die(ERR_BIND, "failed to bind a socket: %s", strerror(errno));
-    }
-
-    freeaddrinfo(ai_result);
-
-    if (listen(*sock_fd, SOMAXCONN) == -1) {
-        die(ERR_LISTEN, "listen() failed: %s", strerror(errno));
-    }
-}
-
-static int accept_on_socket(int sock_fd)
-{
-    int client_fd, err;
-    struct sockaddr addr;
-    socklen_t addr_len = sizeof(struct sockaddr);
-    char host_str[NI_MAXHOST], serv_str[NI_MAXSERV];
-
-    client_fd = accept4(sock_fd, &addr, &addr_len, (unsigned)SOCK_NONBLOCK);
-    if (client_fd == -1) {
-        die(ERR_ACCEPT, "accept4() failed: %s", strerror(errno));
-    }
-
-    err = getnameinfo(&addr, addr_len, host_str, NI_MAXHOST, serv_str,
-            NI_MAXSERV, (unsigned)NI_NUMERICHOST | (unsigned)NI_NUMERICSERV);
-
-    if (err == -1) {
-        log("accept() on socket fd = %d -> fd = %d from unknown source: %s",
-                sock_fd, client_fd, gai_strerror(err));
-    } else {
-        log("accept() on socket fd = %d -> fd = %d from %s:%s",
-                sock_fd, client_fd, host_str, serv_str);
-    }
-
-    return client_fd;
-}
-
-static int send_message(int fd, const char *message, ssize_t length)
-{
-    ssize_t total_sent = 0, remaining = length, sent;
-
-    while (total_sent < length) {
-        sent = send(fd, message + total_sent, remaining, MSG_NOSIGNAL);
-        if (sent == -1) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                continue;
-            }
-
-            log("failed to send message of length %zd to fd = %d: %s", length,
-                    fd, strerror(errno));
-            return 0;
-        }
-
-        total_sent += sent;
-        remaining -= sent;
-    }
-
-    return total_sent == length;
-}
-
-static void epoll_add_interface(struct ap_state *state, int fd)
-{
-    struct epoll_event ep_event = { 0 };
-    ep_event.events = (unsigned)EPOLLIN | (unsigned)EPOLLRDHUP | EPOLLET;
-    ep_event.data.fd = fd;
-
-    log("new fd = %d", fd);
-
-    if (epoll_ctl(state->epoll_fd, EPOLL_CTL_ADD, fd, &ep_event) != -1) {
-        return;
-    }
-
-    if (errno == EEXIST) {
-        log("epoll_add_interface: interface fd = %d already exists", fd);
-        return;
-    }
-
-    close(state->epoll_fd);
-
-    die(ERR_EPOLL_CTL, "error adding interface (fd = %d) to epoll: %s", fd,
-            strerror(errno));
-}
-
-static void epoll_close_interface(struct ap_state *state, int fd)
-{
-    if (epoll_ctl(state->epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1) {
-        close(state->epoll_fd);
-        die(ERR_EPOLL_CTL, "error removing interface (fd = %d) from epoll: %s",
-                fd, strerror(errno));
-    }
-
-    log("del fd = %d", fd);
-
-    close(fd);
-}
-
-static int handle_message(struct ap_state *state, const uint8_t *message, ssize_t length, int *close)
+static int handle_message(struct ap_state *state, const uint8_t *message,
+        ssize_t length, int *close)
 {
     (void)state;
     (void)message;

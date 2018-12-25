@@ -1,4 +1,4 @@
-sources = main.c daemonize.c worker.c
+sources = main.c daemonize.c worker.c socket.c epoll.c
 cflags = -Wall -Wextra -g
 ldflags =
 binname = voproxyd
