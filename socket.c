@@ -96,3 +96,16 @@ int send_message(int fd, const char *message, ssize_t length)
     return total_sent == length;
 }
 
+void handle_socket_error(int sock_fd)
+{
+    int err;
+    socklen_t err_len = sizeof(err);
+
+    if (getsockopt(sock_fd, SOL_SOCKET, SO_ERROR, &err, &err_len) == 0
+            && SO_ERROR != 0) {
+        die(ERR_EPOLL_EVENT, "error on socket: %d", err);
+    } else {
+        die(ERR_GETSOCKOPT, "failed to get error on socket: %s", strerror(errno));
+    }
+}
+

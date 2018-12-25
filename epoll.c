@@ -3,6 +3,7 @@
 #include "epoll.h"
 #include "errors.h"
 #include "log.h"
+#include "socket.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -45,5 +46,25 @@ void epoll_close_interface(struct ap_state *state, int fd)
     log("del fd = %d", fd);
 
     close(fd);
+}
+
+void epoll_handle_event_errors(struct ap_state *state,
+        const struct epoll_event *event)
+{
+    if (!(event->events & (unsigned)EPOLLERR)) {
+        return;
+    }
+
+    if (event->events & (unsigned)EPOLLRDHUP) {
+        return;
+    }
+
+    if (state->current == state->listen_sock_fd) {
+        handle_socket_error(state->current);
+    }
+
+    epoll_close_interface(state, state->current);
+
+    die(ERR_UNSPECIFIED, "epoll error on fd = %d", state->current);
 }
 

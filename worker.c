@@ -72,33 +72,6 @@ static int epoll_handle_read_queue(struct ap_state *state, int *continue_reading
     return 0;
 }
 
-static void epoll_handle_event_errors(struct ap_state *state, const struct epoll_event *event)
-{
-    int err;
-    socklen_t err_len = sizeof(err);
-
-    if (!(event->events & (unsigned)EPOLLERR)) {
-        return;
-    }
-
-    if (event->events & (unsigned)EPOLLRDHUP) {
-        return;
-    }
-
-    if (state->current == state->sock_fd) {
-        if (getsockopt(state->current, SOL_SOCKET, SO_ERROR, &err, &err_len) == 0
-                && SO_ERROR != 0) {
-            die(ERR_EPOLL_EVENT, "error on socket: %d", err);
-        } else {
-            die(ERR_GETSOCKOPT, "failed to get error on socket: %s", strerror(errno));
-        }
-    }
-
-    epoll_close_interface(state, state->current);
-
-    die(ERR_UNSPECIFIED, "epoll error on fd = %d", state->current);
-}
-
 static int epoll_handle_event(struct ap_state *state, const struct epoll_event *event, int *running)
 {
     int err, continue_reading = 1, client_fd;
@@ -114,7 +87,7 @@ static int epoll_handle_event(struct ap_state *state, const struct epoll_event *
     state->close_after_read = !!((event->events & (unsigned)EPOLLHUP)
             | (event->events & (unsigned)EPOLLRDHUP));
 
-    if (state->current == state->sock_fd) {
+    if (state->current == state->listen_sock_fd) {
         client_fd = accept_on_socket(state->current);
         epoll_add_interface(state, client_fd);
         return 0;
@@ -155,7 +128,7 @@ static int main_loop(struct ap_state *state)
         }
     }
 
-    close(state->sock_fd);
+    close(state->listen_sock_fd);
     close(state->epoll_fd);
 
     return err;
@@ -170,11 +143,12 @@ int start_worker(void)
         die(ERR_EPOLL_CREATE, "epoll_create1() failed: %s", strerror(errno));
     }
 
-    create_listening_socket(&state.sock_fd);
+    create_listening_socket(&state.listen_sock_fd);
 
-    epoll_add_interface(&state, state.sock_fd);
+    epoll_add_interface(&state, state.listen_sock_fd);
 
-    log("epoll fd = %d, socket fd = %d", state.epoll_fd, state.sock_fd);
+    log("epoll fd = %d, listen socket fd = %d", state.epoll_fd,
+            state.listen_sock_fd);
 
     return main_loop(&state);
 }
