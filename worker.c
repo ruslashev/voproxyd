@@ -19,7 +19,7 @@
 #define VOPROXYD_MAX_EPOLL_EVENTS 128
 #define VOPROXYD_MAX_RX_MESSAGE_LENGTH 4096
 
-static int handle_message(struct ap_state *state, const uint8_t *message,
+static int handle_tcp(struct ap_state *state, const uint8_t *message,
         ssize_t length, int *close)
 {
     (void)state;
@@ -27,20 +27,35 @@ static int handle_message(struct ap_state *state, const uint8_t *message,
     (void)length;
     *close = 0;
 
-    printf("recv msg of len %d\n", length);
+    printf("parse tcp msg of len %d\n", length);
 
     return 0;
 }
 
-static int epoll_handle_read_queue(struct ap_state *state, int *continue_reading)
+static int handle_udp(struct ap_state *state, const uint8_t *message,
+        ssize_t length, int *close)
+{
+    (void)state;
+    (void)message;
+    (void)length;
+    *close = 0;
+
+    printf("parse udp msg of len %d\n", length);
+
+    return 0;
+}
+
+static int epoll_handle_read_queue(struct ap_state *state, int udp)
 {
     ssize_t message_length;
     uint8_t rx_message[VOPROXYD_MAX_RX_MESSAGE_LENGTH];
-    int err, close = 0;
+    int close = 0;
 
-    *continue_reading = 0;
+    log("about to read on fd = %d", state->current);
 
     message_length = read(state->current, rx_message, sizeof(rx_message));
+
+    log("read on fd = %d message_length = %d", state->current, message_length);
 
     if (message_length == 0) {
         log("close connection on socket fd = %d", state->current);
@@ -49,8 +64,10 @@ static int epoll_handle_read_queue(struct ap_state *state, int *continue_reading
     }
 
     if (message_length != -1) {
-        if ((err = handle_message(state, rx_message, message_length, &close))) {
-            return err;
+        if (udp) {
+            handle_udp(state, rx_message, message_length, &close);
+        } else {
+            handle_tcp(state, rx_message, message_length, &close);
         }
 
         if (close || state->close_after_read) {
@@ -59,55 +76,51 @@ static int epoll_handle_read_queue(struct ap_state *state, int *continue_reading
             return 0;
         }
 
-        *continue_reading = 1;
-        return 0;
+        return 1;
     }
 
     if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        log("the err is (eagain | ewouldblock)");
         return 0;
     }
 
-    log("error on socket fd = %d: %s", state->current, strerror(errno));
     epoll_close_interface(state, state->current);
-    return 0;
+    die(ERR_READ, "error reading on socket fd = %d: %s", state->current,
+            strerror(errno));
 }
 
-static int epoll_handle_event(struct ap_state *state, const struct epoll_event *event, int *running)
+static void epoll_handle_event(struct ap_state *state,
+        const struct epoll_event *event)
 {
-    int err, continue_reading = 1, client_fd;
+    int continue_reading = 1, client_fd;
 
-    *running = 1;
+    log("new event on fd = %d", state->current);
 
     epoll_handle_event_errors(state, event);
 
-    if ((event->events & (unsigned)EPOLLHUP) && !(event->events & (unsigned)EPOLLIN)) {
+    if ((event->events & (unsigned)EPOLLHUP)) {
         log("hangup on fd = %d", state->current);
     }
 
-    state->close_after_read = !!((event->events & (unsigned)EPOLLHUP)
-            | (event->events & (unsigned)EPOLLRDHUP));
+    state->close_after_read = !!((event->events & (unsigned)EPOLLHUP) |
+            (event->events & (unsigned)EPOLLRDHUP));
 
-    if (state->current == state->listen_sock_fd) {
+    if (state->current == state->tcp_sock_fd) {
         client_fd = accept_on_socket(state->current);
         epoll_add_interface(state, client_fd);
-        return 0;
+        return;
     }
 
     while (continue_reading) {
-        err = epoll_handle_read_queue(state, &continue_reading);
-        if (err) {
-            *running = 0;
-            return err;
-        }
+        continue_reading = epoll_handle_read_queue(state,
+                state->current == state->udp_sock_fd);
     }
-
-    return 0;
 }
 
-static int main_loop(struct ap_state *state)
+static void main_loop(struct ap_state *state)
 {
     struct epoll_event events[VOPROXYD_MAX_EPOLL_EVENTS];
-    int num_events, ev_idx, running = 1, err = 0;
+    int num_events, ev_idx, running = 1;
 
     while (running) {
         num_events = epoll_wait(state->epoll_fd, events,
@@ -117,24 +130,19 @@ static int main_loop(struct ap_state *state)
             die(ERR_EPOLL_WAIT, "epoll_wait() failed: %s", strerror(errno));
         }
 
-        for (ev_idx = 0; ev_idx < num_events && running && !err; ++ev_idx) {
+        for (ev_idx = 0; ev_idx < num_events; ++ev_idx) {
             state->close_after_read = 0;
             state->current = events[ev_idx].data.fd;
-            err = epoll_handle_event(state, &events[ev_idx], &running);
-        }
-
-        if (err) {
-            break;
+            epoll_handle_event(state, &events[ev_idx]);
         }
     }
 
-    close(state->listen_sock_fd);
+    close(state->udp_sock_fd);
+    close(state->tcp_sock_fd);
     close(state->epoll_fd);
-
-    return err;
 }
 
-int start_worker(void)
+void start_worker(void)
 {
     struct ap_state state = { 0 };
 
@@ -143,13 +151,16 @@ int start_worker(void)
         die(ERR_EPOLL_CREATE, "epoll_create1() failed: %s", strerror(errno));
     }
 
-    create_listening_socket(&state.listen_sock_fd);
+    /* create_listening_tcp_socket(&state.tcp_sock_fd); */
+    /* epoll_add_interface(&state, state.tcp_sock_fd); */
+    state.tcp_sock_fd = -1;
 
-    epoll_add_interface(&state, state.listen_sock_fd);
+    create_udp_socket(&state.udp_sock_fd);
+    epoll_add_interface(&state, state.udp_sock_fd);
 
-    log("epoll fd = %d, listen socket fd = %d", state.epoll_fd,
-            state.listen_sock_fd);
+    log("epoll fd = %d, tcp fd = %d udp fd = %d", state.epoll_fd,
+            state.tcp_sock_fd, state.udp_sock_fd);
 
-    return main_loop(&state);
+    main_loop(&state);
 }
 

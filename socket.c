@@ -12,7 +12,7 @@
 #include <string.h>
 #include <unistd.h>
 
-void create_listening_socket(int *sock_fd)
+void create_listening_tcp_socket(int *sock_fd)
 {
     struct addrinfo ai_hint = { 0 }, *ai_result;
     int err;
@@ -21,7 +21,7 @@ void create_listening_socket(int *sock_fd)
     ai_hint.ai_socktype = SOCK_STREAM;
     ai_hint.ai_flags = AI_PASSIVE;
 
-    err = getaddrinfo(NULL, VOPROXYD_PORT, &ai_hint, &ai_result);
+    err = getaddrinfo(NULL, VOPROXYD_TCP_PORT, &ai_hint, &ai_result);
     if (err != 0) {
         die(ERR_GETADDRINFO, "gettaddrinfo() failed: %s", gai_strerror(err));
     }
@@ -47,6 +47,26 @@ void create_listening_socket(int *sock_fd)
     }
 }
 
+void create_udp_socket(int *sock_fd)
+{
+    struct sockaddr_in addr;
+
+    *sock_fd = socket(AF_INET, (unsigned)SOCK_DGRAM | (unsigned)SOCK_NONBLOCK, 0);
+    if (*sock_fd == -1) {
+        die(ERR_SOCKET, "failed to create socket: %s", strerror(errno));
+    }
+
+    memset(&addr, 0, sizeof(addr));
+
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(VOPROXYD_UDP_PORT);
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    if (bind(*sock_fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+        die(ERR_BIND, "failed to bind() socket: %s", strerror(errno));
+    }
+}
+
 int accept_on_socket(int sock_fd)
 {
     int client_fd, err;
@@ -63,11 +83,10 @@ int accept_on_socket(int sock_fd)
             NI_MAXSERV, (unsigned)NI_NUMERICHOST | (unsigned)NI_NUMERICSERV);
 
     if (err == -1) {
-        log("accept() on socket fd = %d -> fd = %d from unknown source: %s",
-                sock_fd, client_fd, gai_strerror(err));
+        log("accept() fd = %d from unknown source: %s", client_fd,
+                gai_strerror(err));
     } else {
-        log("accept() on socket fd = %d -> fd = %d from %s:%s",
-                sock_fd, client_fd, host_str, serv_str);
+        log("accept() fd = %d from %s:%s", client_fd, host_str, serv_str);
     }
 
     return client_fd;

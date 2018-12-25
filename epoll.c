@@ -18,7 +18,7 @@ void epoll_add_interface(struct ap_state *state, int fd)
     ep_event.events = (unsigned)EPOLLIN | (unsigned)EPOLLRDHUP | EPOLLET;
     ep_event.data.fd = fd;
 
-    log("new fd = %d", fd);
+    log("add fd = %d to epoll set", fd);
 
     if (epoll_ctl(state->epoll_fd, EPOLL_CTL_ADD, fd, &ep_event) != -1) {
         return;
@@ -43,7 +43,7 @@ void epoll_close_interface(struct ap_state *state, int fd)
                 fd, strerror(errno));
     }
 
-    log("del fd = %d", fd);
+    log("del fd = %d from epoll set", fd);
 
     close(fd);
 }
@@ -59,7 +59,7 @@ void epoll_handle_event_errors(struct ap_state *state,
         return;
     }
 
-    if (state->current == state->listen_sock_fd) {
+    if (state->current == state->tcp_sock_fd) {
         handle_socket_error(state->current);
     }
 

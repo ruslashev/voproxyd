@@ -1,4 +1,4 @@
 #pragma once
 
-int start_worker(void);
+void start_worker(void);
 

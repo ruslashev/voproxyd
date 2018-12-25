@@ -5,7 +5,8 @@
 struct ap_state
 {
     int epoll_fd;
-    int listen_sock_fd;
+    int tcp_sock_fd;
+    int udp_sock_fd;
     int current;
     int close_after_read;
 };

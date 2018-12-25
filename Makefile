@@ -5,5 +5,5 @@ binname = voproxyd
 
 all:
 	gcc $(sources) $(cflags) $(ldflags) -o $(binname)
-	# ./$(binname)
+	./$(binname)
 
