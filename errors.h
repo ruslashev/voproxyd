@@ -28,5 +28,6 @@ enum {
     ERR_NOMEM,
     ERR_GETSOCKOPT,
     ERR_EPOLL_EVENT,
+    ERR_PROTOCOL
 };
 

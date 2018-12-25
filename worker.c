@@ -5,6 +5,7 @@
 #include "log.h"
 #include "socket.h"
 #include "tempconfig.h"
+#include "visca.h"
 #include "worker.h"
 
 #include <errno.h>
@@ -24,10 +25,9 @@ static int handle_tcp(struct ap_state *state, const uint8_t *message,
 {
     (void)state;
     (void)message;
-    (void)length;
     *close = 0;
 
-    printf("parse tcp msg of len %d\n", length);
+    log("parse tcp msg of len %d\n", length);
 
     return 0;
 }
@@ -40,7 +40,7 @@ static int handle_udp(struct ap_state *state, const uint8_t *message,
     (void)length;
     *close = 0;
 
-    printf("parse udp msg of len %d\n", length);
+    visca_handle_message(message, length);
 
     return 0;
 }
