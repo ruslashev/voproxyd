@@ -13,6 +13,5 @@ struct ap_state
 
 void epoll_add_interface(struct ap_state *state, int fd);
 void epoll_close_interface(struct ap_state *state, int fd);
-void epoll_handle_event_errors(struct ap_state *state,
-        const struct epoll_event *event);
+void epoll_handle_event_errors(struct ap_state *state, const struct epoll_event *event);
 

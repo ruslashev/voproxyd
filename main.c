@@ -22,8 +22,7 @@ static void parse_arguments(int argc, char *argv[])
         { "help",       no_argument,       NULL, 'h' },
         { 0,            0,                 0,    0   }
     };
-    int opt = 0;
-    int option_index = 0;
+    int opt = 0, option_index = 0;
 
     while ((opt = getopt_long(argc, argv, "h", long_options, &option_index)) != -1) {
         switch (opt) {

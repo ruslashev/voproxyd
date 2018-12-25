@@ -48,8 +48,7 @@ void epoll_close_interface(struct ap_state *state, int fd)
     close(fd);
 }
 
-void epoll_handle_event_errors(struct ap_state *state,
-        const struct epoll_event *event)
+void epoll_handle_event_errors(struct ap_state *state, const struct epoll_event *event)
 {
     if (!(event->events & (unsigned)EPOLLERR)) {
         return;

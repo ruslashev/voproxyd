@@ -20,8 +20,7 @@
 #define VOPROXYD_MAX_EPOLL_EVENTS 128
 #define VOPROXYD_MAX_RX_MESSAGE_LENGTH 4096
 
-static int handle_tcp(struct ap_state *state, const uint8_t *message,
-        ssize_t length, int *close)
+static int handle_tcp(struct ap_state *state, const uint8_t *message, ssize_t length, int *close)
 {
     (void)state;
     (void)message;
@@ -32,8 +31,7 @@ static int handle_tcp(struct ap_state *state, const uint8_t *message,
     return 0;
 }
 
-static int handle_udp(struct ap_state *state, const uint8_t *message,
-        ssize_t length, int *close)
+static int handle_udp(struct ap_state *state, const uint8_t *message, ssize_t length, int *close)
 {
     (void)state;
     (void)message;
@@ -85,12 +83,10 @@ static int epoll_handle_read_queue(struct ap_state *state, int udp)
     }
 
     epoll_close_interface(state, state->current);
-    die(ERR_READ, "error reading on socket fd = %d: %s", state->current,
-            strerror(errno));
+    die(ERR_READ, "error reading on socket fd = %d: %s", state->current, strerror(errno));
 }
 
-static void epoll_handle_event(struct ap_state *state,
-        const struct epoll_event *event)
+static void epoll_handle_event(struct ap_state *state, const struct epoll_event *event)
 {
     int continue_reading = 1, client_fd;
 

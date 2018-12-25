@@ -79,12 +79,11 @@ int accept_on_socket(int sock_fd)
         die(ERR_ACCEPT, "accept4() failed: %s", strerror(errno));
     }
 
-    err = getnameinfo(&addr, addr_len, host_str, NI_MAXHOST, serv_str,
-            NI_MAXSERV, (unsigned)NI_NUMERICHOST | (unsigned)NI_NUMERICSERV);
+    err = getnameinfo(&addr, addr_len, host_str, NI_MAXHOST, serv_str, NI_MAXSERV,
+            (unsigned)NI_NUMERICHOST | (unsigned)NI_NUMERICSERV);
 
     if (err == -1) {
-        log("accept() fd = %d from unknown source: %s", client_fd,
-                gai_strerror(err));
+        log("accept() fd = %d from unknown source: %s", client_fd, gai_strerror(err));
     } else {
         log("accept() fd = %d from %s:%s", client_fd, host_str, serv_str);
     }
@@ -103,8 +102,7 @@ int send_message(int fd, const char *message, ssize_t length)
                 continue;
             }
 
-            log("failed to send message of length %zd to fd = %d: %s", length,
-                    fd, strerror(errno));
+            log("failed to send message of length %zd to fd = %d: %s", length, fd, strerror(errno));
             return 0;
         }
 
@@ -120,8 +118,7 @@ void handle_socket_error(int sock_fd)
     int err;
     socklen_t err_len = sizeof(err);
 
-    if (getsockopt(sock_fd, SOL_SOCKET, SO_ERROR, &err, &err_len) == 0
-            && SO_ERROR != 0) {
+    if (getsockopt(sock_fd, SOL_SOCKET, SO_ERROR, &err, &err_len) == 0 && SO_ERROR != 0) {
         die(ERR_EPOLL_EVENT, "error on socket: %d", err);
     } else {
         die(ERR_GETSOCKOPT, "failed to get error on socket: %s", strerror(errno));

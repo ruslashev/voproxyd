@@ -52,7 +52,16 @@ static void handle_control_command(const uint8_t *payload, size_t length, uint32
     (void)length;
     (void)seq_number;
 
-    log("it's a control command!");
+    switch (payload[0]) {
+        case 0x01: /* RESET */
+            log("visca control command RESET");
+            break;
+        case 0x0F: /* ERROR */
+            if (length != 2) {
+                die(ERR_PROTOCOL, "handle_control_command: ERROR: excepted length == 2, got %d",
+                        length);
+            }
+    }
 }
 
 static void handle_control_reply(const uint8_t *payload, size_t length, uint32_t seq_number)
