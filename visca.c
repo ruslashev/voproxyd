@@ -58,7 +58,7 @@ static void handle_control_command(const uint8_t *payload, size_t length, uint32
             break;
         case 0x0F: /* ERROR */
             if (length != 2) {
-                die(ERR_PROTOCOL, "handle_control_command: ERROR: excepted length == 2, got %d",
+                die(ERR_PROTOCOL, "handle_control_command: ERROR: excepted length == 2, got %ld",
                         length);
             }
     }
@@ -89,7 +89,7 @@ void visca_handle_message(const uint8_t *message, size_t length)
 
     if (header->payload_length != length - 8) {
         die(ERR_PROTOCOL,
-                "assertion `header->payload_length == length - 8' failed: %d != %d",
+                "assertion `header->payload_length == length - 8' failed: %d != %ld",
                 header->payload_length, length - 8);
     }
 
