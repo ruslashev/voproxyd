@@ -1,4 +1,4 @@
 #pragma once
 
-int daemonize(void);
+void daemonize(void);
 

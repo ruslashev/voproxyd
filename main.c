@@ -56,9 +56,7 @@ int main(int argc, char *argv[])
 #ifdef DAEMONIZE
     openlog("voproxyd", LOG_NDELAY | LOG_PID, LOG_USER);
 
-    if ((err = daemonize())) {
-        return err;
-    }
+    daemonize();
 #endif
 
     start_worker();
