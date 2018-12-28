@@ -24,7 +24,6 @@ static int handle_tcp(struct ap_state *state, const uint8_t *message, ssize_t le
 {
     (void)state;
     (void)message;
-    *close = 0;
 
     log("parse tcp msg of len %ld\n", length);
 
@@ -33,12 +32,12 @@ static int handle_tcp(struct ap_state *state, const uint8_t *message, ssize_t le
 
 static int handle_udp(struct ap_state *state, const uint8_t *message, ssize_t length, int *close)
 {
-    (void)state;
-    (void)message;
-    (void)length;
-    *close = 0;
+    uint8_t response[VISCA_OVER_IP_MAX_MESSAGE_LENGTH];
+    size_t response_len;
 
-    visca_handle_message(message, length);
+    visca_handle_message(message, length, response, &response_len);
+
+    send_message(state->current, response, response_len);
 
     return 0;
 }

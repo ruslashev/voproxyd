@@ -91,7 +91,7 @@ int accept_on_socket(int sock_fd)
     return client_fd;
 }
 
-int send_message(int fd, const char *message, ssize_t length)
+int send_message(int fd, const void *message, ssize_t length)
 {
     ssize_t total_sent = 0, remaining = length, sent;
 
