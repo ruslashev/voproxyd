@@ -1,5 +1,5 @@
-sources = main.c daemonize.c worker.c socket.c epoll.c visca.c
-cflags = -Wall -Wextra -g
+sources = avltree.c daemonize.c epoll.c main.c socket.c visca.c worker.c
+cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable
 ldflags =
 binname = voproxyd
 
