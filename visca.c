@@ -91,6 +91,16 @@ static void absolute_move(uint8_t p[5], uint8_t t[4])
             t[0], t[1], t[2], t[3]);
 }
 
+static void home()
+{
+    log("home");
+}
+
+static void reset()
+{
+    log("reset");
+}
+
 static void pan_tilt_drive_directionals(const uint8_t *payload, size_t length, uint32_t seq_number)
 {
     uint8_t pan_speed, tilt_speed;
@@ -163,6 +173,21 @@ static void pan_tilt_drive_abs_rel(const uint8_t *payload, size_t length, uint32
     }
 }
 
+static void pan_tilt_drive_pan_tilt_limit(const uint8_t *payload, size_t length, uint32_t seq_number)
+{
+
+}
+
+static void pan_tilt_drive_ramp_curve(const uint8_t *payload, size_t length, uint32_t seq_number)
+{
+
+}
+
+static void pan_tilt_drive_slow_mode(const uint8_t *payload, size_t length, uint32_t seq_number)
+{
+
+}
+
 static void handle_pan_tilt_drive(const uint8_t *payload, size_t length, uint32_t seq_number)
 {
     switch (payload[3]) {
@@ -176,14 +201,19 @@ static void handle_pan_tilt_drive(const uint8_t *payload, size_t length, uint32_
             pan_tilt_drive_abs_rel(payload, length, seq_number, 1);
             break;
         case 0x04: /* home */
+            home();
             break;
         case 0x05: /* reset */
+            reset();
             break;
         case 0x07: /* pan tilt limit */
+            pan_tilt_drive_pan_tilt_limit(payload, length, seq_number);
             break;
         case 0x31: /* ramp curve */
+            pan_tilt_drive_ramp_curve(payload, length, seq_number);
             break;
         case 0x44: /* pan-tilt slow mode */
+            pan_tilt_drive_slow_mode(payload, length, seq_number);
             break;
         default:
             die("handle_pan_tilt_drive: unexpected type 0x%02x", payload[3]);
