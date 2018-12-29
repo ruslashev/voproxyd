@@ -101,13 +101,14 @@ static void reset()
     log("reset");
 }
 
-static void pan_tilt_drive_directionals(const uint8_t *payload, size_t length, uint32_t seq_number)
+static void ptd_directionals(const uint8_t *payload, size_t length, uint32_t seq_number)
 {
     uint8_t pan_speed, tilt_speed;
     int vert, horiz;
 
     if (length != 9) {
-        die("pan_tilt_drive_directionals: bad length %ld", length);
+        log("ptd_directionals: bad length %ld", length);
+        return;
     }
 
     pan_speed = payload[4];
@@ -124,7 +125,8 @@ static void pan_tilt_drive_directionals(const uint8_t *payload, size_t length, u
             horiz = 0;
             break;
         default:
-            die("pan_tilt_drive_directionals: unexpected horizontal drive 0x%02x", payload[6]);
+            log("ptd_directionals: unexpected horizontal drive 0x%02x", payload[6]);
+            return;
     }
 
     switch (payload[7]) {
@@ -138,24 +140,27 @@ static void pan_tilt_drive_directionals(const uint8_t *payload, size_t length, u
             vert = 0;
             break;
         default:
-            die("pan_tilt_drive_directionals: unexpected vertical drive 0x%02x", payload[7]);
+            log("ptd_directionals: unexpected vertical drive 0x%02x", payload[7]);
+            return;
     }
 
     directionals(vert, horiz, pan_speed, tilt_speed);
 }
 
-static void pan_tilt_drive_abs_rel(const uint8_t *payload, size_t length, uint32_t seq_number, int rel)
+static void ptd_abs_rel(const uint8_t *payload, size_t length, uint32_t seq_number, int rel)
 {
     uint8_t speed, p[5], t[4];
 
     if (length != 16) {
-        die("pan_tilt_drive_abs_rel: bad length %ld", length);
+        log("ptd_abs_rel: bad length %ld", length);
+        return;
     }
 
     speed = payload[4];
 
     if (payload[5] != 0) {
-        die("pan_tilt_drive_abs_rel: expected payload[5] to be 0, not 0x%02x", payload[5]);
+        log("ptd_abs_rel: expected payload[5] to be 0, not 0x%02x", payload[5]);
+        return;
     }
 
     for (int i = 0; i < 5; ++i) {
@@ -173,17 +178,17 @@ static void pan_tilt_drive_abs_rel(const uint8_t *payload, size_t length, uint32
     }
 }
 
-static void pan_tilt_drive_pan_tilt_limit(const uint8_t *payload, size_t length, uint32_t seq_number)
+static void ptd_pan_tilt_limit(const uint8_t *payload, size_t length, uint32_t seq_number)
 {
 
 }
 
-static void pan_tilt_drive_ramp_curve(const uint8_t *payload, size_t length, uint32_t seq_number)
+static void ptd_ramp_curve(const uint8_t *payload, size_t length, uint32_t seq_number)
 {
 
 }
 
-static void pan_tilt_drive_slow_mode(const uint8_t *payload, size_t length, uint32_t seq_number)
+static void ptd_slow_mode(const uint8_t *payload, size_t length, uint32_t seq_number)
 {
 
 }
@@ -192,13 +197,13 @@ static void handle_pan_tilt_drive(const uint8_t *payload, size_t length, uint32_
 {
     switch (payload[3]) {
         case 0x01: /* directionals or stop */
-            pan_tilt_drive_directionals(payload, length, seq_number);
+            ptd_directionals(payload, length, seq_number);
             break;
         case 0x02: /* absolute position */
-            pan_tilt_drive_abs_rel(payload, length, seq_number, 0);
+            ptd_abs_rel(payload, length, seq_number, 0);
             break;
         case 0x03: /* relative position */
-            pan_tilt_drive_abs_rel(payload, length, seq_number, 1);
+            ptd_abs_rel(payload, length, seq_number, 1);
             break;
         case 0x04: /* home */
             home();
@@ -207,16 +212,16 @@ static void handle_pan_tilt_drive(const uint8_t *payload, size_t length, uint32_
             reset();
             break;
         case 0x07: /* pan tilt limit */
-            pan_tilt_drive_pan_tilt_limit(payload, length, seq_number);
+            ptd_pan_tilt_limit(payload, length, seq_number);
             break;
         case 0x31: /* ramp curve */
-            pan_tilt_drive_ramp_curve(payload, length, seq_number);
+            ptd_ramp_curve(payload, length, seq_number);
             break;
         case 0x44: /* pan-tilt slow mode */
-            pan_tilt_drive_slow_mode(payload, length, seq_number);
+            ptd_slow_mode(payload, length, seq_number);
             break;
         default:
-            die("handle_pan_tilt_drive: unexpected type 0x%02x", payload[3]);
+            log("handle_pan_tilt_drive: unexpected type 0x%02x", payload[3]);
     }
 }
 
@@ -225,11 +230,13 @@ static void handle_visca_command(const uint8_t *payload, size_t length, uint32_t
     log("handle_visca_command");
 
     if (length < 5) {
-        die("handle_control_command: bad length %ld", length);
+        log("handle_control_command: bad length %ld", length);
+        return;
     }
 
     if (payload[0] != 0x81 || payload[1] != 0x01) {
-        die("handle_control_command: unexpected payload start %02x %02x", payload[0], payload[1]);
+        log("handle_control_command: unexpected payload start %02x %02x", payload[0], payload[1]);
+        return;
     }
 
     switch (payload[2]) {
@@ -237,7 +244,7 @@ static void handle_visca_command(const uint8_t *payload, size_t length, uint32_t
             handle_pan_tilt_drive(payload, length, seq_number);
             break;
         default:
-            die("handle_control_command: unsupported command 0x%02x", payload[2]);
+            log("handle_control_command: unsupported command 0x%02x", payload[2]);
     }
 }
 
@@ -281,7 +288,8 @@ static void handle_control_command(const uint8_t *payload, size_t length, uint32
             log("control command ERROR");
 
             if (length != 2) {
-                die("handle_control_command: ERROR: excepted length == 2, got %ld", length);
+                log("handle_control_command: ERROR: excepted length == 2, got %ld", length);
+                return;
             }
 
             switch (payload[1]) {
@@ -292,12 +300,13 @@ static void handle_control_command(const uint8_t *payload, size_t length, uint32
                     log("abnormality in the message type");
                     break;
                 default:
-                    die("handle_control_command: ERROR: unexpected error type 0x%02x", payload[1]);
+                    log("handle_control_command: ERROR: unexpected error type 0x%02x", payload[1]);
+                    return;
             }
 
             compose_control_reply(g_response, &g_response_len, seq_number);
         default:
-            die("handle_control_command: unexpected control command type 0x%02x", payload[0]);
+            log("handle_control_command: unexpected control command type 0x%02x", payload[0]);
     }
 }
 
@@ -328,8 +337,9 @@ void visca_handle_message(const uint8_t *message, size_t length, uint8_t *respon
     log("header->seq_number=%d", header->seq_number);
 
     if (header->payload_length != length - 8) {
-        die("assertion `header->payload_length == length - 8' failed: %d != %ld",
+        log("assertion `header->payload_length == length - 8' failed: %d != %ld",
                 header->payload_length, length - 8);
+        return;
     }
 
     switch (header->payload_type) {
@@ -352,7 +362,7 @@ void visca_handle_message(const uint8_t *message, size_t length, uint8_t *respon
             handle_control_reply(payload, payload_length, header->seq_number);
             break;
         default:
-            die("visca_handle_message: unexpected payload type 0x%04x", header->payload_type);
+            log("visca_handle_message: unexpected payload type 0x%04x", header->payload_type);
     }
 }
 
