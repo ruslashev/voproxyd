@@ -107,7 +107,7 @@ static void ptd_directionals(const uint8_t *payload, size_t length, uint32_t seq
     int vert, horiz;
 
     if (length != 9) {
-        log("ptd_directionals: bad length %ld", length);
+        log("ptd_directionals: bad length %zu, expected 9", length);
         return;
     }
 
@@ -152,7 +152,7 @@ static void ptd_abs_rel(const uint8_t *payload, size_t length, uint32_t seq_numb
     uint8_t speed, p[5], t[4];
 
     if (length != 16) {
-        log("ptd_abs_rel: bad length %ld", length);
+        log("ptd_abs_rel: bad length %zu, expected 16", length);
         return;
     }
 
@@ -180,6 +180,9 @@ static void ptd_abs_rel(const uint8_t *payload, size_t length, uint32_t seq_numb
 
 static void ptd_pan_tilt_limit(const uint8_t *payload, size_t length, uint32_t seq_number)
 {
+    if (length != 16) {
+        log("ptd_pan_tilt_limit: bad length %zu, expected 16", length);
+    }
 
 }
 
@@ -230,7 +233,7 @@ static void handle_visca_command(const uint8_t *payload, size_t length, uint32_t
     log("handle_visca_command");
 
     if (length < 5) {
-        log("handle_control_command: bad length %ld", length);
+        log("handle_control_command: bad length %zu", length);
         return;
     }
 
@@ -288,7 +291,7 @@ static void handle_control_command(const uint8_t *payload, size_t length, uint32
             log("control command ERROR");
 
             if (length != 2) {
-                log("handle_control_command: ERROR: excepted length == 2, got %ld", length);
+                log("handle_control_command: ERROR: bad length %zu, expected 2", length);
                 return;
             }
 
@@ -337,7 +340,7 @@ void visca_handle_message(const uint8_t *message, size_t length, uint8_t *respon
     log("header->seq_number=%d", header->seq_number);
 
     if (header->payload_length != length - 8) {
-        log("assertion `header->payload_length == length - 8' failed: %d != %ld",
+        log("assertion `header->payload_length == length - 8' failed: %d != %zu",
                 header->payload_length, length - 8);
         return;
     }
