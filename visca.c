@@ -8,6 +8,12 @@
 #undef die
 #define die(...) die_detail(ERR_VISCA_PROTOCOL, __VA_ARGS__)
 
+#define check_length(X) \
+    if (length != X) { \
+        log("%s: bad length %zu, expected %d", __func__, length, X); \
+        return; \
+    }
+
 struct visca_header
 {
     uint16_t payload_type;
@@ -74,6 +80,12 @@ static void visca_header_convert_endianness(struct visca_header *header)
     header->seq_number = ntohl(header->seq_number);
 }
 
+static void log_p5t4(uint8_t p[5], uint8_t t[4])
+{
+    log("%02x%02x%02x%02x%02x %02x%02x%02x%02x", p[0], p[1], p[2], p[3], p[4],
+            t[0], t[1], t[2], t[3]);
+}
+
 static void directionals(int vert, int horiz, uint8_t pan_speed, uint8_t tilt_speed)
 {
     log("directionals: % d, % d, (pan %d, tilt %d)", vert, horiz, pan_speed, tilt_speed);
@@ -81,14 +93,14 @@ static void directionals(int vert, int horiz, uint8_t pan_speed, uint8_t tilt_sp
 
 static void relative_move(uint8_t p[5], uint8_t t[4])
 {
-    log("relative_move: %02x%02x%02x%02x%02x %02x%02x%02x%02x", p[0], p[1], p[2], p[3], p[4],
-            t[0], t[1], t[2], t[3]);
+    log("relative_move:");
+    log_p5t4(p, t);
 }
 
 static void absolute_move(uint8_t p[5], uint8_t t[4])
 {
-    log("absolute_move: %02x%02x%02x%02x%02x %02x%02x%02x%02x", p[0], p[1], p[2], p[3], p[4],
-            t[0], t[1], t[2], t[3]);
+    log("absolute_move:");
+    log_p5t4(p, t);
 }
 
 static void home()
@@ -101,15 +113,33 @@ static void reset()
     log("reset");
 }
 
+static void pan_tilt_limit_set(uint8_t p[5], uint8_t t[4])
+{
+    log("pan_tilt_limit_set:");
+    log_p5t4(p, t);
+}
+
+static void pan_tilt_limit_clear()
+{
+    log("pan_tilt_limit_clear:");
+}
+
+static void ramp_curve(int p)
+{
+    log("ramp_curve: %d", p);
+}
+
+static void slow_mode(int p)
+{
+    log("slow_mode: %d", p);
+}
+
 static void ptd_directionals(const uint8_t *payload, size_t length, uint32_t seq_number)
 {
     uint8_t pan_speed, tilt_speed;
     int vert, horiz;
 
-    if (length != 9) {
-        log("ptd_directionals: bad length %zu, expected 9", length);
-        return;
-    }
+    check_length(9);
 
     pan_speed = payload[4];
     tilt_speed = payload[5];
@@ -151,10 +181,7 @@ static void ptd_abs_rel(const uint8_t *payload, size_t length, uint32_t seq_numb
 {
     uint8_t speed, p[5], t[4];
 
-    if (length != 16) {
-        log("ptd_abs_rel: bad length %zu, expected 16", length);
-        return;
-    }
+    check_length(16);
 
     speed = payload[4];
 
@@ -180,23 +207,67 @@ static void ptd_abs_rel(const uint8_t *payload, size_t length, uint32_t seq_numb
 
 static void ptd_pan_tilt_limit(const uint8_t *payload, size_t length, uint32_t seq_number)
 {
-    if (length != 16) {
-        log("ptd_pan_tilt_limit: bad length %zu, expected 16", length);
+    int set, position;
+    uint8_t p[5], t[4];
+
+    check_length(16);
+
+    set = payload[4];
+
+    if (set != 0 && set != 1) {
+        log("ptd_pan_tilt_limit: unexpected set byte 0x%02x", set);
     }
 
+    position = payload[5];
+
+    if (set == 1) {
+        for (int i = 0; i < 5; ++i) {
+            p[i] = payload[6 + i];
+        }
+
+        for (int i = 0; i < 4; ++i) {
+            t[i] = payload[11 + i];
+        }
+
+        pan_tilt_limit_set(p, t);
+    } else {
+        pan_tilt_limit_clear();
+    }
 }
 
 static void ptd_ramp_curve(const uint8_t *payload, size_t length, uint32_t seq_number)
 {
+    int p;
 
+    check_length(6);
+
+    p = payload[4];
+
+    if (p != 1 && p != 2 && p != 3) {
+        log("ptd_ramp_curve: unexpected p %d", p);
+        return;
+    }
+
+    ramp_curve(p);
 }
 
 static void ptd_slow_mode(const uint8_t *payload, size_t length, uint32_t seq_number)
 {
+    int p;
 
+    check_length(6);
+
+    p = payload[4];
+
+    if (p != 2 && p != 3) {
+        log("ptd_slow_mode: unexpected p %d", p);
+        return;
+    }
+
+    slow_mode(p);
 }
 
-static void handle_pan_tilt_drive(const uint8_t *payload, size_t length, uint32_t seq_number)
+static void dispatch_pan_tilt_drive(const uint8_t *payload, size_t length, uint32_t seq_number)
 {
     switch (payload[3]) {
         case 0x01: /* directionals or stop */
@@ -224,7 +295,7 @@ static void handle_pan_tilt_drive(const uint8_t *payload, size_t length, uint32_
             ptd_slow_mode(payload, length, seq_number);
             break;
         default:
-            log("handle_pan_tilt_drive: unexpected type 0x%02x", payload[3]);
+            log("dispatch_pan_tilt_drive: unexpected type 0x%02x", payload[3]);
     }
 }
 
@@ -244,7 +315,7 @@ static void handle_visca_command(const uint8_t *payload, size_t length, uint32_t
 
     switch (payload[2]) {
         case 0x06:
-            handle_pan_tilt_drive(payload, length, seq_number);
+            dispatch_pan_tilt_drive(payload, length, seq_number);
             break;
         default:
             log("handle_control_command: unsupported command 0x%02x", payload[2]);
@@ -290,10 +361,7 @@ static void handle_control_command(const uint8_t *payload, size_t length, uint32
         case 0x0F: /* ERROR */
             log("control command ERROR");
 
-            if (length != 2) {
-                log("handle_control_command: ERROR: bad length %zu, expected 2", length);
-                return;
-            }
+            check_length(2);
 
             switch (payload[1]) {
                 case 0x01:
