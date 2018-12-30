@@ -41,7 +41,7 @@ static int handle_udp(const struct ap_state *state, uint8_t *message_bytes, ssiz
     response = visca_handle_message(message);
 
     if (response->length != 0) {
-        log("debug visca_handle_message:");
+        log("output of visca_handle_message:");
         print_buffer(response, 16);
 
         send_message_udp(state->current, response, addr);

@@ -3,6 +3,7 @@
 #include "errors.h"
 #include "log.h"
 #include "visca.h"
+#include "visca_inquiries.h"
 
 #include <netdb.h>
 #include <string.h>
@@ -19,6 +20,8 @@
 
 #define check_length_null(X) check_length_detail(X, NULL)
 #define check_length(X) check_length_detail(X, )
+
+#define stub() do { log("%s:%d: unimplemented", __func__, __LINE__); return; } while (0)
 
 struct visca_header
 {
@@ -285,14 +288,44 @@ static void handle_visca_command(const buffer_t *payload, uint32_t seq_number, b
 
 static void handle_visca_inquiry(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
-    (void)payload;
+    uint8_t p, completition_data[VOIP_MAX_PAYLOAD_LENGTH - 3];
+    size_t completition_length;
+
     (void)response;
     (void)seq_number;
 
     log("handle_visca_inquiry");
 
+    if (payload->length < 5) {
+        log("handle_visca_inquiry: unexpected length %zu", payload->length);
+        return;
+    }
+
     if (payload->data[0] != 0x81) {
         log("handle_visca_inquiry: unexpected payload start 0x%02x", payload->data[0]);
+        return;
+    }
+
+    if (payload->data[1] == 0x01) {
+        switch (payload->data[2]) {
+            case 0x7e:
+                if (payload->data[3] == 0x01) {
+                    bridge_inq_exposure_nd_filter();
+                } else if (payload->data[3] == 0x04) {
+                    bridge_inq_preset_mode();
+                } else {
+                    log("handle_visca_inquiry: unexpected byte 0x%02x", payload->data[3]);
+                    return;
+                }
+                break;
+            case 0x06:
+                bridge_inq_pan_tilt_limit();
+                break;
+        }
+    } else if (payload->data[1] == 0x09) {
+        visca_inquiries_dispatch(payload, seq_number, response);
+    } else {
+        log("handle_visca_inquiry: invalid packet continuation 0x%02x", payload->data[1]);
         return;
     }
 }
