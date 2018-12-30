@@ -1,3 +1,4 @@
+#include "bridge.h"
 #include "errors.h"
 #include "log.h"
 #include "visca.h"
@@ -82,66 +83,12 @@ static void compose_control_reply(uint8_t *buffer, size_t *n, uint32_t seq_numbe
 
     memcpy(buffer, &header, VOIP_HEADER_LENGTH);
 
-    *(buffer + VOIP_HEADER_LENGTH) = 0x01; /* ACK: reply for RESET */
+    buffer[VOIP_HEADER_LENGTH] = 0x01; /* ACK: reply for RESET */
 
     *n = VOIP_HEADER_LENGTH + 1;
 
     log("compose_control_reply: debug response:");
     print_buffer(buffer, *n, 16);
-}
-
-static void log_p5t4(uint8_t p[5], uint8_t t[4])
-{
-    log("%02x%02x%02x%02x%02x %02x%02x%02x%02x", p[0], p[1], p[2], p[3], p[4],
-            t[0], t[1], t[2], t[3]);
-}
-
-static void directionals(int vert, int horiz, uint8_t pan_speed, uint8_t tilt_speed)
-{
-    log("directionals: % d, % d, (pan %d, tilt %d)", vert, horiz, pan_speed, tilt_speed);
-}
-
-static void relative_move(uint8_t speed, uint8_t p[5], uint8_t t[4])
-{
-    log("relative_move: %d,", speed);
-    log_p5t4(p, t);
-}
-
-static void absolute_move(uint8_t speed, uint8_t p[5], uint8_t t[4])
-{
-    log("absolute_move: %d,", speed);
-    log_p5t4(p, t);
-}
-
-static void home()
-{
-    log("home");
-}
-
-static void reset()
-{
-    log("reset");
-}
-
-static void pan_tilt_limit_set(uint8_t position, uint8_t p[5], uint8_t t[4])
-{
-    log("pan_tilt_limit_set: %d,", position);
-    log_p5t4(p, t);
-}
-
-static void pan_tilt_limit_clear(uint8_t position)
-{
-    log("pan_tilt_limit_clear: %d", position);
-}
-
-static void ramp_curve(int p)
-{
-    log("ramp_curve: %d", p);
-}
-
-static void slow_mode(int p)
-{
-    log("slow_mode: %d", p);
 }
 
 static void ptd_directionals(const uint8_t *payload, size_t length, uint32_t seq_number)
@@ -184,7 +131,7 @@ static void ptd_directionals(const uint8_t *payload, size_t length, uint32_t seq
             return;
     }
 
-    directionals(vert, horiz, pan_speed, tilt_speed);
+    bridge_directionals(vert, horiz, pan_speed, tilt_speed);
 }
 
 static void ptd_abs_rel(const uint8_t *payload, size_t length, uint32_t seq_number, int rel)
@@ -209,9 +156,9 @@ static void ptd_abs_rel(const uint8_t *payload, size_t length, uint32_t seq_numb
     }
 
     if (rel) {
-        relative_move(speed, p, t);
+        bridge_relative_move(speed, p, t);
     } else {
-        absolute_move(speed, p, t);
+        bridge_absolute_move(speed, p, t);
     }
 }
 
@@ -239,9 +186,9 @@ static void ptd_pan_tilt_limit(const uint8_t *payload, size_t length, uint32_t s
             t[i] = payload[11 + i];
         }
 
-        pan_tilt_limit_set(position, p, t);
+        bridge_pan_tilt_limit_set(position, p, t);
     } else {
-        pan_tilt_limit_clear(position);
+        bridge_pan_tilt_limit_clear(position);
     }
 }
 
@@ -258,7 +205,7 @@ static void ptd_ramp_curve(const uint8_t *payload, size_t length, uint32_t seq_n
         return;
     }
 
-    ramp_curve(p);
+    bridge_ramp_curve(p);
 }
 
 static void ptd_slow_mode(const uint8_t *payload, size_t length, uint32_t seq_number)
@@ -274,7 +221,7 @@ static void ptd_slow_mode(const uint8_t *payload, size_t length, uint32_t seq_nu
         return;
     }
 
-    slow_mode(p);
+    bridge_slow_mode(p);
 }
 
 static void dispatch_pan_tilt_drive(const uint8_t *payload, size_t length, uint32_t seq_number)
@@ -290,10 +237,10 @@ static void dispatch_pan_tilt_drive(const uint8_t *payload, size_t length, uint3
             ptd_abs_rel(payload, length, seq_number, 1);
             break;
         case 0x04: /* home */
-            home();
+            bridge_home();
             break;
         case 0x05: /* reset */
-            reset();
+            bridge_reset();
             break;
         case 0x07: /* pan tilt limit */
             ptd_pan_tilt_limit(payload, length, seq_number);

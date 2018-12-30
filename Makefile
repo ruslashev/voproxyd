@@ -1,4 +1,4 @@
-sources = avltree.c daemonize.c epoll.c main.c socket.c visca.c worker.c
+sources = avltree.c bridge.c daemonize.c epoll.c main.c socket.c visca.c worker.c
 cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \
          -Wno-unused-but-set-variable
 ldflags =
