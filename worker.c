@@ -25,7 +25,7 @@ static int handle_tcp(struct ap_state *state, const uint8_t *message, ssize_t le
     (void)state;
     (void)message;
 
-    log("parse tcp msg of len %ld\n", length);
+    log("parse tcp msg of len %zu\n", length);
 
     return 0;
 }
@@ -52,7 +52,7 @@ static int epoll_handle_read_queue(struct ap_state *state, int udp)
 
     message_length = read(state->current, rx_message, sizeof(rx_message));
 
-    log("read on fd = %d message_length = %ld", state->current, message_length);
+    log("read on fd = %d message_length = %zd", state->current, message_length);
 
     if (message_length == 0) {
         log("close connection on socket fd = %d", state->current);

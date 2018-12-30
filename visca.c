@@ -9,7 +9,7 @@
 #define die(...) die_detail(ERR_VISCA_PROTOCOL, __VA_ARGS__)
 
 #define check_length(X) \
-    if (length != X) { \
+    if (length != (X)) { \
         log("%s: bad length %zu, expected %d", __func__, length, X); \
         return; \
     }
@@ -36,7 +36,7 @@ static void compose_ack(uint8_t *buffer, size_t *n)
     *n = 3;
 }
 
-static void compose_completition(uint8_t *buffer, size_t *n, uint8_t data[], size_t data_len)
+static void compose_completition(uint8_t *buffer, size_t *n, const uint8_t data[], size_t data_len)
 {
     *(buffer + 0) = 0x90;
     *(buffer + 1) = 0x50;
@@ -91,15 +91,15 @@ static void directionals(int vert, int horiz, uint8_t pan_speed, uint8_t tilt_sp
     log("directionals: % d, % d, (pan %d, tilt %d)", vert, horiz, pan_speed, tilt_speed);
 }
 
-static void relative_move(uint8_t p[5], uint8_t t[4])
+static void relative_move(uint8_t speed, uint8_t p[5], uint8_t t[4])
 {
-    log("relative_move:");
+    log("relative_move: %d,", speed);
     log_p5t4(p, t);
 }
 
-static void absolute_move(uint8_t p[5], uint8_t t[4])
+static void absolute_move(uint8_t speed, uint8_t p[5], uint8_t t[4])
 {
-    log("absolute_move:");
+    log("absolute_move: %d,", speed);
     log_p5t4(p, t);
 }
 
@@ -113,15 +113,15 @@ static void reset()
     log("reset");
 }
 
-static void pan_tilt_limit_set(uint8_t p[5], uint8_t t[4])
+static void pan_tilt_limit_set(uint8_t position, uint8_t p[5], uint8_t t[4])
 {
-    log("pan_tilt_limit_set:");
+    log("pan_tilt_limit_set: %d,", position);
     log_p5t4(p, t);
 }
 
-static void pan_tilt_limit_clear()
+static void pan_tilt_limit_clear(uint8_t position)
 {
-    log("pan_tilt_limit_clear:");
+    log("pan_tilt_limit_clear: %d", position);
 }
 
 static void ramp_curve(int p)
@@ -199,9 +199,9 @@ static void ptd_abs_rel(const uint8_t *payload, size_t length, uint32_t seq_numb
     }
 
     if (rel) {
-        relative_move(p, t);
+        relative_move(speed, p, t);
     } else {
-        absolute_move(p, t);
+        absolute_move(speed, p, t);
     }
 }
 
@@ -229,9 +229,9 @@ static void ptd_pan_tilt_limit(const uint8_t *payload, size_t length, uint32_t s
             t[i] = payload[11 + i];
         }
 
-        pan_tilt_limit_set(p, t);
+        pan_tilt_limit_set(position, p, t);
     } else {
-        pan_tilt_limit_clear();
+        pan_tilt_limit_clear(position);
     }
 }
 
@@ -376,6 +376,7 @@ static void handle_control_command(const uint8_t *payload, size_t length, uint32
             }
 
             compose_control_reply(g_response, &g_response_len, seq_number);
+            break;
         default:
             log("handle_control_command: unexpected control command type 0x%02x", payload[0]);
     }
