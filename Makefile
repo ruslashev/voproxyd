@@ -5,6 +5,7 @@ ldflags =
 binname = voproxyd
 
 all:
-	gcc $(sources) $(cflags) $(ldflags) -o $(binname)
+	@gcc $(sources) $(cflags) $(ldflags) -o $(binname)
+	@echo "gcc $(binname)"
 	./$(binname)
 
