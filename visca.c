@@ -44,20 +44,18 @@ static void visca_header_convert_endianness_hton(struct visca_header *header)
     header->seq_number = htonl(header->seq_number);
 }
 
-static struct buffer_t* compose_ack()
+static void compose_ack(struct buffer_t *response)
 {
-    struct buffer_t *response = cons_buffer(3);
+    response->length = 3;
 
     response->data[0] = 0x90;
     response->data[1] = 0x40;
     response->data[2] = 0xff;
-
-    return response;
 }
 
-static struct buffer_t* compose_completition(const uint8_t data[], size_t data_len)
+static void compose_completition(struct buffer_t *response, const uint8_t data[], size_t data_len)
 {
-    struct buffer_t *response = cons_buffer(3 + data_len);
+    response->length = 3 + data_len;
 
     response->data[0] = 0x90;
     response->data[1] = 0x50;
@@ -67,18 +65,15 @@ static struct buffer_t* compose_completition(const uint8_t data[], size_t data_l
     }
 
     response->data[2 + data_len] = 0xff;
-
-    return response;
 }
 
-static struct buffer_t* compose_empty_completition()
+static void compose_empty_completition(struct buffer_t *response)
 {
-    return compose_completition(NULL, 0);
+    compose_completition(response, NULL, 0);
 }
 
-static struct buffer_t* compose_control_reply(uint32_t seq_number)
+static void compose_control_reply(struct buffer_t *response, uint32_t seq_number)
 {
-    struct buffer_t *response = cons_buffer(VOIP_HEADER_LENGTH + 1);
     struct visca_header header = {
         .payload_type = 0x0201,
         .payload_length = 0x01,
@@ -87,11 +82,11 @@ static struct buffer_t* compose_control_reply(uint32_t seq_number)
 
     visca_header_convert_endianness_hton(&header);
 
+    response->length = VOIP_HEADER_LENGTH + 1;
+
     memcpy(response->data, &header, VOIP_HEADER_LENGTH);
 
     response->data[VOIP_HEADER_LENGTH] = 0x01; /* ACK: reply for RESET */
-
-    return response;
 }
 
 static void ptd_directionals(const struct buffer_t *payload)
@@ -227,7 +222,7 @@ static void ptd_slow_mode(const struct buffer_t *payload)
     bridge_slow_mode(p);
 }
 
-static struct buffer_t* dispatch_pan_tilt_drive(const struct buffer_t *payload, uint32_t seq_number)
+static void dispatch_pan_tilt_drive(const struct buffer_t *payload, struct buffer_t *response, uint32_t seq_number)
 {
     switch (payload->data[3]) {
         case 0x01: /* directionals or stop */
@@ -256,69 +251,67 @@ static struct buffer_t* dispatch_pan_tilt_drive(const struct buffer_t *payload, 
             break;
         default:
             log("dispatch_pan_tilt_drive: unexpected type 0x%02x", payload->data[3]);
-            return NULL;
+            return;
     }
 
+    (void)response;
     (void)seq_number;
-    return NULL;
 }
 
-static struct buffer_t* handle_visca_command(const struct buffer_t *payload, uint32_t seq_number)
+static void handle_visca_command(const struct buffer_t *payload, uint32_t seq_number, struct buffer_t *response)
 {
     log("handle_visca_command");
 
     if (payload->length < 5) {
         log("handle_visca_command: bad length %zu", payload->length);
-        return NULL;
+        return;
     }
 
     if (payload->data[0] != 0x81 || payload->data[1] != 0x01) {
         log("handle_visca_command: unexpected payload start %02x %02x",
                 payload->data[0], payload->data[1]);
-        return NULL;
+        return;
     }
 
     switch (payload->data[2]) {
         case 0x06:
-            return dispatch_pan_tilt_drive(payload, seq_number);
+            dispatch_pan_tilt_drive(payload, response, seq_number);
+            break;
         default:
             log("handle_visca_command: unsupported command 0x%02x", payload->data[2]);
-            return NULL;
+            return;
     }
 }
 
-static struct buffer_t* handle_visca_inquiry(const struct buffer_t *payload, uint32_t seq_number)
+static void handle_visca_inquiry(const struct buffer_t *payload, uint32_t seq_number, struct buffer_t *response)
 {
     (void)payload;
+    (void)response;
     (void)seq_number;
 
     log("handle_visca_inquiry");
-
-    return NULL;
 }
 
-static struct buffer_t* handle_visca_reply(const struct buffer_t *payload, uint32_t seq_number)
+static void handle_visca_reply(const struct buffer_t *payload, uint32_t seq_number, struct buffer_t *response)
 {
     (void)payload;
+    (void)response;
     (void)seq_number;
 
     log("handle_visca_reply");
-
-    return NULL;
 }
 
-static struct buffer_t* handle_visca_device_setting_cmd(const struct buffer_t *payload,
-        uint32_t seq_number)
+static void handle_visca_device_setting_cmd(const struct buffer_t *payload, uint32_t seq_number,
+        struct buffer_t *response)
 {
     (void)payload;
+    (void)response;
     (void)seq_number;
 
     log("handle_visca_device_setting_cmd");
-
-    return NULL;
 }
 
-static struct buffer_t* handle_control_command(const struct buffer_t *payload, uint32_t seq_number)
+static void handle_control_command(const struct buffer_t *payload, uint32_t seq_number, struct buffer_t *response)
 {
     log("handle_control_command");
 
@@ -330,7 +323,7 @@ static struct buffer_t* handle_control_command(const struct buffer_t *payload, u
         case 0x0F: /* ERROR */
             log("control command ERROR");
 
-            check_length_null(2);
+            check_length(2);
 
             switch (payload->data[1]) {
                 case 0x01:
@@ -342,26 +335,25 @@ static struct buffer_t* handle_control_command(const struct buffer_t *payload, u
                 default:
                     log("handle_control_command: ERROR: unexpected error type 0x%02x",
                             payload->data[1]);
-                    return NULL;
+                    return;
             }
 
             break;
         default:
             log("handle_control_command: unexpected control command type 0x%02x", payload->data[0]);
-            return NULL;
+            return;
     }
 
-    return compose_control_reply(seq_number);
+    compose_control_reply(response, seq_number);
 }
 
-static struct buffer_t* handle_control_reply(const struct buffer_t *payload, uint32_t seq_number)
+static void handle_control_reply(const struct buffer_t *payload, uint32_t seq_number, struct buffer_t *response)
 {
     (void)payload;
+    (void)response;
     (void)seq_number;
 
     log("handle_control_reply");
-
-    return NULL;
 }
 
 struct buffer_t* visca_handle_message(const struct buffer_t *message)
@@ -371,6 +363,7 @@ struct buffer_t* visca_handle_message(const struct buffer_t *message)
         .length = message->length - 8,
         .data = message->data + 8
     };
+    struct buffer_t *response = cons_buffer(VOIP_MAX_MESSAGE_LENGTH);
 
     log("got msg:");
     print_buffer(message, 16);
@@ -389,21 +382,29 @@ struct buffer_t* visca_handle_message(const struct buffer_t *message)
 
     switch (header->payload_type) {
         case 0x0100:
-            return handle_visca_command(&payload, header->seq_number);
+            handle_visca_command(&payload, header->seq_number, response);
+            break;
         case 0x0110:
-            return handle_visca_inquiry(&payload, header->seq_number);
+            handle_visca_inquiry(&payload, header->seq_number, response);
+            break;
         case 0x0111:
-            return handle_visca_reply(&payload, header->seq_number);
+            handle_visca_reply(&payload, header->seq_number, response);
+            break;
         case 0x0120:
-            return handle_visca_device_setting_cmd(&payload, header->seq_number);
+            handle_visca_device_setting_cmd(&payload, header->seq_number, response);
+            break;
         case 0x0200:
-            return handle_control_command(&payload, header->seq_number);
+            handle_control_command(&payload, header->seq_number, response);
+            break;
         case 0x0201:
-            return handle_control_reply(&payload, header->seq_number);
+            handle_control_reply(&payload, header->seq_number, response);
+            break;
         default:
             log("visca_handle_message: unexpected payload type 0x%04x", header->payload_type);
             return NULL;
     }
+
+    return response;
 }
 
 /* Command ->
