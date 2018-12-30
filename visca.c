@@ -290,6 +290,11 @@ static void handle_visca_inquiry(const buffer_t *payload, uint32_t seq_number, b
     (void)seq_number;
 
     log("handle_visca_inquiry");
+
+    if (payload->data[0] != 0x81) {
+        log("handle_visca_inquiry: unexpected payload start 0x%02x", payload->data[0]);
+        return;
+    }
 }
 
 static void handle_visca_reply(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
@@ -362,17 +367,19 @@ buffer_t* visca_handle_message(const buffer_t *message)
     buffer_t payload = {
         .length = message->length - 8,
         .data = message->data + 8
-    };
-    buffer_t *response = cons_buffer(VOIP_MAX_MESSAGE_LENGTH);
+    }, *response = cons_buffer(VOIP_MAX_MESSAGE_LENGTH);
 
+    response->length = 0;
+
+    log(" ");
     log("got msg:");
     print_buffer(message, 16);
 
     visca_header_convert_endianness_ntoh(header);
 
-    log("header->payload_type=0x%04x", header->payload_type);
-    log("header->payload_length=%d", header->payload_length);
-    log("header->seq_number=%d", header->seq_number);
+    /* log("header->payload_type=0x%04x", header->payload_type); */
+    /* log("header->payload_length=%d", header->payload_length); */
+    /* log("header->seq_number=%d", header->seq_number); */
 
     if (header->payload_length != payload.length) {
         log("assertion `header->payload_length == payload.length' failed: %d != %zu",
