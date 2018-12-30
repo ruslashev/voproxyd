@@ -30,19 +30,20 @@ static int handle_tcp(struct ap_state *state, const uint8_t *message, ssize_t le
     return 0;
 }
 
-static int handle_udp(struct ap_state *state, const uint8_t *message, ssize_t length, int *close)
+static int handle_udp(const struct ap_state *state, const uint8_t *message, ssize_t length,
+        struct sockaddr *addr)
 {
     uint8_t response[VOIP_MAX_MESSAGE_LENGTH];
     size_t response_len;
 
     visca_handle_message(message, length, response, &response_len);
 
-    send_message(state->current, response, response_len);
+    send_message_udp(state->current, response, response_len, addr);
 
     return 0;
 }
 
-static int epoll_handle_read_queue(struct ap_state *state, int udp)
+static int epoll_handle_read_queue_tcp(struct ap_state *state)
 {
     ssize_t message_length;
     uint8_t rx_message[VOPROXYD_MAX_RX_MESSAGE_LENGTH];
@@ -62,11 +63,7 @@ static int epoll_handle_read_queue(struct ap_state *state, int udp)
     }
 
     if (message_length != -1) {
-        if (udp) {
-            handle_udp(state, rx_message, message_length, &close);
-        } else {
-            handle_tcp(state, rx_message, message_length, &close);
-        }
+        handle_tcp(state, rx_message, message_length, &close);
 
         if (close || state->close_after_read) {
             state->close_after_read = 0;
@@ -83,6 +80,46 @@ static int epoll_handle_read_queue(struct ap_state *state, int udp)
 
     epoll_close_interface(state, state->current);
     die(ERR_READ, "error reading on socket fd = %d: %s", state->current, strerror(errno));
+}
+
+static int epoll_handle_read_queue_udp(struct ap_state *state)
+{
+    ssize_t message_length;
+    uint8_t rx_message[VOPROXYD_MAX_RX_MESSAGE_LENGTH];
+    struct sockaddr_in addr;
+    socklen_t addr_len = sizeof(addr);
+    int close = 0;
+
+    message_length = recvfrom(state->current, rx_message, sizeof(rx_message), MSG_DONTWAIT,
+            (struct sockaddr*)&addr, &addr_len);
+
+    log("recvfrom fd = %d message_length = %zd %s", state->current, message_length,
+            (errno == EAGAIN || errno == EWOULDBLOCK) ? "(eagain | ewouldblock)" : "");
+
+    if (message_length == 0) {
+        log("close connection on socket fd = %d", state->current);
+        epoll_close_interface(state, state->current);
+        return 0;
+    }
+
+    if (message_length == -1) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return 0;
+        }
+
+        epoll_close_interface(state, state->current);
+        die(ERR_READ, "error reading on socket fd = %d: %s", state->current, strerror(errno));
+    }
+
+    handle_udp(state, rx_message, message_length, (struct sockaddr*)&addr);
+
+    if (close || state->close_after_read) {
+        state->close_after_read = 0;
+        epoll_close_interface(state, state->current);
+        return 0;
+    }
+
+    return 1;
 }
 
 static void epoll_handle_event(struct ap_state *state, const struct epoll_event *event)
@@ -107,8 +144,7 @@ static void epoll_handle_event(struct ap_state *state, const struct epoll_event 
     }
 
     while (continue_reading) {
-        continue_reading = epoll_handle_read_queue(state,
-                state->current == state->udp_sock_fd);
+        continue_reading = epoll_handle_read_queue_udp(state);
     }
 }
 

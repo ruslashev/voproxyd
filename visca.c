@@ -358,8 +358,6 @@ void visca_handle_message(const uint8_t *message, size_t length, uint8_t *respon
 
     log("got msg:");
     print_buffer(message, length, 16);
-    print_buffer(message, length, 2);
-    log(" ");
 
     visca_header_convert_endianness_ntoh(header);
 
@@ -394,7 +392,11 @@ void visca_handle_message(const uint8_t *message, size_t length, uint8_t *respon
             break;
         default:
             log("visca_handle_message: unexpected payload type 0x%04x", header->payload_type);
+            return;
     }
+
+    memcpy(response, g_response, g_response_len);
+    *response_len = g_response_len;
 }
 
 /* Command ->
