@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 
+#include "buffer.h"
 #include "epoll.h"
 #include "errors.h"
 #include "log.h"
@@ -30,15 +31,23 @@ static int handle_tcp(struct ap_state *state, const uint8_t *message, ssize_t le
     return 0;
 }
 
-static int handle_udp(const struct ap_state *state, const uint8_t *message, ssize_t length,
+static int handle_udp(const struct ap_state *state, uint8_t *message_bytes, ssize_t length,
         struct sockaddr *addr)
 {
-    uint8_t response[VOIP_MAX_MESSAGE_LENGTH];
-    size_t response_len;
+    struct buffer_t *message = cons_buffer(length), *response;
 
-    visca_handle_message(message, length, response, &response_len);
+    message->data = message_bytes;
 
-    send_message_udp(state->current, response, response_len, addr);
+    response = visca_handle_message(message);
+
+    if (response != NULL) {
+        log("debug visca_handle_message:");
+        print_buffer(response, 16);
+
+        send_message_udp(state->current, response, addr);
+
+        free(response);
+    }
 
     return 0;
 }
@@ -104,6 +113,7 @@ static int epoll_handle_read_queue_udp(struct ap_state *state)
 
     if (message_length == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            errno = 0;
             return 0;
         }
 

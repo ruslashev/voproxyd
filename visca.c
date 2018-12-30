@@ -1,4 +1,5 @@
 #include "bridge.h"
+#include "buffer.h"
 #include "errors.h"
 #include "log.h"
 #include "visca.h"
@@ -10,11 +11,14 @@
 #undef die
 #define die(...) die_detail(ERR_VISCA_PROTOCOL, __VA_ARGS__)
 
-#define check_length(X) \
-    if (length != (X)) { \
-        log("%s: bad length %zu, expected %d", __func__, length, X); \
-        return; \
+#define check_length_detail(X, R) \
+    if (payload->length != (X)) { \
+        log("%s: bad length %zu, expected %d", __func__, payload->length, X); \
+        return R; \
     }
+
+#define check_length_null(X) check_length_detail(X, NULL)
+#define check_length(X) check_length_detail(X, )
 
 struct visca_header
 {
@@ -25,9 +29,6 @@ struct visca_header
 
 _Static_assert(sizeof(struct visca_header) == VOIP_HEADER_LENGTH,
         "VISCA header size must be 8 bytes");
-
-static uint8_t g_response[VOIP_MAX_MESSAGE_LENGTH];
-static size_t g_response_len;
 
 static void visca_header_convert_endianness_ntoh(struct visca_header *header)
 {
@@ -43,36 +44,41 @@ static void visca_header_convert_endianness_hton(struct visca_header *header)
     header->seq_number = htonl(header->seq_number);
 }
 
-static void compose_ack(uint8_t *buffer, size_t *n)
+static struct buffer_t* compose_ack()
 {
-    *(buffer + 0) = 0x90;
-    *(buffer + 1) = 0x40;
-    *(buffer + 2) = 0xff;
+    struct buffer_t *response = cons_buffer(3);
 
-    *n = 3;
+    response->data[0] = 0x90;
+    response->data[1] = 0x40;
+    response->data[2] = 0xff;
+
+    return response;
 }
 
-static void compose_completition(uint8_t *buffer, size_t *n, const uint8_t data[], size_t data_len)
+static struct buffer_t* compose_completition(const uint8_t data[], size_t data_len)
 {
-    *(buffer + 0) = 0x90;
-    *(buffer + 1) = 0x50;
+    struct buffer_t *response = cons_buffer(3 + data_len);
+
+    response->data[0] = 0x90;
+    response->data[1] = 0x50;
 
     for (size_t i = 0; i < data_len; ++i) {
-        *(buffer + 2 + i) = data[i];
+        response->data[2 + i] = data[i];
     }
 
-    *(buffer + 2 + data_len) = 0xff;
+    response->data[2 + data_len] = 0xff;
 
-    *n = 3 + data_len;
+    return response;
 }
 
-static void compose_empty_completition(uint8_t *buffer, size_t *n)
+static struct buffer_t* compose_empty_completition()
 {
-    compose_completition(buffer, n, NULL, 0);
+    return compose_completition(NULL, 0);
 }
 
-static void compose_control_reply(uint8_t *buffer, size_t *n, uint32_t seq_number)
+static struct buffer_t* compose_control_reply(uint32_t seq_number)
 {
+    struct buffer_t *response = cons_buffer(VOIP_HEADER_LENGTH + 1);
     struct visca_header header = {
         .payload_type = 0x0201,
         .payload_length = 0x01,
@@ -81,27 +87,24 @@ static void compose_control_reply(uint8_t *buffer, size_t *n, uint32_t seq_numbe
 
     visca_header_convert_endianness_hton(&header);
 
-    memcpy(buffer, &header, VOIP_HEADER_LENGTH);
+    memcpy(response->data, &header, VOIP_HEADER_LENGTH);
 
-    buffer[VOIP_HEADER_LENGTH] = 0x01; /* ACK: reply for RESET */
+    response->data[VOIP_HEADER_LENGTH] = 0x01; /* ACK: reply for RESET */
 
-    *n = VOIP_HEADER_LENGTH + 1;
-
-    log("compose_control_reply: debug response:");
-    print_buffer(buffer, *n, 16);
+    return response;
 }
 
-static void ptd_directionals(const uint8_t *payload, size_t length, uint32_t seq_number)
+static void ptd_directionals(const struct buffer_t *payload)
 {
     uint8_t pan_speed, tilt_speed;
     int vert, horiz;
 
     check_length(9);
 
-    pan_speed = payload[4];
-    tilt_speed = payload[5];
+    pan_speed = payload->data[4];
+    tilt_speed = payload->data[5];
 
-    switch (payload[6]) {
+    switch (payload->data[6]) {
         case 0x01:
             horiz = -1;
             break;
@@ -112,11 +115,11 @@ static void ptd_directionals(const uint8_t *payload, size_t length, uint32_t seq
             horiz = 0;
             break;
         default:
-            log("ptd_directionals: unexpected horizontal drive 0x%02x", payload[6]);
+            log("ptd_directionals: unexpected horizontal drive 0x%02x", payload->data[6]);
             return;
     }
 
-    switch (payload[7]) {
+    switch (payload->data[7]) {
         case 0x01:
             vert = 1;
             break;
@@ -127,32 +130,32 @@ static void ptd_directionals(const uint8_t *payload, size_t length, uint32_t seq
             vert = 0;
             break;
         default:
-            log("ptd_directionals: unexpected vertical drive 0x%02x", payload[7]);
+            log("ptd_directionals: unexpected vertical drive 0x%02x", payload->data[7]);
             return;
     }
 
     bridge_directionals(vert, horiz, pan_speed, tilt_speed);
 }
 
-static void ptd_abs_rel(const uint8_t *payload, size_t length, uint32_t seq_number, int rel)
+static void ptd_abs_rel(const struct buffer_t *payload, int rel)
 {
     uint8_t speed, p[5], t[4];
 
     check_length(16);
 
-    speed = payload[4];
+    speed = payload->data[4];
 
-    if (payload[5] != 0) {
-        log("ptd_abs_rel: expected payload[5] to be 0, not 0x%02x", payload[5]);
+    if (payload->data[5] != 0) {
+        log("ptd_abs_rel: expected payload->data[5] to be 0, not 0x%02x", payload->data[5]);
         return;
     }
 
     for (int i = 0; i < 5; ++i) {
-        p[i] = payload[6 + i];
+        p[i] = payload->data[6 + i];
     }
 
     for (int i = 0; i < 4; ++i) {
-        t[i] = payload[11 + i];
+        t[i] = payload->data[11 + i];
     }
 
     if (rel) {
@@ -162,28 +165,28 @@ static void ptd_abs_rel(const uint8_t *payload, size_t length, uint32_t seq_numb
     }
 }
 
-static void ptd_pan_tilt_limit(const uint8_t *payload, size_t length, uint32_t seq_number)
+static void ptd_pan_tilt_limit(const struct buffer_t *payload)
 {
     int set, position;
     uint8_t p[5], t[4];
 
     check_length(16);
 
-    set = payload[4];
+    set = payload->data[4];
 
     if (set != 0 && set != 1) {
         log("ptd_pan_tilt_limit: unexpected set byte 0x%02x", set);
     }
 
-    position = payload[5];
+    position = payload->data[5];
 
     if (set == 1) {
         for (int i = 0; i < 5; ++i) {
-            p[i] = payload[6 + i];
+            p[i] = payload->data[6 + i];
         }
 
         for (int i = 0; i < 4; ++i) {
-            t[i] = payload[11 + i];
+            t[i] = payload->data[11 + i];
         }
 
         bridge_pan_tilt_limit_set(position, p, t);
@@ -192,13 +195,13 @@ static void ptd_pan_tilt_limit(const uint8_t *payload, size_t length, uint32_t s
     }
 }
 
-static void ptd_ramp_curve(const uint8_t *payload, size_t length, uint32_t seq_number)
+static void ptd_ramp_curve(const struct buffer_t *payload)
 {
     int p;
 
     check_length(6);
 
-    p = payload[4];
+    p = payload->data[4];
 
     if (p != 1 && p != 2 && p != 3) {
         log("ptd_ramp_curve: unexpected p %d", p);
@@ -208,13 +211,13 @@ static void ptd_ramp_curve(const uint8_t *payload, size_t length, uint32_t seq_n
     bridge_ramp_curve(p);
 }
 
-static void ptd_slow_mode(const uint8_t *payload, size_t length, uint32_t seq_number)
+static void ptd_slow_mode(const struct buffer_t *payload)
 {
     int p;
 
     check_length(6);
 
-    p = payload[4];
+    p = payload->data[4];
 
     if (p != 2 && p != 3) {
         log("ptd_slow_mode: unexpected p %d", p);
@@ -224,17 +227,17 @@ static void ptd_slow_mode(const uint8_t *payload, size_t length, uint32_t seq_nu
     bridge_slow_mode(p);
 }
 
-static void dispatch_pan_tilt_drive(const uint8_t *payload, size_t length, uint32_t seq_number)
+static struct buffer_t* dispatch_pan_tilt_drive(const struct buffer_t *payload, uint32_t seq_number)
 {
-    switch (payload[3]) {
+    switch (payload->data[3]) {
         case 0x01: /* directionals or stop */
-            ptd_directionals(payload, length, seq_number);
+            ptd_directionals(payload);
             break;
         case 0x02: /* absolute position */
-            ptd_abs_rel(payload, length, seq_number, 0);
+            ptd_abs_rel(payload, 0);
             break;
         case 0x03: /* relative position */
-            ptd_abs_rel(payload, length, seq_number, 1);
+            ptd_abs_rel(payload, 1);
             break;
         case 0x04: /* home */
             bridge_home();
@@ -243,74 +246,83 @@ static void dispatch_pan_tilt_drive(const uint8_t *payload, size_t length, uint3
             bridge_reset();
             break;
         case 0x07: /* pan tilt limit */
-            ptd_pan_tilt_limit(payload, length, seq_number);
+            ptd_pan_tilt_limit(payload);
             break;
         case 0x31: /* ramp curve */
-            ptd_ramp_curve(payload, length, seq_number);
+            ptd_ramp_curve(payload);
             break;
         case 0x44: /* pan-tilt slow mode */
-            ptd_slow_mode(payload, length, seq_number);
+            ptd_slow_mode(payload);
             break;
         default:
-            log("dispatch_pan_tilt_drive: unexpected type 0x%02x", payload[3]);
+            log("dispatch_pan_tilt_drive: unexpected type 0x%02x", payload->data[3]);
+            return NULL;
     }
+
+    (void)seq_number;
+    return NULL;
 }
 
-static void handle_visca_command(const uint8_t *payload, size_t length, uint32_t seq_number)
+static struct buffer_t* handle_visca_command(const struct buffer_t *payload, uint32_t seq_number)
 {
     log("handle_visca_command");
 
-    if (length < 5) {
-        log("handle_visca_command: bad length %zu", length);
-        return;
+    if (payload->length < 5) {
+        log("handle_visca_command: bad length %zu", payload->length);
+        return NULL;
     }
 
-    if (payload[0] != 0x81 || payload[1] != 0x01) {
-        log("handle_visca_command: unexpected payload start %02x %02x", payload[0], payload[1]);
-        return;
+    if (payload->data[0] != 0x81 || payload->data[1] != 0x01) {
+        log("handle_visca_command: unexpected payload start %02x %02x",
+                payload->data[0], payload->data[1]);
+        return NULL;
     }
 
-    switch (payload[2]) {
+    switch (payload->data[2]) {
         case 0x06:
-            dispatch_pan_tilt_drive(payload, length, seq_number);
-            break;
+            return dispatch_pan_tilt_drive(payload, seq_number);
         default:
-            log("handle_visca_command: unsupported command 0x%02x", payload[2]);
+            log("handle_visca_command: unsupported command 0x%02x", payload->data[2]);
+            return NULL;
     }
 }
 
-static void handle_visca_inquiry(const uint8_t *payload, size_t length, uint32_t seq_number)
+static struct buffer_t* handle_visca_inquiry(const struct buffer_t *payload, uint32_t seq_number)
 {
     (void)payload;
-    (void)length;
     (void)seq_number;
 
     log("handle_visca_inquiry");
+
+    return NULL;
 }
 
-static void handle_visca_reply(const uint8_t *payload, size_t length, uint32_t seq_number)
+static struct buffer_t* handle_visca_reply(const struct buffer_t *payload, uint32_t seq_number)
 {
     (void)payload;
-    (void)length;
     (void)seq_number;
 
     log("handle_visca_reply");
+
+    return NULL;
 }
 
-static void handle_visca_device_setting_cmd(const uint8_t *payload, size_t length, uint32_t seq_number)
+static struct buffer_t* handle_visca_device_setting_cmd(const struct buffer_t *payload,
+        uint32_t seq_number)
 {
     (void)payload;
-    (void)length;
     (void)seq_number;
 
     log("handle_visca_device_setting_cmd");
+
+    return NULL;
 }
 
-static void handle_control_command(const uint8_t *payload, size_t length, uint32_t seq_number)
+static struct buffer_t* handle_control_command(const struct buffer_t *payload, uint32_t seq_number)
 {
     log("handle_control_command");
 
-    switch (payload[0]) {
+    switch (payload->data[0]) {
         case 0x01: /* RESET */
             log("control command RESET");
             seq_number = 0;
@@ -318,9 +330,9 @@ static void handle_control_command(const uint8_t *payload, size_t length, uint32
         case 0x0F: /* ERROR */
             log("control command ERROR");
 
-            check_length(2);
+            check_length_null(2);
 
-            switch (payload[1]) {
+            switch (payload->data[1]) {
                 case 0x01:
                     log("abnormality in the sequence number");
                     break;
@@ -328,36 +340,40 @@ static void handle_control_command(const uint8_t *payload, size_t length, uint32
                     log("abnormality in the message type");
                     break;
                 default:
-                    log("handle_control_command: ERROR: unexpected error type 0x%02x", payload[1]);
-                    return;
+                    log("handle_control_command: ERROR: unexpected error type 0x%02x",
+                            payload->data[1]);
+                    return NULL;
             }
 
             break;
         default:
-            log("handle_control_command: unexpected control command type 0x%02x", payload[0]);
-            return;
+            log("handle_control_command: unexpected control command type 0x%02x", payload->data[0]);
+            return NULL;
     }
 
-    compose_control_reply(g_response, &g_response_len, seq_number);
+    return compose_control_reply(seq_number);
 }
 
-static void handle_control_reply(const uint8_t *payload, size_t length, uint32_t seq_number)
+static struct buffer_t* handle_control_reply(const struct buffer_t *payload, uint32_t seq_number)
 {
     (void)payload;
-    (void)length;
     (void)seq_number;
 
     log("handle_control_reply");
+
+    return NULL;
 }
 
-void visca_handle_message(const uint8_t *message, size_t length, uint8_t *response, size_t *response_len)
+struct buffer_t* visca_handle_message(const struct buffer_t *message)
 {
-    struct visca_header *header = (struct visca_header*)message;
-    const uint8_t *payload = message + 8;
-    size_t payload_length = length - 8;
+    struct visca_header *header = (struct visca_header*)message->data;
+    struct buffer_t payload = {
+        .length = message->length - 8,
+        .data = message->data + 8
+    };
 
     log("got msg:");
-    print_buffer(message, length, 16);
+    print_buffer(message, 16);
 
     visca_header_convert_endianness_ntoh(header);
 
@@ -365,38 +381,29 @@ void visca_handle_message(const uint8_t *message, size_t length, uint8_t *respon
     log("header->payload_length=%d", header->payload_length);
     log("header->seq_number=%d", header->seq_number);
 
-    if (header->payload_length != length - 8) {
-        log("assertion `header->payload_length == length - 8' failed: %d != %zu",
-                header->payload_length, length - 8);
-        return;
+    if (header->payload_length != payload.length) {
+        log("assertion `header->payload_length == payload.length' failed: %d != %zu",
+                header->payload_length, payload.length);
+        return NULL;
     }
 
     switch (header->payload_type) {
         case 0x0100:
-            handle_visca_command(payload, payload_length, header->seq_number);
-            break;
+            return handle_visca_command(&payload, header->seq_number);
         case 0x0110:
-            handle_visca_inquiry(payload, payload_length, header->seq_number);
-            break;
+            return handle_visca_inquiry(&payload, header->seq_number);
         case 0x0111:
-            handle_visca_reply(payload, payload_length, header->seq_number);
-            break;
+            return handle_visca_reply(&payload, header->seq_number);
         case 0x0120:
-            handle_visca_device_setting_cmd(payload, payload_length, header->seq_number);
-            break;
+            return handle_visca_device_setting_cmd(&payload, header->seq_number);
         case 0x0200:
-            handle_control_command(payload, payload_length, header->seq_number);
-            break;
+            return handle_control_command(&payload, header->seq_number);
         case 0x0201:
-            handle_control_reply(payload, payload_length, header->seq_number);
-            break;
+            return handle_control_reply(&payload, header->seq_number);
         default:
             log("visca_handle_message: unexpected payload type 0x%04x", header->payload_type);
-            return;
+            return NULL;
     }
-
-    memcpy(response, g_response, g_response_len);
-    *response_len = g_response_len;
 }
 
 /* Command ->
