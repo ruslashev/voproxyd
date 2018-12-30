@@ -32,7 +32,7 @@ static int handle_tcp(struct ap_state *state, const uint8_t *message, ssize_t le
 
 static int handle_udp(struct ap_state *state, const uint8_t *message, ssize_t length, int *close)
 {
-    uint8_t response[VISCA_OVER_IP_MAX_MESSAGE_LENGTH];
+    uint8_t response[VOIP_MAX_MESSAGE_LENGTH];
     size_t response_len;
 
     visca_handle_message(message, length, response, &response_len);
@@ -52,7 +52,8 @@ static int epoll_handle_read_queue(struct ap_state *state, int udp)
 
     message_length = read(state->current, rx_message, sizeof(rx_message));
 
-    log("read on fd = %d message_length = %zd", state->current, message_length);
+    log("read on fd = %d message_length = %zd %s", state->current, message_length,
+            (errno == EAGAIN || errno == EWOULDBLOCK) ? "(eagain | ewouldblock)" : "");
 
     if (message_length == 0) {
         log("close connection on socket fd = %d", state->current);
@@ -77,7 +78,6 @@ static int epoll_handle_read_queue(struct ap_state *state, int udp)
     }
 
     if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        log("the err is (eagain | ewouldblock)");
         return 0;
     }
 
