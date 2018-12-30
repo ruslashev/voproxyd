@@ -113,7 +113,7 @@ int send_message(int fd, const void *message, ssize_t length)
     return total_sent == length;
 }
 
-int send_message_udp(int fd, const struct buffer_t *message, struct sockaddr *addr)
+int send_message_udp(int fd, const buffer_t *message, struct sockaddr *addr)
 {
     ssize_t total = message->length, total_sent = 0, remaining = total, sent;
     socklen_t addr_len = sizeof(struct sockaddr_in);

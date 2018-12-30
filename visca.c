@@ -44,7 +44,7 @@ static void visca_header_convert_endianness_hton(struct visca_header *header)
     header->seq_number = htonl(header->seq_number);
 }
 
-static void compose_ack(struct buffer_t *response)
+static void compose_ack(buffer_t *response)
 {
     response->length = 3;
 
@@ -53,7 +53,7 @@ static void compose_ack(struct buffer_t *response)
     response->data[2] = 0xff;
 }
 
-static void compose_completition(struct buffer_t *response, const uint8_t data[], size_t data_len)
+static void compose_completition(buffer_t *response, const uint8_t data[], size_t data_len)
 {
     response->length = 3 + data_len;
 
@@ -67,12 +67,12 @@ static void compose_completition(struct buffer_t *response, const uint8_t data[]
     response->data[2 + data_len] = 0xff;
 }
 
-static void compose_empty_completition(struct buffer_t *response)
+static void compose_empty_completition(buffer_t *response)
 {
     compose_completition(response, NULL, 0);
 }
 
-static void compose_control_reply(struct buffer_t *response, uint32_t seq_number)
+static void compose_control_reply(buffer_t *response, uint32_t seq_number)
 {
     struct visca_header header = {
         .payload_type = 0x0201,
@@ -89,7 +89,7 @@ static void compose_control_reply(struct buffer_t *response, uint32_t seq_number
     response->data[VOIP_HEADER_LENGTH] = 0x01; /* ACK: reply for RESET */
 }
 
-static void ptd_directionals(const struct buffer_t *payload)
+static void ptd_directionals(const buffer_t *payload)
 {
     uint8_t pan_speed, tilt_speed;
     int vert, horiz;
@@ -132,7 +132,7 @@ static void ptd_directionals(const struct buffer_t *payload)
     bridge_directionals(vert, horiz, pan_speed, tilt_speed);
 }
 
-static void ptd_abs_rel(const struct buffer_t *payload, int rel)
+static void ptd_abs_rel(const buffer_t *payload, int rel)
 {
     uint8_t speed, p[5], t[4];
 
@@ -160,7 +160,7 @@ static void ptd_abs_rel(const struct buffer_t *payload, int rel)
     }
 }
 
-static void ptd_pan_tilt_limit(const struct buffer_t *payload)
+static void ptd_pan_tilt_limit(const buffer_t *payload)
 {
     int set, position;
     uint8_t p[5], t[4];
@@ -190,7 +190,7 @@ static void ptd_pan_tilt_limit(const struct buffer_t *payload)
     }
 }
 
-static void ptd_ramp_curve(const struct buffer_t *payload)
+static void ptd_ramp_curve(const buffer_t *payload)
 {
     int p;
 
@@ -206,7 +206,7 @@ static void ptd_ramp_curve(const struct buffer_t *payload)
     bridge_ramp_curve(p);
 }
 
-static void ptd_slow_mode(const struct buffer_t *payload)
+static void ptd_slow_mode(const buffer_t *payload)
 {
     int p;
 
@@ -222,7 +222,7 @@ static void ptd_slow_mode(const struct buffer_t *payload)
     bridge_slow_mode(p);
 }
 
-static void dispatch_pan_tilt_drive(const struct buffer_t *payload, struct buffer_t *response, uint32_t seq_number)
+static void dispatch_pan_tilt_drive(const buffer_t *payload, buffer_t *response, uint32_t seq_number)
 {
     switch (payload->data[3]) {
         case 0x01: /* directionals or stop */
@@ -258,7 +258,7 @@ static void dispatch_pan_tilt_drive(const struct buffer_t *payload, struct buffe
     (void)seq_number;
 }
 
-static void handle_visca_command(const struct buffer_t *payload, uint32_t seq_number, struct buffer_t *response)
+static void handle_visca_command(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
     log("handle_visca_command");
 
@@ -283,7 +283,7 @@ static void handle_visca_command(const struct buffer_t *payload, uint32_t seq_nu
     }
 }
 
-static void handle_visca_inquiry(const struct buffer_t *payload, uint32_t seq_number, struct buffer_t *response)
+static void handle_visca_inquiry(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
     (void)payload;
     (void)response;
@@ -292,7 +292,7 @@ static void handle_visca_inquiry(const struct buffer_t *payload, uint32_t seq_nu
     log("handle_visca_inquiry");
 }
 
-static void handle_visca_reply(const struct buffer_t *payload, uint32_t seq_number, struct buffer_t *response)
+static void handle_visca_reply(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
     (void)payload;
     (void)response;
@@ -301,8 +301,8 @@ static void handle_visca_reply(const struct buffer_t *payload, uint32_t seq_numb
     log("handle_visca_reply");
 }
 
-static void handle_visca_device_setting_cmd(const struct buffer_t *payload, uint32_t seq_number,
-        struct buffer_t *response)
+static void handle_visca_device_setting_cmd(const buffer_t *payload, uint32_t seq_number,
+        buffer_t *response)
 {
     (void)payload;
     (void)response;
@@ -311,7 +311,7 @@ static void handle_visca_device_setting_cmd(const struct buffer_t *payload, uint
     log("handle_visca_device_setting_cmd");
 }
 
-static void handle_control_command(const struct buffer_t *payload, uint32_t seq_number, struct buffer_t *response)
+static void handle_control_command(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
     log("handle_control_command");
 
@@ -347,7 +347,7 @@ static void handle_control_command(const struct buffer_t *payload, uint32_t seq_
     compose_control_reply(response, seq_number);
 }
 
-static void handle_control_reply(const struct buffer_t *payload, uint32_t seq_number, struct buffer_t *response)
+static void handle_control_reply(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
     (void)payload;
     (void)response;
@@ -356,14 +356,14 @@ static void handle_control_reply(const struct buffer_t *payload, uint32_t seq_nu
     log("handle_control_reply");
 }
 
-struct buffer_t* visca_handle_message(const struct buffer_t *message)
+buffer_t* visca_handle_message(const buffer_t *message)
 {
     struct visca_header *header = (struct visca_header*)message->data;
-    struct buffer_t payload = {
+    buffer_t payload = {
         .length = message->length - 8,
         .data = message->data + 8
     };
-    struct buffer_t *response = cons_buffer(VOIP_MAX_MESSAGE_LENGTH);
+    buffer_t *response = cons_buffer(VOIP_MAX_MESSAGE_LENGTH);
 
     log("got msg:");
     print_buffer(message, 16);

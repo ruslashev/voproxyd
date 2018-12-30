@@ -1,9 +1,9 @@
 #include "buffer.h"
 #include "log.h"
 
-struct buffer_t* cons_buffer(size_t length)
+buffer_t* cons_buffer(size_t length)
 {
-    struct buffer_t *out = malloc(sizeof(struct buffer_t));
+    buffer_t *out = malloc(sizeof(buffer_t));
     if (out == NULL) {
         die(ERR_ALLOC, "failed to allocate memory for buffer_t");
     }
@@ -51,7 +51,7 @@ void print_bytes(const void *bytes, size_t len, int base)
     log("%s", writebuf);
 }
 
-void print_buffer(const struct buffer_t *buffer, int base)
+void print_buffer(const buffer_t *buffer, int base)
 {
     print_bytes(buffer->data, buffer->length, base);
 }

@@ -3,13 +3,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
-struct buffer_t
+typedef struct
 {
     size_t length;
     uint8_t *data;
-};
+} buffer_t;
 
-struct buffer_t* cons_buffer(size_t length);
+buffer_t* cons_buffer(size_t length);
 void print_bytes(const void *bytes, size_t len, int base);
-void print_buffer(const struct buffer_t *buffer, int base);
+void print_buffer(const buffer_t *buffer, int base);
 

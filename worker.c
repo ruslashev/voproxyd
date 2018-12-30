@@ -34,7 +34,7 @@ static int handle_tcp(struct ap_state *state, const uint8_t *message, ssize_t le
 static int handle_udp(const struct ap_state *state, uint8_t *message_bytes, ssize_t length,
         struct sockaddr *addr)
 {
-    struct buffer_t *message = cons_buffer(length), *response;
+    buffer_t *message = cons_buffer(length), *response;
 
     message->data = message_bytes;
 
