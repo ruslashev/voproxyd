@@ -113,6 +113,29 @@ int send_message(int fd, const void *message, ssize_t length)
     return total_sent == length;
 }
 
+int send_message_udp(int fd, const void *message, ssize_t length, struct sockaddr *addr)
+{
+    ssize_t total_sent = 0, remaining = length, sent;
+    socklen_t addr_len = sizeof(struct sockaddr_in);
+
+    while (total_sent < length) {
+        sent = sendto(fd, message + total_sent, remaining, 0, addr, addr_len);
+        if (sent == -1) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                continue;
+            }
+
+            log("failed to send message of length %zd to fd = %d: %s", length, fd, strerror(errno));
+            return 0;
+        }
+
+        total_sent += sent;
+        remaining -= sent;
+    }
+
+    return total_sent == length;
+}
+
 void handle_socket_error(int sock_fd)
 {
     int err;
