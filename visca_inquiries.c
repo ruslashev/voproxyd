@@ -1,5 +1,6 @@
 #include "bridge.h"
 #include "log.h"
+#include "visca.h"
 #include "visca_inquiries.h"
 
 static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
@@ -172,9 +173,13 @@ static void dispatch_05(const buffer_t *payload, uint32_t seq_number, buffer_t *
 
 static void dispatch_06(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
+    uint8_t data[VOIP_MAX_PAYLOAD_LENGTH] = { 0 };
+    size_t length;
+
     switch (payload->data[3]) {
         case 0x12:
             bridge_inq_pan_tilt_position();
+            compose_completition(response, data, 9);
             break;
         case 0x10:
             bridge_inq_pan_tilt_status();

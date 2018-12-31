@@ -47,7 +47,7 @@ static void visca_header_convert_endianness_hton(struct visca_header *header)
     header->seq_number = htonl(header->seq_number);
 }
 
-static void compose_ack(buffer_t *response)
+void compose_ack(buffer_t *response)
 {
     response->length = 3;
 
@@ -56,8 +56,13 @@ static void compose_ack(buffer_t *response)
     response->data[2] = 0xff;
 }
 
-static void compose_completition(buffer_t *response, const uint8_t data[], size_t data_len)
+void compose_completition(buffer_t *response, const uint8_t data[], size_t data_len)
 {
+    if (3 + data_len > VOIP_MAX_MESSAGE_LENGTH) {
+        log("compose_completition: buffer length too big: %zu", data_len);
+        return;
+    }
+
     response->length = 3 + data_len;
 
     response->data[0] = 0x90;
@@ -70,12 +75,12 @@ static void compose_completition(buffer_t *response, const uint8_t data[], size_
     response->data[2 + data_len] = 0xff;
 }
 
-static void compose_empty_completition(buffer_t *response)
+void compose_empty_completition(buffer_t *response)
 {
     compose_completition(response, NULL, 0);
 }
 
-static void compose_control_reply(buffer_t *response, uint32_t seq_number)
+void compose_control_reply(buffer_t *response, uint32_t seq_number)
 {
     struct visca_header header = {
         .payload_type = 0x0201,
