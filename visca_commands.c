@@ -3,6 +3,81 @@
 #include "visca.h"
 #include "visca_inquiries.h"
 
+static uint64_t parse_retarded_integer_encoding(const buffer_t *payload, size_t start, size_t n)
+{
+    uint64_t output = 0;
+
+    for (size_t i = 0; i < n; ++i) {
+        output = (output << 4u) | (payload->data[start + i] & 0x0f);
+    }
+
+    return output;
+}
+
+static int gain_parameter_to_db(uint8_t p)
+{
+    switch (p) {
+        case 0x0c: return 33;
+        case 0x0b: return 30;
+        case 0x0a: return 27;
+        case 0x09: return 24;
+        case 0x08: return 21;
+        case 0x07: return 18;
+        case 0x06: return 15;
+        case 0x05: return 12;
+        case 0x04: return 9;
+        case 0x03: return 6;
+        case 0x02: return 3;
+        case 0x01: return 0;
+        case 0x00: return -3;
+        default:
+            log("gain_parameter_to_db: invalid byte 0x%02x", p);
+            return 0;
+    }
+}
+
+static void hdmi_parameter_to_specs(uint8_t p, int *w, int *h, int *f, char *l)
+{
+    int params[][4] = {
+        [0x00] = { 1920, 1080, 59, 'p' },
+        [0x02] = { 1920, 1080, 29, 'p' },
+        [0x03] = { 1920, 1080, 59, 'i' },
+        [0x04] = { 1280,  720, 59, 'p' },
+        [0x08] = { 1920, 1080, 50, 'p' },
+        [0x0a] = { 1920, 1080, 25, 'p' },
+        [0x0b] = { 1920, 1080, 50, 'i' },
+        [0x0c] = { 1280,  720, 50, 'p' },
+        [0x18] = {  640,  480, 59, 'p' },
+        [0x22] = { 3840, 2160, 29, 'p' },
+        [0x26] = { 3840, 2160, 25, 'p' },
+        [0x28] = { 1920, 1080, 23, 'p' },
+        [0x2a] = { 3840, 2160, 23, 'p' }
+    };
+
+    switch (p) {
+        case 0x00:
+        case 0x02:
+        case 0x03:
+        case 0x04:
+        case 0x08:
+        case 0x0a:
+        case 0x0b:
+        case 0x0c:
+        case 0x18:
+        case 0x22:
+        case 0x26:
+        case 0x28:
+        case 0x2a:
+            *w = params[p][0];
+            *h = params[p][1];
+            *f = params[p][2];
+            *l = params[p][3];
+            break;
+        default:
+            *w = *h = *f = *l = 0;
+    }
+}
+
 static void dispatch_exposure_mode(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
     switch (payload->data[4]) {
@@ -33,10 +108,10 @@ static void dispatch_exposure_iris(const buffer_t *payload, uint32_t seq_number,
             bridge_cmd_exposure_iris_reset();
             break;
         case 0x02:
-            bridge_cmd_exposure_iris_open();
+            bridge_cmd_exposure_iris_up();
             break;
         case 0x03:
-            bridge_cmd_exposure_iris_close();
+            bridge_cmd_exposure_iris_down();
             break;
         default:
             bad_byte(4);
@@ -77,8 +152,54 @@ static void dispatch_exposure_shutter(const buffer_t *payload, uint32_t seq_numb
     }
 }
 
+static void dispatch_exposure_exp_comp(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+{
+    switch (payload->data[4]) {
+        case 0x00:
+            bridge_cmd_exposure_exp_comp_reset();
+            break;
+        case 0x02:
+            bridge_cmd_exposure_exp_comp_up();
+            break;
+        case 0x03:
+            bridge_cmd_exposure_exp_comp_down();
+            break;
+        default:
+            bad_byte(4);
+    }
+}
+
+static void dispatch_color_white_balance(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+{
+    switch (payload->data[4]) {
+        case 0x00:
+            bridge_cmd_color_white_balance_auto1();
+            break;
+        case 0x01:
+            bridge_cmd_color_white_balance_indoor();
+            break;
+        case 0x02:
+            bridge_cmd_color_white_balance_outdoor();
+            break;
+        case 0x03:
+            bridge_cmd_color_white_balance_one_push_wb();
+            break;
+        case 0x04:
+            bridge_cmd_color_white_balance_auto2();
+            break;
+        case 0x05:
+            bridge_cmd_color_white_balance_manual();
+            break;
+        default:
+            bad_byte(4);
+    }
+}
+
 static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
+    uint64_t p, q, r;
+    uint8_t b4 = payload->data[4], onoff = (b4 == 2) ? 1 : 0;
+
     switch (payload->data[3]) {
         case 0x39:
             dispatch_exposure_mode(payload, seq_number, response);
@@ -87,94 +208,59 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             dispatch_exposure_iris(payload, seq_number, response);
             break;
         case 0x4b:
-            bridge_cmd_exposure_iris_direct();
+            p = parse_retarded_integer_encoding(payload, 6, 2);
+            bridge_cmd_exposure_iris_direct(p);
             break;
         case 0x0c:
             dispatch_exposure_gain(payload, seq_number, response);
             break;
         case 0x4c:
-            bridge_cmd_exposure_gain_direct();
+            p = parse_retarded_integer_encoding(payload, 6, 2);
+            bridge_cmd_exposure_gain_direct(gain_parameter_to_db(p));
             break;
         case 0x2c:
-            bridge_cmd_exposure_gain_limit();
+            bridge_cmd_exposure_gain_limit(gain_parameter_to_db(b4));
             break;
         case 0x0a:
             dispatch_exposure_shutter(payload, seq_number, response);
             break;
         case 0x4a:
-            bridge_cmd_exposure_shutter_direct();
+            p = parse_retarded_integer_encoding(payload, 6, 2);
+            bridge_cmd_exposure_shutter_direct(p);
             break;
         case 0x5d:
-            bridge_cmd_exposure_ae_speed();
+            bridge_cmd_exposure_ae_speed(b4);
             break;
         case 0x3e:
-            bridge_cmd_exposure_exp_comp_set();
+            bridge_cmd_exposure_exp_comp_set(onoff);
             break;
         case 0x0e:
-            switch (payload->data[4]) {
-                case 0x00:
-                    bridge_cmd_exposure_exp_comp_reset();
-                    break;
-                case 0x02:
-                    bridge_cmd_exposure_exp_comp_up();
-                    break;
-                case 0x03:
-                    bridge_cmd_exposure_exp_comp_down();
-                    break;
-                default:
-                    bad_byte(4);
-            }
+            dispatch_exposure_exp_comp(payload, seq_number, response);
             break;
         case 0x4e:
-            bridge_cmd_exposure_exp_comp_direct();
+            p = parse_retarded_integer_encoding(payload, 6, 2);
+            bridge_cmd_exposure_exp_comp_direct(p);
             break;
         case 0x33:
-            bridge_cmd_exposure_back_light_set();
+            bridge_cmd_exposure_back_light_set(onoff);
             break;
         case 0x3a:
-            bridge_cmd_exposure_spot_light_set();
+            bridge_cmd_exposure_spot_light_set(onoff);
             break;
         case 0x3d:
-            switch (payload->data[4]) {
-                case 0x03:
-                    bridge_cmd_exposure_vis_enh_set();
-                    break;
-                case 0x06:
-                    bridge_cmd_exposure_vis_enh_set();
-                    break;
-                default:
-                    bad_byte(4);
-            }
+            bridge_cmd_exposure_vis_enh_set(b4 == 0x06 ? 1 : 0);
             break;
         case 0x2d:
-            bridge_cmd_exposure_vis_enh_direct();
+            p = payload->data[5];
+            q = payload->data[6];
+            r = payload->data[7];
+            bridge_cmd_exposure_vis_enh_direct(p, q, r);
             break;
         case 0x01:
-            bridge_cmd_exposure_ir_cut_filter_set();
+            bridge_cmd_exposure_ir_cut_filter_set(onoff);
             break;
         case 0x35:
-            switch (payload->data[4]) {
-                case 0x00:
-                    bridge_cmd_color_white_balance_auto1();
-                    break;
-                case 0x01:
-                    bridge_cmd_color_white_balance_indoor();
-                    break;
-                case 0x02:
-                    bridge_cmd_color_white_balance_outdoor();
-                    break;
-                case 0x03:
-                    bridge_cmd_color_white_balance_one_push_wb();
-                    break;
-                case 0x04:
-                    bridge_cmd_color_white_balance_auto2();
-                    break;
-                case 0x05:
-                    bridge_cmd_color_white_balance_manual();
-                    break;
-                default:
-                    bad_byte(4);
-            }
+            dispatch_color_white_balance(payload, seq_number, response);
             break;
         case 0x10:
             bridge_cmd_color_one_push_trigger();
@@ -195,7 +281,8 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x43:
-            bridge_cmd_color_rgain_direct();
+            p = parse_retarded_integer_encoding(payload, 6, 2);
+            bridge_cmd_color_rgain_direct((int)p - 128);
             break;
         case 0x04:
             switch (payload->data[4]) {
@@ -213,13 +300,14 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x44:
-            bridge_cmd_color_bgain_direct();
+            p = parse_retarded_integer_encoding(payload, 6, 2);
+            bridge_cmd_color_bgain_direct((int)p - 128);
             break;
         case 0x56:
-            bridge_cmd_color_speed();
+            bridge_cmd_color_speed(b4);
             break;
         case 0x5f:
-            bridge_cmd_color_chroma_suppress();
+            bridge_cmd_color_chroma_suppress(b4);
             break;
         case 0x09:
             switch (payload->data[4]) {
@@ -237,7 +325,7 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x49:
-            bridge_cmd_color_level_direct();
+            bridge_cmd_color_level_direct(payload->data[7]);
             break;
         case 0x0f:
             switch (payload->data[4]) {
@@ -255,7 +343,7 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x4f:
-            bridge_cmd_color_phase_direct();
+            bridge_cmd_color_phase_direct(payload->data[7]);
             break;
         case 0x02:
             switch (payload->data[4]) {
@@ -273,19 +361,22 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x42:
-            bridge_cmd_detail_level_direct();
+            p = parse_retarded_integer_encoding(payload, 6, 2);
+            bridge_cmd_detail_level_direct(p);
             break;
         case 0x5b:
-            bridge_cmd_gamma_mode();
+            bridge_cmd_gamma_mode(b4);
             break;
         case 0x1e:
-            bridge_cmd_gamma_offset();
+            p = payload->data[7];
+            q = parse_retarded_integer_encoding(payload, 8, 2);
+            bridge_cmd_gamma_offset(p, q);
             break;
         case 0x32:
-            bridge_cmd_flicker_reduction_mode_set();
+            bridge_cmd_flicker_reduction_mode_set(onoff);
             break;
         case 0x53:
-            bridge_cmd_noise_reduction_mode_level_set();
+            bridge_cmd_noise_reduction_mode_level_set(b4);
             break;
         case 0x07:
             switch (payload->data[4]) {
@@ -299,23 +390,23 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
                     bridge_cmd_zoom_wide();
                     break;
                 default:
-                    bad_byte(4);
+                    if ((b4 & 0xf0) == 2) {
+                        b4 = b4 & 0x0f;
+                        bridge_cmd_zoom_tele_var(b4);
+                    } else if ((b4 & 0xf0) == 3) {
+                        b4 = b4 & 0x0f;
+                        bridge_cmd_zoom_wide_var(b4);
+                    } else {
+                        bad_byte(4);
+                    }
             }
             break;
         case 0x47:
-            bridge_cmd_zoom_direct();
+            p = parse_retarded_integer_encoding(payload, 4, 4);
+            bridge_cmd_zoom_direct(p);
             break;
         case 0x06:
-            switch (payload->data[4]) {
-                case 0x03:
-                    bridge_cmd_zoom_clear_image_set();
-                    break;
-                case 0x04:
-                    bridge_cmd_zoom_clear_image_set();
-                    break;
-                default:
-                    bad_byte(4);
-            }
+            bridge_cmd_zoom_clear_image_set(b4 == 0x04 ? 1 : 0);
             break;
         case 0x38:
             switch (payload->data[4]) {
@@ -344,11 +435,20 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
                     bridge_cmd_focus_near();
                     break;
                 default:
-                    bad_byte(4);
+                    if ((b4 & 0xf0) == 2) {
+                        b4 = b4 & 0x0f;
+                        bridge_cmd_focus_far_var(b4);
+                    } else if ((b4 & 0xf0) == 3) {
+                        b4 = b4 & 0x0f;
+                        bridge_cmd_focus_near_var(b4);
+                    } else {
+                        bad_byte(4);
+                    }
             }
             break;
         case 0x48:
-            bridge_cmd_focus_direct();
+            p = parse_retarded_integer_encoding(payload, 4, 4);
+            bridge_cmd_focus_direct(p);
             break;
         case 0x18:
             switch (payload->data[4]) {
@@ -363,13 +463,14 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x28:
-            bridge_cmd_focus_near_limit();
+            p = parse_retarded_integer_encoding(payload, 4, 4);
+            bridge_cmd_focus_near_limit(p);
             break;
         case 0x58:
-            bridge_cmd_focus_af_sensitivity();
+            bridge_cmd_focus_af_sensitivity(b4 == 2 ? 1 : 0);
             break;
         case 0x11:
-            bridge_cmd_focus_ir_correction();
+            bridge_cmd_focus_ir_correction(b4);
             break;
         case 0x3f:
             switch (payload->data[4]) {
@@ -385,6 +486,9 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
                 default:
                     bad_byte(4);
             }
+            break;
+        case 0x66:
+            bridge_cmd_system_img_flip(onoff);
             break;
         default:
             bad_byte(3);
@@ -425,33 +529,41 @@ static void dispatch_detail(const buffer_t *payload, uint32_t seq_number, buffer
 
 static void dispatch_05(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
+    uint64_t p, q;
+    uint8_t b4 = payload->data[4], onoff = (b4 == 2) ? 1 : 0;
+
     switch (payload->data[3]) {
         case 0x0c:
-            bridge_cmd_exposure_gain_point_set();
+            bridge_cmd_exposure_gain_point_set(onoff);
             break;
         case 0x4c:
-            bridge_cmd_exposure_gain_point_position();
+            p = parse_retarded_integer_encoding(payload, 4, 2);
+            bridge_cmd_exposure_gain_point_position(gain_parameter_to_db(p));
             break;
         case 0x2a:
-            bridge_cmd_exposure_minmax_shutter_set();
+            p = parse_retarded_integer_encoding(payload, 5, 2);
+            bridge_cmd_exposure_minmax_shutter_set(b4, p);
             break;
         case 0x39:
-            bridge_cmd_exposure_low_light_basis_brightness_set();
+            bridge_cmd_exposure_low_light_basis_brightness_set(onoff);
             break;
         case 0x49:
-            bridge_cmd_exposure_low_light_basis_brightness_direct();
+            bridge_cmd_exposure_low_light_basis_brightness_direct(b4);
             break;
         case 0x42:
             dispatch_detail(payload, seq_number, response);
             break;
         case 0x5b:
-            bridge_cmd_gamma_pattern();
+            p = parse_retarded_integer_encoding(payload, 4, 3);
+            bridge_cmd_gamma_pattern(p);
             break;
         case 0x5c:
-            bridge_cmd_gamma_black_gamma_range();
+            bridge_cmd_gamma_black_gamma_range(b4);
             break;
         case 0x53:
-            bridge_cmd_noise_reduction_2d_3d_manual_setting();
+            p = payload->data[4];
+            q = payload->data[5];
+            bridge_cmd_noise_reduction_2d_3d_manual_setting(p, q);
             break;
         default:
             bad_byte(3);
@@ -460,9 +572,14 @@ static void dispatch_05(const buffer_t *payload, uint32_t seq_number, buffer_t *
 
 static void dispatch_7e_01(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
-    switch (payload->data[5]) {
+    uint64_t p, q;
+    uint8_t b5 = payload->data[5];
+    int w, h, f;
+    char l;
+
+    switch (payload->data[4]) {
         case 0x53:
-            bridge_cmd_exposure_nd_filter();
+            bridge_cmd_exposure_nd_filter(b5);
             break;
         case 0x2e:
             switch (payload->data[6]) {
@@ -481,91 +598,121 @@ static void dispatch_7e_01(const buffer_t *payload, uint32_t seq_number, buffer_
                             bad_byte(7);
                     }
                 case 0x01:
-                    bridge_cmd_color_offset_direct();
+                    bridge_cmd_color_offset_direct((int)payload->data[6] - 7);
                     break;
                 default:
                     bad_byte(6);
             }
             break;
         case 0x3d:
-            bridge_cmd_color_matrix_select();
+            bridge_cmd_color_matrix_select(b5);
             break;
         case 0x7a:
-            bridge_cmd_color_rg();
+            p = parse_retarded_integer_encoding(payload, 5, 2);
+            bridge_cmd_color_rg((int)p - 99);
             break;
         case 0x7b:
-            bridge_cmd_color_rb();
+            p = parse_retarded_integer_encoding(payload, 5, 2);
+            bridge_cmd_color_rb((int)p - 99);
             break;
         case 0x7c:
-            bridge_cmd_color_gr();
+            p = parse_retarded_integer_encoding(payload, 5, 2);
+            bridge_cmd_color_gr((int)p - 99);
             break;
         case 0x7d:
-            bridge_cmd_color_gb();
+            p = parse_retarded_integer_encoding(payload, 5, 2);
+            bridge_cmd_color_gb((int)p - 99);
             break;
         case 0x7e:
-            bridge_cmd_color_br();
+            p = parse_retarded_integer_encoding(payload, 5, 2);
+            bridge_cmd_color_br((int)p - 99);
             break;
         case 0x7f:
-            bridge_cmd_color_bg();
+            p = parse_retarded_integer_encoding(payload, 5, 2);
+            bridge_cmd_color_bg((int)p - 99);
             break;
         case 0x6d:
-            bridge_cmd_knee_set();
+            bridge_cmd_knee_set(payload->data[5] == 2 ? 1 : 0);
             break;
         case 0x54:
-            bridge_cmd_knee_mode();
+            bridge_cmd_knee_mode(b5 == 4 ? 1 : 0);
             break;
         case 0x6f:
-            bridge_cmd_knee_slope();
+            p = parse_retarded_integer_encoding(payload, 5, 2);
+            bridge_cmd_knee_slope(p);
             break;
         case 0x6e:
-            bridge_cmd_knee_point();
+            p = parse_retarded_integer_encoding(payload, 5, 2);
+            bridge_cmd_knee_point(p);
             break;
         case 0x71:
-            bridge_cmd_gamma_level();
+            p = parse_retarded_integer_encoding(payload, 5, 2);
+            bridge_cmd_gamma_level(p);
             break;
         case 0x72:
-            bridge_cmd_gamma_black_gamma_level();
+            p = parse_retarded_integer_encoding(payload, 5, 2);
+            bridge_cmd_gamma_black_gamma_level(p);
             break;
         case 0x0b:
-            bridge_cmd_preset_drive_speed();
+            p = payload->data[5];
+            q = payload->data[6];
+            bridge_cmd_preset_drive_speed(p, q);
             break;
         case 0x3e:
-            bridge_cmd_system_hphase_set();
+            bridge_cmd_system_hphase_set(payload->data[6] == 0x02 ? 1 : 0);
             break;
         case 0x5b:
-            bridge_cmd_system_hphase_direct();
+            p = parse_retarded_integer_encoding(payload, 6, 3);
+            bridge_cmd_system_hphase_direct(p);
             break;
         case 0x06:
-            bridge_cmd_system_pan_reverse();
+            bridge_cmd_system_pan_reverse(payload->data[6]);
             break;
         case 0x09:
-            bridge_cmd_system_tilt_reverse();
+            bridge_cmd_system_tilt_reverse(payload->data[6]);
             break;
         case 0x0a:
             switch (payload->data[6]) {
                 case 0x00:
-                    bridge_cmd_tarry_set();
+                    bridge_cmd_tarry_set(payload->data[6] == 0x02 ? 1 : 0);
                     break;
                 case 0x01:
-                    bridge_cmd_tarry_tally_mode();
+                    p = payload->data[6];
+                    switch (p) {
+                        case 0:
+                            bridge_cmd_tarry_tally_mode(0);
+                            break;
+                        case 4:
+                            bridge_cmd_tarry_tally_mode(1);
+                            break;
+                        case 5:
+                            bridge_cmd_tarry_tally_mode(2);
+                            break;
+                        default:
+                            bad_byte(6);
+                    }
                     break;
                 default:
                     bad_byte(6);
             }
             break;
         case 0x1e:
-            bridge_cmd_hdmi_video_format_change();
+            p = parse_retarded_integer_encoding(payload, 5, 2);
+            hdmi_parameter_to_specs(p, &w, &h, &f, &l);
+            bridge_cmd_hdmi_video_format_change(w, h, f, l);
             break;
         case 0x03:
-            bridge_cmd_hdmi_color_space();
+            bridge_cmd_hdmi_color_space(payload->data[6]);
             break;
         default:
-            bad_byte(5);
+            bad_byte(4);
     }
 }
 
 static void dispatch_7e_04(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
+    uint64_t p;
+
     switch (payload->data[5]) {
         case 0x15:
             switch (payload->data[6]) {
@@ -583,27 +730,28 @@ static void dispatch_7e_04(const buffer_t *payload, uint32_t seq_number, buffer_
             }
             break;
         case 0x45:
-            bridge_cmd_gamma_black_level_direct();
+            p = parse_retarded_integer_encoding(payload, 5, 2);
+            bridge_cmd_gamma_black_level_direct((int)p - 48);
             break;
         case 0x5f:
-            bridge_cmd_picture_profile_mode();
+            bridge_cmd_picture_profile_mode(payload->data[5] + 1);
             break;
         case 0x36:
-            bridge_cmd_zoom_teleconvert_mode();
+            bridge_cmd_zoom_teleconvert_mode(payload->data[5] == 2 ? 1 : 0);
             break;
         case 0x3d:
-            bridge_cmd_preset_mode();
+            bridge_cmd_preset_mode(payload->data[5]);
             break;
         case 0x20:
             switch (payload->data[6]) {
                 case 0x00:
-                    bridge_cmd_ptz_trace_rec();
+                    bridge_cmd_ptz_trace_rec(payload->data[7] == 2 ? 1 : 0, payload->data[6] & 0x0f);
                     break;
                 case 0x01:
-                    bridge_cmd_ptz_trace_play();
+                    bridge_cmd_ptz_trace_play(payload->data[7] - 1, payload->data[6] & 0x0f);
                     break;
                 case 0x02:
-                    bridge_cmd_ptz_trace_delete();
+                    bridge_cmd_ptz_trace_delete(payload->data[6] & 0x0f);
                     break;
                 default:
                     bad_byte(6);
