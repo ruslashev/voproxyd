@@ -6,6 +6,7 @@ sources = avltree.c \
           main.c \
           socket.c \
           visca.c \
+          visca_commands.c \
           visca_inquiries.c \
           worker.c
 cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \

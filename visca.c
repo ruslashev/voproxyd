@@ -3,6 +3,7 @@
 #include "errors.h"
 #include "log.h"
 #include "visca.h"
+#include "visca_commands.h"
 #include "visca_inquiries.h"
 
 #include <netdb.h>
@@ -137,7 +138,7 @@ static void ptd_directionals(const buffer_t *payload)
             return;
     }
 
-    bridge_directionals(vert, horiz, pan_speed, tilt_speed);
+    bridge_cmd_pan_tilt_directionals(vert, horiz, pan_speed, tilt_speed);
 }
 
 static void ptd_abs_rel(const buffer_t *payload, int rel)
@@ -162,9 +163,9 @@ static void ptd_abs_rel(const buffer_t *payload, int rel)
     }
 
     if (rel) {
-        bridge_relative_move(speed, p, t);
+        bridge_cmd_pan_tilt_relative_move(speed, p, t);
     } else {
-        bridge_absolute_move(speed, p, t);
+        bridge_cmd_pan_tilt_absolute_move(speed, p, t);
     }
 }
 
@@ -192,9 +193,9 @@ static void ptd_pan_tilt_limit(const buffer_t *payload)
             t[i] = payload->data[11 + i];
         }
 
-        bridge_pan_tilt_limit_set(position, p, t);
+        bridge_cmd_pan_tilt_limit_set(position, p, t);
     } else {
-        bridge_pan_tilt_limit_clear(position);
+        bridge_cmd_pan_tilt_limit_clear(position);
     }
 }
 
@@ -211,7 +212,7 @@ static void ptd_ramp_curve(const buffer_t *payload)
         return;
     }
 
-    bridge_ramp_curve(p);
+    bridge_cmd_pan_tilt_ramp_curve(p);
 }
 
 static void ptd_slow_mode(const buffer_t *payload)
@@ -227,7 +228,7 @@ static void ptd_slow_mode(const buffer_t *payload)
         return;
     }
 
-    bridge_slow_mode(p);
+    bridge_cmd_pan_tilt_slow_mode(p);
 }
 
 static void dispatch_pan_tilt_drive(const buffer_t *payload, buffer_t *response, uint32_t seq_number)
@@ -243,10 +244,10 @@ static void dispatch_pan_tilt_drive(const buffer_t *payload, buffer_t *response,
             ptd_abs_rel(payload, 1);
             break;
         case 0x04: /* home */
-            bridge_home();
+            bridge_cmd_pan_tilt_home();
             break;
         case 0x05: /* reset */
-            bridge_reset();
+            bridge_cmd_pan_tilt_reset();
             break;
         case 0x07: /* pan tilt limit */
             ptd_pan_tilt_limit(payload);
@@ -283,11 +284,14 @@ static void handle_visca_command(const buffer_t *payload, uint32_t seq_number, b
 
     switch (payload->data[2]) {
         case 0x06:
-            dispatch_pan_tilt_drive(payload, response, seq_number);
+            if (payload->data[3] == 0x06) {
+                bridge_cmd_menu_display_off();
+            } else {
+                dispatch_pan_tilt_drive(payload, response, seq_number);
+            }
             break;
         default:
-            log("handle_visca_command: unsupported command 0x%02x", payload->data[2]);
-            return;
+            visca_commands_dispatch(payload, seq_number, response);
     }
 }
 
@@ -295,9 +299,6 @@ static void handle_visca_inquiry(const buffer_t *payload, uint32_t seq_number, b
 {
     uint8_t p, completition_data[VOIP_MAX_PAYLOAD_LENGTH - 3];
     size_t completition_length;
-
-    (void)response;
-    (void)seq_number;
 
     log("handle_visca_inquiry");
 

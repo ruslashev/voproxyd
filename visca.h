@@ -6,6 +6,12 @@
 #define VOIP_HEADER_LENGTH 8
 #define VOIP_MAX_MESSAGE_LENGTH (VOIP_HEADER_LENGTH + VOIP_MAX_PAYLOAD_LENGTH)
 
+#define bad_byte(X) \
+    do { \
+        log("%s:%d: unexpected byte 0x%02x", __func__, __LINE__, payload->data[X]); \
+        return; \
+    } while (0)
+
 void compose_ack(buffer_t *response);
 void compose_completition(buffer_t *response, const uint8_t data[], size_t data_len);
 void compose_empty_completition(buffer_t *response);
