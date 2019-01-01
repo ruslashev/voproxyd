@@ -13,15 +13,6 @@
 #undef die
 #define die(...) die_detail(ERR_VISCA_PROTOCOL, __VA_ARGS__)
 
-#define check_length_detail(X, R) \
-    if (payload->length != (X)) { \
-        log("%s: bad length %zu, expected %d", __func__, payload->length, X); \
-        return R; \
-    }
-
-#define check_length_null(X) check_length_detail(X, NULL)
-#define check_length(X) check_length_detail(X, )
-
 #define stub() do { log("%s:%d: unimplemented", __func__, __LINE__); return; } while (0)
 
 struct visca_header
@@ -98,175 +89,6 @@ void compose_control_reply(buffer_t *response, uint32_t seq_number)
     response->data[VOIP_HEADER_LENGTH] = 0x01; /* ACK: reply for RESET */
 }
 
-static void ptd_directionals(const buffer_t *payload)
-{
-    uint8_t pan_speed, tilt_speed;
-    int vert, horiz;
-
-    check_length(9);
-
-    pan_speed = payload->data[4];
-    tilt_speed = payload->data[5];
-
-    switch (payload->data[6]) {
-        case 0x01:
-            horiz = -1;
-            break;
-        case 0x02:
-            horiz = 1;
-            break;
-        case 0x03:
-            horiz = 0;
-            break;
-        default:
-            log("ptd_directionals: unexpected horizontal drive 0x%02x", payload->data[6]);
-            return;
-    }
-
-    switch (payload->data[7]) {
-        case 0x01:
-            vert = 1;
-            break;
-        case 0x02:
-            vert = -1;
-            break;
-        case 0x03:
-            vert = 0;
-            break;
-        default:
-            log("ptd_directionals: unexpected vertical drive 0x%02x", payload->data[7]);
-            return;
-    }
-
-    bridge_cmd_pan_tilt_directionals(vert, horiz, pan_speed, tilt_speed);
-}
-
-static void ptd_abs_rel(const buffer_t *payload, int rel)
-{
-    uint8_t speed, p[5], t[4];
-
-    check_length(16);
-
-    speed = payload->data[4];
-
-    if (payload->data[5] != 0) {
-        log("ptd_abs_rel: expected payload->data[5] to be 0, not 0x%02x", payload->data[5]);
-        return;
-    }
-
-    for (int i = 0; i < 5; ++i) {
-        p[i] = payload->data[6 + i];
-    }
-
-    for (int i = 0; i < 4; ++i) {
-        t[i] = payload->data[11 + i];
-    }
-
-    if (rel) {
-        bridge_cmd_pan_tilt_relative_move(speed, p, t);
-    } else {
-        bridge_cmd_pan_tilt_absolute_move(speed, p, t);
-    }
-}
-
-static void ptd_pan_tilt_limit(const buffer_t *payload)
-{
-    int set, position;
-    uint8_t p[5], t[4];
-
-    check_length(16);
-
-    set = payload->data[4];
-
-    if (set != 0 && set != 1) {
-        log("ptd_pan_tilt_limit: unexpected set byte 0x%02x", set);
-    }
-
-    position = payload->data[5];
-
-    if (set == 1) {
-        for (int i = 0; i < 5; ++i) {
-            p[i] = payload->data[6 + i];
-        }
-
-        for (int i = 0; i < 4; ++i) {
-            t[i] = payload->data[11 + i];
-        }
-
-        bridge_cmd_pan_tilt_limit_set(position, p, t);
-    } else {
-        bridge_cmd_pan_tilt_limit_clear(position);
-    }
-}
-
-static void ptd_ramp_curve(const buffer_t *payload)
-{
-    int p;
-
-    check_length(6);
-
-    p = payload->data[4];
-
-    if (p != 1 && p != 2 && p != 3) {
-        log("ptd_ramp_curve: unexpected p %d", p);
-        return;
-    }
-
-    bridge_cmd_pan_tilt_ramp_curve(p);
-}
-
-static void ptd_slow_mode(const buffer_t *payload)
-{
-    int p;
-
-    check_length(6);
-
-    p = payload->data[4];
-
-    if (p != 2 && p != 3) {
-        log("ptd_slow_mode: unexpected p %d", p);
-        return;
-    }
-
-    bridge_cmd_pan_tilt_slow_mode(p);
-}
-
-static void dispatch_pan_tilt_drive(const buffer_t *payload, buffer_t *response, uint32_t seq_number)
-{
-    switch (payload->data[3]) {
-        case 0x01: /* directionals or stop */
-            ptd_directionals(payload);
-            break;
-        case 0x02: /* absolute position */
-            ptd_abs_rel(payload, 0);
-            break;
-        case 0x03: /* relative position */
-            ptd_abs_rel(payload, 1);
-            break;
-        case 0x04: /* home */
-            bridge_cmd_pan_tilt_home();
-            break;
-        case 0x05: /* reset */
-            bridge_cmd_pan_tilt_reset();
-            break;
-        case 0x07: /* pan tilt limit */
-            ptd_pan_tilt_limit(payload);
-            break;
-        case 0x31: /* ramp curve */
-            ptd_ramp_curve(payload);
-            break;
-        case 0x44: /* pan-tilt slow mode */
-            ptd_slow_mode(payload);
-            break;
-        default:
-            log("dispatch_pan_tilt_drive: unexpected type 0x%02x", payload->data[3]);
-            return;
-    }
-
-    (void)response;
-    (void)seq_number;
-}
-
 static void handle_visca_command(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
     log("handle_visca_command");
@@ -282,24 +104,11 @@ static void handle_visca_command(const buffer_t *payload, uint32_t seq_number, b
         return;
     }
 
-    switch (payload->data[2]) {
-        case 0x06:
-            if (payload->data[3] == 0x06) {
-                bridge_cmd_menu_display_off();
-            } else {
-                dispatch_pan_tilt_drive(payload, response, seq_number);
-            }
-            break;
-        default:
-            visca_commands_dispatch(payload, seq_number, response);
-    }
+    visca_commands_dispatch(payload, seq_number, response);
 }
 
 static void handle_visca_inquiry(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
 {
-    uint8_t p, completition_data[VOIP_MAX_PAYLOAD_LENGTH - 3];
-    size_t completition_length;
-
     log("handle_visca_inquiry");
 
     if (payload->length < 5) {
