@@ -106,7 +106,7 @@ static buffer_t* dispatch_09_04(const struct message_t *message)
             bridge_inq_power_on();
             break;
         default:
-            log("dispatch_04: unexpected byte 0x%02x", message->payload[3]);
+            bad_byte_null(3);
     }
 
     return NULL;
@@ -169,7 +169,7 @@ static buffer_t* dispatch_09_05(const struct message_t *message)
             bridge_inq_noise_reduction_manual_setting();
             break;
         default:
-            log("dispatch_05: unexpected byte 0x%02x", message->payload[3]);
+            bad_byte_null(3);
     }
 
     return NULL;
@@ -200,7 +200,7 @@ static buffer_t* dispatch_09_06(const struct message_t *message)
             bridge_inq_menu_display_status();
             break;
         default:
-            log("dispatch_06: unexpected byte 0x%02x", message->payload[3]);
+            bad_byte_null(3);
     }
 
     return NULL;
@@ -272,8 +272,7 @@ static buffer_t* dispatch_09_7e(const struct message_t *message)
                     bridge_inq_hdmi_color_space();
                     break;
                 default:
-                    log("dispatch_7e: 0x01: unexpected byte 0x%02x", message->payload[4]);
-                    return NULL;
+                    bad_byte_null(4);
             }
             break;
         case 0x04:
@@ -285,12 +284,10 @@ static buffer_t* dispatch_09_7e(const struct message_t *message)
                     bridge_inq_preset_mode();
                     break;
                 default:
-                    log("dispatch_7e: 0x04: unexpected byte 0x%02x", message->payload[4]);
-                    return NULL;
+                    bad_byte_null(4);
             }
         default:
-            log("dispatch_7e: unexpected byte 0x%02x", message->payload[3]);
-            return NULL;
+            bad_byte_null(3);
     }
 
     return NULL;
@@ -323,8 +320,7 @@ static buffer_t* dispatch_09(const struct message_t *message)
         case 0x7e:
             return dispatch_09_7e(message);
         default:
-            log("visca_inquiries_dispatch: invalid byte 0x%02x", message->payload[2]);
-            return NULL;
+            bad_byte_null(2);
     }
 }
 

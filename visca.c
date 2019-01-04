@@ -120,8 +120,11 @@ static void handle_visca_inquiry(const struct message_t *message, const struct e
 
     if (inquiry_data != NULL) {
         response = compose_completition(inquiry_data);
+
         socket_send_message_udp_event(event, response);
+
         free(response);
+        free(inquiry_data);
     }
 }
 
