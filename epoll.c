@@ -24,12 +24,7 @@ static struct event_t* mk_event_t()
 
 static void ll_free_entitiy(struct tracking_ll_t *node)
 {
-    if (node->event->buffer != NULL) {
-        free(node->event->buffer);
-    }
-
     free(node->event);
-
     free(node);
 }
 
@@ -79,8 +74,7 @@ void epoll_add_fd(struct ap_state *state, int fd, int in, int type)
 
     event->fd = fd;
     event->type = type;
-    event->buffer_rw_idx = 0;
-    event->buffer = NULL;
+    event->addr = NULL;
 
     ep_event.events = (unsigned)(in ? EPOLLIN : EPOLLOUT) | (unsigned)EPOLLRDHUP | EPOLLET;
     ep_event.data.ptr = event;

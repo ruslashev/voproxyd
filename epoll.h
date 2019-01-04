@@ -1,6 +1,7 @@
 #pragma once
 
 #include "buffer.h"
+#include <netdb.h>
 #include <sys/epoll.h>
 
 enum fd_type
@@ -14,8 +15,7 @@ struct event_t
 {
     int fd;
     int type;
-    size_t buffer_rw_idx;
-    buffer_t *buffer;
+    struct sockaddr *addr;
 };
 
 struct tracking_ll_t
