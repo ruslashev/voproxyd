@@ -4,7 +4,6 @@
 #include "errors.h"
 #include "log.h"
 #include "socket.h"
-
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,7 +72,7 @@ static void ll_delete_node(struct tracking_ll_t **head, struct tracking_ll_t *no
     ll_free_entitiy(node);
 }
 
-void epoll_add_interface(struct ap_state *state, int fd, int in, int type)
+void epoll_add_fd(struct ap_state *state, int fd, int in, int type)
 {
     struct event_t *event = mk_event_t();
     struct epoll_event ep_event = { 0 };
@@ -95,22 +94,20 @@ void epoll_add_interface(struct ap_state *state, int fd, int in, int type)
     }
 
     if (errno == EEXIST) {
-        log("epoll_add_interface: interface fd = %d already exists", fd);
+        log("epoll_add_fd: fd fd = %d already exists", fd);
         return;
     }
 
     close(state->epoll_fd);
 
-    die(ERR_EPOLL_CTL, "error adding interface (fd = %d) to epoll: %s", fd,
-            strerror(errno));
+    die(ERR_EPOLL_CTL, "error adding fd = %d to epoll: %s", fd, strerror(errno));
 }
 
-void epoll_close_interface(struct ap_state *state, int fd)
+void epoll_close_fd(struct ap_state *state, int fd)
 {
     if (epoll_ctl(state->epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1) {
         close(state->epoll_fd);
-        die(ERR_EPOLL_CTL, "error removing interface (fd = %d) from epoll: %s",
-                fd, strerror(errno));
+        die(ERR_EPOLL_CTL, "error removing fd = %d from epoll: %s", fd, strerror(errno));
     }
 
     log("del fd = %d from epoll set", fd);
@@ -132,7 +129,7 @@ void epoll_handle_event_errors(struct ap_state *state, const struct epoll_event 
         handle_socket_error(state->current);
     }
 
-    epoll_close_interface(state, state->current);
+    epoll_close_fd(state, state->current);
 
     die(ERR_UNSPECIFIED, "epoll error on fd = %d", state->current);
 }

@@ -8,7 +8,6 @@
 #include "tempconfig.h"
 #include "visca.h"
 #include "worker.h"
-
 #include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -68,7 +67,7 @@ static int epoll_handle_read_queue_tcp(struct ap_state *state)
 
     if (message_length == 0) {
         log("close connection on socket fd = %d", state->current);
-        epoll_close_interface(state, state->current);
+        epoll_close_fd(state, state->current);
         return 0;
     }
 
@@ -77,7 +76,7 @@ static int epoll_handle_read_queue_tcp(struct ap_state *state)
 
         if (close || state->close_after_read) {
             state->close_after_read = 0;
-            epoll_close_interface(state, state->current);
+            epoll_close_fd(state, state->current);
             return 0;
         }
 
@@ -89,7 +88,7 @@ static int epoll_handle_read_queue_tcp(struct ap_state *state)
         return 0;
     }
 
-    epoll_close_interface(state, state->current);
+    epoll_close_fd(state, state->current);
     die(ERR_READ, "error reading on socket fd = %d: %s", state->current, strerror(errno));
 }
 */
@@ -110,7 +109,7 @@ static int epoll_handle_read_queue_udp(struct ap_state *state)
 
     if (message_length == 0) {
         log("close connection on socket fd = %d", state->current);
-        epoll_close_interface(state, state->current);
+        epoll_close_fd(state, state->current);
         return 0;
     }
 
@@ -120,7 +119,7 @@ static int epoll_handle_read_queue_udp(struct ap_state *state)
             return 0;
         }
 
-        epoll_close_interface(state, state->current);
+        epoll_close_fd(state, state->current);
         die(ERR_READ, "error reading on socket fd = %d: %s", state->current, strerror(errno));
     }
 
@@ -128,7 +127,7 @@ static int epoll_handle_read_queue_udp(struct ap_state *state)
 
     if (close || state->close_after_read) {
         state->close_after_read = 0;
-        epoll_close_interface(state, state->current);
+        epoll_close_fd(state, state->current);
         return 0;
     }
 
@@ -153,7 +152,7 @@ static void epoll_handle_event(struct ap_state *state, const struct epoll_event 
     switch (state->current_event->type) {
         case FDT_TCP_LISTEN:
             client_fd = accept_on_socket(state->current);
-            epoll_add_interface(state, client_fd, FDT_TCP, 1);
+            epoll_add_fd(state, client_fd, FDT_TCP, 1);
             break;
         /* case FDT_TCP: */
         /*     while (continue_reading) { */
@@ -209,11 +208,11 @@ void start_worker(void)
     }
 
     /* create_listening_tcp_socket(&state.tcp_sock_fd); */
-    /* epoll_add_interface(&state, state.tcp_sock_fd, FDT_TCP_LISTEN, 1); */
+    /* epoll_add_fd(&state, state.tcp_sock_fd, FDT_TCP_LISTEN, 1); */
     tcp_sock_fd = -1;
 
     create_udp_socket(&udp_sock_fd);
-    epoll_add_interface(&state, udp_sock_fd, FDT_UDP, 1);
+    epoll_add_fd(&state, udp_sock_fd, FDT_UDP, 1);
 
     log("epoll fd = %d, tcp fd = %d udp fd = %d", state.epoll_fd, tcp_sock_fd, udp_sock_fd);
 
