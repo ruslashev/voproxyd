@@ -3,7 +3,7 @@
 #include "buffer.h"
 #include "epoll.h"
 
-struct visca_header
+struct visca_header_t
 {
     uint16_t payload_type;
     uint16_t payload_length;
@@ -12,7 +12,7 @@ struct visca_header
 
 struct message_t
 {
-    struct visca_header *header;
+    struct visca_header_t *header;
     const uint8_t *payload;
     size_t payload_length;
 };

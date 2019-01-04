@@ -13,16 +13,16 @@
 #undef die
 #define die(...) die_detail(ERR_VISCA_PROTOCOL, __VA_ARGS__)
 
-_Static_assert(sizeof(struct visca_header) == VOIP_HEADER_LENGTH, "VISCA header size must be 8 bytes");
+_Static_assert(sizeof(struct visca_header_t) == VOIP_HEADER_LENGTH, "VISCA header size must be 8 bytes");
 
-static void visca_header_convert_endianness_ntoh(struct visca_header *header)
+static void visca_header_convert_endianness_ntoh(struct visca_header_t *header)
 {
     header->payload_type = ntohs(header->payload_type);
     header->payload_length = ntohs(header->payload_length);
     header->seq_number = ntohl(header->seq_number);
 }
 
-static void visca_header_convert_endianness_hton(struct visca_header *header)
+static void visca_header_convert_endianness_hton(struct visca_header_t *header)
 {
     header->payload_type = htons(header->payload_type);
     header->payload_length = htons(header->payload_length);
@@ -67,7 +67,7 @@ buffer_t* compose_empty_completition()
 
 void compose_control_reply(buffer_t *response, uint32_t seq_number)
 {
-    struct visca_header header = {
+    struct visca_header_t header = {
         .payload_type = 0x0201,
         .payload_length = 0x01,
         .seq_number = seq_number
@@ -193,7 +193,7 @@ static void handle_control_reply(const struct message_t *message, const struct e
 void visca_handle_message(const buffer_t *message_buf, const struct event_t *event)
 {
     struct message_t message = {
-        .header = (struct visca_header*)message_buf->data,
+        .header = (struct visca_header_t*)message_buf->data,
         .payload = message_buf->data + 8,
         .payload_length = message_buf->length - 8,
     };
