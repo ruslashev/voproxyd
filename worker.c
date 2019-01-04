@@ -52,6 +52,7 @@ static int handle_udp(const struct ap_state *state, uint8_t *message_bytes, ssiz
     return 0;
 }
 
+/*
 static int epoll_handle_read_queue_tcp(struct ap_state *state)
 {
     ssize_t message_length;
@@ -84,12 +85,14 @@ static int epoll_handle_read_queue_tcp(struct ap_state *state)
     }
 
     if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        errno = 0;
         return 0;
     }
 
     epoll_close_interface(state, state->current);
     die(ERR_READ, "error reading on socket fd = %d: %s", state->current, strerror(errno));
 }
+*/
 
 static int epoll_handle_read_queue_udp(struct ap_state *state)
 {
@@ -147,15 +150,26 @@ static void epoll_handle_event(struct ap_state *state, const struct epoll_event 
     state->close_after_read = !!((event->events & (unsigned)EPOLLHUP) |
             (event->events & (unsigned)EPOLLRDHUP));
 
-    if (state->current == state->tcp_sock_fd) {
-        client_fd = accept_on_socket(state->current);
-        epoll_add_interface(state, client_fd);
-        return;
+    switch (state->current_event->type) {
+        case FDT_TCP_LISTEN:
+            client_fd = accept_on_socket(state->current);
+            epoll_add_interface(state, client_fd, FDT_TCP, 1);
+            break;
+        /* case FDT_TCP: */
+        /*     while (continue_reading) { */
+        /*         continue_reading = epoll_handle_read_queue_tcp(state); */
+        /*     } */
+        /*     break; */
+        case FDT_UDP:
+            while (continue_reading) {
+                continue_reading = epoll_handle_read_queue_udp(state);
+            }
+            break;
+        default:
+            die(ERR_EPOLL_EVENT, "epoll_handle_event: unknown event type %d",
+                    state->current_event->type);
     }
 
-    while (continue_reading) {
-        continue_reading = epoll_handle_read_queue_udp(state);
-    }
 }
 
 static void main_loop(struct ap_state *state)
@@ -173,19 +187,21 @@ static void main_loop(struct ap_state *state)
 
         for (ev_idx = 0; ev_idx < num_events; ++ev_idx) {
             state->close_after_read = 0;
-            state->current = events[ev_idx].data.fd;
+            state->current_event = events[ev_idx].data.ptr;
+            state->current = state->current_event->fd;
             epoll_handle_event(state, &events[ev_idx]);
         }
     }
 
-    close(state->udp_sock_fd);
-    close(state->tcp_sock_fd);
+    ll_free_list(&state->tracked_events);
+
     close(state->epoll_fd);
 }
 
 void start_worker(void)
 {
     struct ap_state state = { 0 };
+    int tcp_sock_fd, udp_sock_fd;
 
     state.epoll_fd = epoll_create1(0);
     if (state.epoll_fd == -1) {
@@ -193,14 +209,13 @@ void start_worker(void)
     }
 
     /* create_listening_tcp_socket(&state.tcp_sock_fd); */
-    /* epoll_add_interface(&state, state.tcp_sock_fd); */
-    state.tcp_sock_fd = -1;
+    /* epoll_add_interface(&state, state.tcp_sock_fd, FDT_TCP_LISTEN, 1); */
+    tcp_sock_fd = -1;
 
-    create_udp_socket(&state.udp_sock_fd);
-    epoll_add_interface(&state, state.udp_sock_fd);
+    create_udp_socket(&udp_sock_fd);
+    epoll_add_interface(&state, udp_sock_fd, FDT_UDP, 1);
 
-    log("epoll fd = %d, tcp fd = %d udp fd = %d", state.epoll_fd,
-            state.tcp_sock_fd, state.udp_sock_fd);
+    log("epoll fd = %d, tcp fd = %d udp fd = %d", state.epoll_fd, tcp_sock_fd, udp_sock_fd);
 
     main_loop(&state);
 }
