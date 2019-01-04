@@ -4,5 +4,5 @@
 
 #include <stdint.h>
 
-void visca_commands_dispatch(const buffer_t *payload, uint32_t seq_number, buffer_t *response);
+void visca_commands_dispatch(const struct message_t *message, const struct event_t *event);
 

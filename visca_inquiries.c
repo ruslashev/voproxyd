@@ -3,9 +3,9 @@
 #include "visca.h"
 #include "visca_inquiries.h"
 
-static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static buffer_t* dispatch_04(const struct message_t *message)
 {
-    switch (payload->data[3]) {
+    switch (message->payload[3]) {
         case 0x39:
             bridge_inq_exposure_mode();
             break;
@@ -106,18 +106,20 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             bridge_inq_power_on();
             break;
         default:
-            log("dispatch_04: unexpected byte 0x%02x", payload->data[3]);
+            log("dispatch_04: unexpected byte 0x%02x", message->payload[3]);
     }
+
+    return NULL;
 }
 
-static void dispatch_05(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static buffer_t* dispatch_05(const struct message_t *message)
 {
-    switch (payload->data[3]) {
+    switch (message->payload[3]) {
         case 0x4c:
             bridge_inq_exposure_gain_point_position();
             break;
         case 0x2a:
-            if (payload->data[4] == 0) {
+            if (message->payload[4] == 0) {
                 bridge_inq_exposure_max_shutter();
             } else {
                 bridge_inq_exposure_min_shutter();
@@ -130,7 +132,7 @@ static void dispatch_05(const buffer_t *payload, uint32_t seq_number, buffer_t *
             bridge_inq_exposure_low_light_basis_brightness();
             break;
         case 0x42:
-            switch (payload->data[4]) {
+            switch (message->payload[4]) {
                 case 0x01:
                     bridge_inq_detail_mode();
                     break;
@@ -167,19 +169,17 @@ static void dispatch_05(const buffer_t *payload, uint32_t seq_number, buffer_t *
             bridge_inq_noise_reduction_manual_setting();
             break;
         default:
-            log("dispatch_05: unexpected byte 0x%02x", payload->data[3]);
+            log("dispatch_05: unexpected byte 0x%02x", message->payload[3]);
     }
+
+    return NULL;
 }
 
-static void dispatch_06(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static buffer_t* dispatch_06(const struct message_t *message)
 {
-    uint8_t data[VOIP_MAX_PAYLOAD_LENGTH] = { 0 };
-    size_t length;
-
-    switch (payload->data[3]) {
+    switch (message->payload[3]) {
         case 0x12:
             bridge_inq_pan_tilt_position();
-            compose_completition(response, data, 9);
             break;
         case 0x10:
             bridge_inq_pan_tilt_status();
@@ -200,15 +200,17 @@ static void dispatch_06(const buffer_t *payload, uint32_t seq_number, buffer_t *
             bridge_inq_menu_display_status();
             break;
         default:
-            log("dispatch_06: unexpected byte 0x%02x", payload->data[3]);
+            log("dispatch_06: unexpected byte 0x%02x", message->payload[3]);
     }
+
+    return NULL;
 }
 
-static void dispatch_7e(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static buffer_t* dispatch_7e(const struct message_t *message)
 {
-    switch (payload->data[3]) {
+    switch (message->payload[3]) {
         case 0x01:
-            switch (payload->data[4]) {
+            switch (message->payload[4]) {
                 case 0x2e:
                     bridge_inq_color_offset();
                     break;
@@ -270,12 +272,12 @@ static void dispatch_7e(const buffer_t *payload, uint32_t seq_number, buffer_t *
                     bridge_inq_hdmi_color_space();
                     break;
                 default:
-                    log("dispatch_7e: 0x01: unexpected byte 0x%02x", payload->data[4]);
-                    return;
+                    log("dispatch_7e: 0x01: unexpected byte 0x%02x", message->payload[4]);
+                    return NULL;
             }
             break;
         case 0x04:
-            switch (payload->data[4]) {
+            switch (message->payload[4]) {
                 case 0x45:
                     bridge_inq_gamma_black_level();
                     break;
@@ -283,36 +285,46 @@ static void dispatch_7e(const buffer_t *payload, uint32_t seq_number, buffer_t *
                     bridge_inq_preset_mode();
                     break;
                 default:
-                    log("dispatch_7e: 0x04: unexpected byte 0x%02x", payload->data[4]);
-                    return;
+                    log("dispatch_7e: 0x04: unexpected byte 0x%02x", message->payload[4]);
+                    return NULL;
             }
         default:
-            log("dispatch_7e: unexpected byte 0x%02x", payload->data[3]);
-            return;
+            log("dispatch_7e: unexpected byte 0x%02x", message->payload[3]);
+            return NULL;
     }
+
+    return NULL;
 }
 
-void visca_inquiries_dispatch(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static buffer_t* dispatch_00(const struct message_t *message)
 {
-    switch (payload->data[2]) {
+    buffer_t* response = cons_buffer(7);
+
+    if (message->payload[3] != 0x02) {
+        bad_byte_null(3);
+    }
+
+    bridge_inq_software_version();
+
+    return response;
+}
+
+buffer_t* visca_inquiries_dispatch(const struct message_t *message)
+{
+    switch (message->payload[2]) {
         case 0x00:
-            bridge_inq_software_version();
-            break;
+            return dispatch_00(message);
         case 0x04:
-            dispatch_04(payload, seq_number, response);
-            break;
+            return dispatch_04(message);
         case 0x05:
-            dispatch_05(payload, seq_number, response);
-            break;
+            return dispatch_05(message);
         case 0x06:
-            dispatch_06(payload, seq_number, response);
-            break;
+            return dispatch_06(message);
         case 0x7e:
-            dispatch_7e(payload, seq_number, response);
-            break;
+            return dispatch_7e(message);
         default:
-            log("visca_inquiries_dispatch: invalid byte 0x%02x", payload->data[2]);
-            return;
+            log("visca_inquiries_dispatch: invalid byte 0x%02x", message->payload[2]);
+            return NULL;
     }
 }
 

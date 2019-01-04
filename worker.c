@@ -20,7 +20,8 @@
 #define VOPROXYD_MAX_EPOLL_EVENTS 128
 #define VOPROXYD_MAX_RX_MESSAGE_LENGTH 4096
 
-static int handle_tcp_message(struct ap_state *state, const uint8_t *message, ssize_t length, int *close)
+static int handle_tcp_message(struct ap_state *state, const uint8_t *message, ssize_t length,
+        int *close)
 {
     (void)state;
     (void)message;
@@ -33,20 +34,11 @@ static int handle_tcp_message(struct ap_state *state, const uint8_t *message, ss
 
 static int handle_udp_message(const struct ap_state *state, uint8_t *message, ssize_t length)
 {
-    buffer_t *message_buf = cons_buffer(length), *response;
+    buffer_t *message_buf = cons_buffer(length);
 
     message_buf->data = message;
 
-    response = visca_handle_message(message_buf);
-
-    if (response->length != 0) {
-        log("output of visca_handle_message:");
-        print_buffer(response, 16);
-
-        socket_send_message_udp(state->current, response, state->current_event->addr);
-
-        free(response);
-    }
+    visca_handle_message(message_buf, state->current_event);
 
     return 0;
 }

@@ -3,12 +3,12 @@
 #include "visca.h"
 #include "visca_inquiries.h"
 
-static uint64_t parse_retarded_integer_encoding(const buffer_t *payload, size_t start, size_t n)
+static uint64_t parse_retarded_integer_encoding(const struct message_t *message, size_t start, size_t n)
 {
     uint64_t output = 0;
 
     for (size_t i = 0; i < n; ++i) {
-        output = (output << 4u) | (payload->data[start + i] & 0x0f);
+        output = (output << 4u) | (message->payload[start + i] & 0x0fu);
     }
 
     return output;
@@ -78,9 +78,9 @@ static void hdmi_parameter_to_specs(uint8_t p, int *w, int *h, int *f, char *l)
     }
 }
 
-static void dispatch_exposure_mode(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static void dispatch_exposure_mode(const struct message_t *message, const struct event_t *event)
 {
-    switch (payload->data[4]) {
+    switch (message->payload[4]) {
         case 0x00:
             bridge_cmd_exposure_mode_full_auto();
             break;
@@ -101,9 +101,9 @@ static void dispatch_exposure_mode(const buffer_t *payload, uint32_t seq_number,
     }
 }
 
-static void dispatch_exposure_iris(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static void dispatch_exposure_iris(const struct message_t *message, const struct event_t *event)
 {
-    switch (payload->data[4]) {
+    switch (message->payload[4]) {
         case 0x00:
             bridge_cmd_exposure_iris_reset();
             break;
@@ -118,9 +118,9 @@ static void dispatch_exposure_iris(const buffer_t *payload, uint32_t seq_number,
     }
 }
 
-static void dispatch_exposure_gain(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static void dispatch_exposure_gain(const struct message_t *message, const struct event_t *event)
 {
-    switch (payload->data[4]) {
+    switch (message->payload[4]) {
         case 0x00:
             bridge_cmd_exposure_gain_reset();
             break;
@@ -135,9 +135,9 @@ static void dispatch_exposure_gain(const buffer_t *payload, uint32_t seq_number,
     }
 }
 
-static void dispatch_exposure_shutter(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static void dispatch_exposure_shutter(const struct message_t *message, const struct event_t *event)
 {
-    switch (payload->data[4]) {
+    switch (message->payload[4]) {
         case 0x00:
             bridge_cmd_exposure_shutter_reset();
             break;
@@ -152,9 +152,9 @@ static void dispatch_exposure_shutter(const buffer_t *payload, uint32_t seq_numb
     }
 }
 
-static void dispatch_exposure_exp_comp(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static void dispatch_exposure_exp_comp(const struct message_t *message, const struct event_t *event)
 {
-    switch (payload->data[4]) {
+    switch (message->payload[4]) {
         case 0x00:
             bridge_cmd_exposure_exp_comp_reset();
             break;
@@ -169,9 +169,9 @@ static void dispatch_exposure_exp_comp(const buffer_t *payload, uint32_t seq_num
     }
 }
 
-static void dispatch_color_white_balance(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static void dispatch_color_white_balance(const struct message_t *message, const struct event_t *event)
 {
-    switch (payload->data[4]) {
+    switch (message->payload[4]) {
         case 0x00:
             bridge_cmd_color_white_balance_auto1();
             break;
@@ -195,37 +195,37 @@ static void dispatch_color_white_balance(const buffer_t *payload, uint32_t seq_n
     }
 }
 
-static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static void dispatch_04(const struct message_t *message, const struct event_t *event)
 {
     uint64_t p, q, r;
-    uint8_t b4 = payload->data[4], onoff = (b4 == 2) ? 1 : 0;
+    uint8_t b4 = message->payload[4], onoff = (b4 == 2) ? 1 : 0;
 
-    switch (payload->data[3]) {
+    switch (message->payload[3]) {
         case 0x39:
-            dispatch_exposure_mode(payload, seq_number, response);
+            dispatch_exposure_mode(message, event);
             break;
         case 0x0b:
-            dispatch_exposure_iris(payload, seq_number, response);
+            dispatch_exposure_iris(message, event);
             break;
         case 0x4b:
-            p = parse_retarded_integer_encoding(payload, 6, 2);
+            p = parse_retarded_integer_encoding(message, 6, 2);
             bridge_cmd_exposure_iris_direct(p);
             break;
         case 0x0c:
-            dispatch_exposure_gain(payload, seq_number, response);
+            dispatch_exposure_gain(message, event);
             break;
         case 0x4c:
-            p = parse_retarded_integer_encoding(payload, 6, 2);
+            p = parse_retarded_integer_encoding(message, 6, 2);
             bridge_cmd_exposure_gain_direct(gain_parameter_to_db(p));
             break;
         case 0x2c:
             bridge_cmd_exposure_gain_limit(gain_parameter_to_db(b4));
             break;
         case 0x0a:
-            dispatch_exposure_shutter(payload, seq_number, response);
+            dispatch_exposure_shutter(message, event);
             break;
         case 0x4a:
-            p = parse_retarded_integer_encoding(payload, 6, 2);
+            p = parse_retarded_integer_encoding(message, 6, 2);
             bridge_cmd_exposure_shutter_direct(p);
             break;
         case 0x5d:
@@ -235,10 +235,10 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             bridge_cmd_exposure_exp_comp_set(onoff);
             break;
         case 0x0e:
-            dispatch_exposure_exp_comp(payload, seq_number, response);
+            dispatch_exposure_exp_comp(message, event);
             break;
         case 0x4e:
-            p = parse_retarded_integer_encoding(payload, 6, 2);
+            p = parse_retarded_integer_encoding(message, 6, 2);
             bridge_cmd_exposure_exp_comp_direct(p);
             break;
         case 0x33:
@@ -251,22 +251,22 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             bridge_cmd_exposure_vis_enh_set(b4 == 0x06 ? 1 : 0);
             break;
         case 0x2d:
-            p = payload->data[5];
-            q = payload->data[6];
-            r = payload->data[7];
+            p = message->payload[5];
+            q = message->payload[6];
+            r = message->payload[7];
             bridge_cmd_exposure_vis_enh_direct(p, q, r);
             break;
         case 0x01:
             bridge_cmd_exposure_ir_cut_filter_set(onoff);
             break;
         case 0x35:
-            dispatch_color_white_balance(payload, seq_number, response);
+            dispatch_color_white_balance(message, event);
             break;
         case 0x10:
             bridge_cmd_color_one_push_trigger();
             break;
         case 0x03:
-            switch (payload->data[4]) {
+            switch (message->payload[4]) {
                 case 0x00:
                     bridge_cmd_color_rgain_reset();
                     break;
@@ -281,11 +281,11 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x43:
-            p = parse_retarded_integer_encoding(payload, 6, 2);
+            p = parse_retarded_integer_encoding(message, 6, 2);
             bridge_cmd_color_rgain_direct((int)p - 128);
             break;
         case 0x04:
-            switch (payload->data[4]) {
+            switch (message->payload[4]) {
                 case 0x00:
                     bridge_cmd_color_bgain_reset();
                     break;
@@ -300,7 +300,7 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x44:
-            p = parse_retarded_integer_encoding(payload, 6, 2);
+            p = parse_retarded_integer_encoding(message, 6, 2);
             bridge_cmd_color_bgain_direct((int)p - 128);
             break;
         case 0x56:
@@ -310,7 +310,7 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             bridge_cmd_color_chroma_suppress(b4);
             break;
         case 0x09:
-            switch (payload->data[4]) {
+            switch (message->payload[4]) {
                 case 0x00:
                     bridge_cmd_color_level_reset();
                     break;
@@ -325,10 +325,10 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x49:
-            bridge_cmd_color_level_direct(payload->data[7]);
+            bridge_cmd_color_level_direct(message->payload[7]);
             break;
         case 0x0f:
-            switch (payload->data[4]) {
+            switch (message->payload[4]) {
                 case 0x00:
                     bridge_cmd_color_phase_reset();
                     break;
@@ -343,10 +343,10 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x4f:
-            bridge_cmd_color_phase_direct(payload->data[7]);
+            bridge_cmd_color_phase_direct(message->payload[7]);
             break;
         case 0x02:
-            switch (payload->data[4]) {
+            switch (message->payload[4]) {
                 case 0x00:
                     bridge_cmd_detail_level_reset();
                     break;
@@ -361,15 +361,15 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x42:
-            p = parse_retarded_integer_encoding(payload, 6, 2);
+            p = parse_retarded_integer_encoding(message, 6, 2);
             bridge_cmd_detail_level_direct(p);
             break;
         case 0x5b:
             bridge_cmd_gamma_mode(b4);
             break;
         case 0x1e:
-            p = payload->data[7];
-            q = parse_retarded_integer_encoding(payload, 8, 2);
+            p = message->payload[7];
+            q = parse_retarded_integer_encoding(message, 8, 2);
             bridge_cmd_gamma_offset(p, q);
             break;
         case 0x32:
@@ -379,7 +379,7 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             bridge_cmd_noise_reduction_mode_level_set(b4);
             break;
         case 0x07:
-            switch (payload->data[4]) {
+            switch (message->payload[4]) {
                 case 0x00:
                     bridge_cmd_zoom_stop();
                     break;
@@ -402,14 +402,14 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x47:
-            p = parse_retarded_integer_encoding(payload, 4, 4);
+            p = parse_retarded_integer_encoding(message, 4, 4);
             bridge_cmd_zoom_direct(p);
             break;
         case 0x06:
             bridge_cmd_zoom_clear_image_set(b4 == 0x04 ? 1 : 0);
             break;
         case 0x38:
-            switch (payload->data[4]) {
+            switch (message->payload[4]) {
                 case 0x02:
                     bridge_cmd_focus_mode_auto();
                     break;
@@ -424,7 +424,7 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x08:
-            switch (payload->data[4]) {
+            switch (message->payload[4]) {
                 case 0x00:
                     bridge_cmd_focus_stop();
                     break;
@@ -447,11 +447,11 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x48:
-            p = parse_retarded_integer_encoding(payload, 4, 4);
+            p = parse_retarded_integer_encoding(message, 4, 4);
             bridge_cmd_focus_direct(p);
             break;
         case 0x18:
-            switch (payload->data[4]) {
+            switch (message->payload[4]) {
                 case 0x01:
                     bridge_cmd_focus_one_push_trigger();
                     break;
@@ -463,7 +463,7 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             }
             break;
         case 0x28:
-            p = parse_retarded_integer_encoding(payload, 4, 4);
+            p = parse_retarded_integer_encoding(message, 4, 4);
             bridge_cmd_focus_near_limit(p);
             break;
         case 0x58:
@@ -473,7 +473,7 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
             bridge_cmd_focus_ir_correction(b4);
             break;
         case 0x3f:
-            switch (payload->data[4]) {
+            switch (message->payload[4]) {
                 case 0x00:
                     bridge_cmd_preset_reset();
                     break;
@@ -495,9 +495,9 @@ static void dispatch_04(const buffer_t *payload, uint32_t seq_number, buffer_t *
     }
 }
 
-static void dispatch_detail(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static void dispatch_detail(const struct message_t *message, const struct event_t *event)
 {
-    switch (payload->data[4]) {
+    switch (message->payload[4]) {
         case 0x01:
             bridge_cmd_detail_mode();
             break;
@@ -527,21 +527,21 @@ static void dispatch_detail(const buffer_t *payload, uint32_t seq_number, buffer
     }
 }
 
-static void dispatch_05(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static void dispatch_05(const struct message_t *message, const struct event_t *event)
 {
     uint64_t p, q;
-    uint8_t b4 = payload->data[4], onoff = (b4 == 2) ? 1 : 0;
+    uint8_t b4 = message->payload[4], onoff = (b4 == 2) ? 1 : 0;
 
-    switch (payload->data[3]) {
+    switch (message->payload[3]) {
         case 0x0c:
             bridge_cmd_exposure_gain_point_set(onoff);
             break;
         case 0x4c:
-            p = parse_retarded_integer_encoding(payload, 4, 2);
+            p = parse_retarded_integer_encoding(message, 4, 2);
             bridge_cmd_exposure_gain_point_position(gain_parameter_to_db(p));
             break;
         case 0x2a:
-            p = parse_retarded_integer_encoding(payload, 5, 2);
+            p = parse_retarded_integer_encoding(message, 5, 2);
             bridge_cmd_exposure_minmax_shutter_set(b4, p);
             break;
         case 0x39:
@@ -551,18 +551,18 @@ static void dispatch_05(const buffer_t *payload, uint32_t seq_number, buffer_t *
             bridge_cmd_exposure_low_light_basis_brightness_direct(b4);
             break;
         case 0x42:
-            dispatch_detail(payload, seq_number, response);
+            dispatch_detail(message, event);
             break;
         case 0x5b:
-            p = parse_retarded_integer_encoding(payload, 4, 3);
+            p = parse_retarded_integer_encoding(message, 4, 3);
             bridge_cmd_gamma_pattern(p);
             break;
         case 0x5c:
             bridge_cmd_gamma_black_gamma_range(b4);
             break;
         case 0x53:
-            p = payload->data[4];
-            q = payload->data[5];
+            p = message->payload[4];
+            q = message->payload[5];
             bridge_cmd_noise_reduction_2d_3d_manual_setting(p, q);
             break;
         default:
@@ -570,17 +570,17 @@ static void dispatch_05(const buffer_t *payload, uint32_t seq_number, buffer_t *
     }
 }
 
-static void ptd_directionals(const buffer_t *payload)
+static void ptd_directionals(const struct message_t *message)
 {
     uint8_t pan_speed, tilt_speed;
     int vert, horiz;
 
     check_length(9);
 
-    pan_speed = payload->data[4];
-    tilt_speed = payload->data[5];
+    pan_speed = message->payload[4];
+    tilt_speed = message->payload[5];
 
-    switch (payload->data[6]) {
+    switch (message->payload[6]) {
         case 0x01:
             horiz = -1;
             break;
@@ -591,11 +591,11 @@ static void ptd_directionals(const buffer_t *payload)
             horiz = 0;
             break;
         default:
-            log("ptd_directionals: unexpected horizontal drive 0x%02x", payload->data[6]);
+            log("ptd_directionals: unexpected horizontal drive 0x%02x", message->payload[6]);
             return;
     }
 
-    switch (payload->data[7]) {
+    switch (message->payload[7]) {
         case 0x01:
             vert = 1;
             break;
@@ -606,32 +606,32 @@ static void ptd_directionals(const buffer_t *payload)
             vert = 0;
             break;
         default:
-            log("ptd_directionals: unexpected vertical drive 0x%02x", payload->data[7]);
+            log("ptd_directionals: unexpected vertical drive 0x%02x", message->payload[7]);
             return;
     }
 
     bridge_cmd_pan_tilt_directionals(vert, horiz, pan_speed, tilt_speed);
 }
 
-static void ptd_abs_rel(const buffer_t *payload, int rel)
+static void ptd_abs_rel(const struct message_t *message, int rel)
 {
     uint8_t speed, p[5], t[4];
 
     check_length(16);
 
-    speed = payload->data[4];
+    speed = message->payload[4];
 
-    if (payload->data[5] != 0) {
-        log("ptd_abs_rel: expected payload->data[5] to be 0, not 0x%02x", payload->data[5]);
+    if (message->payload[5] != 0) {
+        log("ptd_abs_rel: expected message->payload[5] to be 0, not 0x%02x", message->payload[5]);
         return;
     }
 
     for (int i = 0; i < 5; ++i) {
-        p[i] = payload->data[6 + i];
+        p[i] = message->payload[6 + i];
     }
 
     for (int i = 0; i < 4; ++i) {
-        t[i] = payload->data[11 + i];
+        t[i] = message->payload[11 + i];
     }
 
     if (rel) {
@@ -641,28 +641,28 @@ static void ptd_abs_rel(const buffer_t *payload, int rel)
     }
 }
 
-static void ptd_pan_tilt_limit(const buffer_t *payload)
+static void ptd_pan_tilt_limit(const struct message_t *message)
 {
     int set, position;
     uint8_t p[5], t[4];
 
     check_length(16);
 
-    set = payload->data[4];
+    set = message->payload[4];
 
     if (set != 0 && set != 1) {
         log("ptd_pan_tilt_limit: unexpected set byte 0x%02x", set);
     }
 
-    position = payload->data[5];
+    position = message->payload[5];
 
     if (set == 1) {
         for (int i = 0; i < 5; ++i) {
-            p[i] = payload->data[6 + i];
+            p[i] = message->payload[6 + i];
         }
 
         for (int i = 0; i < 4; ++i) {
-            t[i] = payload->data[11 + i];
+            t[i] = message->payload[11 + i];
         }
 
         bridge_cmd_pan_tilt_limit_set(position, p, t);
@@ -671,13 +671,13 @@ static void ptd_pan_tilt_limit(const buffer_t *payload)
     }
 }
 
-static void ptd_ramp_curve(const buffer_t *payload)
+static void ptd_ramp_curve(const struct message_t *message)
 {
     int p;
 
     check_length(6);
 
-    p = payload->data[4];
+    p = message->payload[4];
 
     if (p != 1 && p != 2 && p != 3) {
         log("ptd_ramp_curve: unexpected p %d", p);
@@ -687,13 +687,13 @@ static void ptd_ramp_curve(const buffer_t *payload)
     bridge_cmd_pan_tilt_ramp_curve(p);
 }
 
-static void ptd_slow_mode(const buffer_t *payload)
+static void ptd_slow_mode(const struct message_t *message)
 {
     int p;
 
     check_length(6);
 
-    p = payload->data[4];
+    p = message->payload[4];
 
     if (p != 2 && p != 3) {
         log("ptd_slow_mode: unexpected p %d", p);
@@ -703,17 +703,17 @@ static void ptd_slow_mode(const buffer_t *payload)
     bridge_cmd_pan_tilt_slow_mode(p);
 }
 
-static void dispatch_pan_tilt_drive(const buffer_t *payload, buffer_t *response, uint32_t seq_number)
+static void dispatch_pan_tilt_drive(const struct message_t *message, const struct event_t *event)
 {
-    switch (payload->data[3]) {
+    switch (message->payload[3]) {
         case 0x01:
-            ptd_directionals(payload);
+            ptd_directionals(message);
             break;
         case 0x02:
-            ptd_abs_rel(payload, 0);
+            ptd_abs_rel(message, 0);
             break;
         case 0x03:
-            ptd_abs_rel(payload, 1);
+            ptd_abs_rel(message, 1);
             break;
         case 0x04:
             bridge_cmd_pan_tilt_home();
@@ -722,38 +722,35 @@ static void dispatch_pan_tilt_drive(const buffer_t *payload, buffer_t *response,
             bridge_cmd_pan_tilt_reset();
             break;
         case 0x07:
-            ptd_pan_tilt_limit(payload);
+            ptd_pan_tilt_limit(message);
             break;
         case 0x31:
-            ptd_ramp_curve(payload);
+            ptd_ramp_curve(message);
             break;
         case 0x44:
-            ptd_slow_mode(payload);
+            ptd_slow_mode(message);
             break;
         default:
-            log("dispatch_pan_tilt_drive: unexpected type 0x%02x", payload->data[3]);
+            log("dispatch_pan_tilt_drive: unexpected type 0x%02x", message->payload[3]);
             return;
     }
-
-    (void)response;
-    (void)seq_number;
 }
 
-static void dispatch_7e_01(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static void dispatch_7e_01(const struct message_t *message, const struct event_t *event)
 {
     uint64_t p, q;
-    uint8_t b5 = payload->data[5];
+    uint8_t b5 = message->payload[5];
     int w, h, f;
     char l;
 
-    switch (payload->data[4]) {
+    switch (message->payload[4]) {
         case 0x53:
             bridge_cmd_exposure_nd_filter(b5);
             break;
         case 0x2e:
-            switch (payload->data[6]) {
+            switch (message->payload[6]) {
                 case 0x00:
-                    switch (payload->data[7]) {
+                    switch (message->payload[7]) {
                         case 0x00:
                             bridge_cmd_color_offset_reset();
                             break;
@@ -767,7 +764,7 @@ static void dispatch_7e_01(const buffer_t *payload, uint32_t seq_number, buffer_
                             bad_byte(7);
                     }
                 case 0x01:
-                    bridge_cmd_color_offset_direct((int)payload->data[6] - 7);
+                    bridge_cmd_color_offset_direct((int)message->payload[6] - 7);
                     break;
                 default:
                     bad_byte(6);
@@ -777,76 +774,76 @@ static void dispatch_7e_01(const buffer_t *payload, uint32_t seq_number, buffer_
             bridge_cmd_color_matrix_select(b5);
             break;
         case 0x7a:
-            p = parse_retarded_integer_encoding(payload, 5, 2);
+            p = parse_retarded_integer_encoding(message, 5, 2);
             bridge_cmd_color_rg((int)p - 99);
             break;
         case 0x7b:
-            p = parse_retarded_integer_encoding(payload, 5, 2);
+            p = parse_retarded_integer_encoding(message, 5, 2);
             bridge_cmd_color_rb((int)p - 99);
             break;
         case 0x7c:
-            p = parse_retarded_integer_encoding(payload, 5, 2);
+            p = parse_retarded_integer_encoding(message, 5, 2);
             bridge_cmd_color_gr((int)p - 99);
             break;
         case 0x7d:
-            p = parse_retarded_integer_encoding(payload, 5, 2);
+            p = parse_retarded_integer_encoding(message, 5, 2);
             bridge_cmd_color_gb((int)p - 99);
             break;
         case 0x7e:
-            p = parse_retarded_integer_encoding(payload, 5, 2);
+            p = parse_retarded_integer_encoding(message, 5, 2);
             bridge_cmd_color_br((int)p - 99);
             break;
         case 0x7f:
-            p = parse_retarded_integer_encoding(payload, 5, 2);
+            p = parse_retarded_integer_encoding(message, 5, 2);
             bridge_cmd_color_bg((int)p - 99);
             break;
         case 0x6d:
-            bridge_cmd_knee_set(payload->data[5] == 2 ? 1 : 0);
+            bridge_cmd_knee_set(message->payload[5] == 2 ? 1 : 0);
             break;
         case 0x54:
             bridge_cmd_knee_mode(b5 == 4 ? 1 : 0);
             break;
         case 0x6f:
-            p = parse_retarded_integer_encoding(payload, 5, 2);
+            p = parse_retarded_integer_encoding(message, 5, 2);
             bridge_cmd_knee_slope(p);
             break;
         case 0x6e:
-            p = parse_retarded_integer_encoding(payload, 5, 2);
+            p = parse_retarded_integer_encoding(message, 5, 2);
             bridge_cmd_knee_point(p);
             break;
         case 0x71:
-            p = parse_retarded_integer_encoding(payload, 5, 2);
+            p = parse_retarded_integer_encoding(message, 5, 2);
             bridge_cmd_gamma_level(p);
             break;
         case 0x72:
-            p = parse_retarded_integer_encoding(payload, 5, 2);
+            p = parse_retarded_integer_encoding(message, 5, 2);
             bridge_cmd_gamma_black_gamma_level(p);
             break;
         case 0x0b:
-            p = payload->data[5];
-            q = payload->data[6];
+            p = message->payload[5];
+            q = message->payload[6];
             bridge_cmd_preset_drive_speed(p, q);
             break;
         case 0x3e:
-            bridge_cmd_system_hphase_set(payload->data[6] == 0x02 ? 1 : 0);
+            bridge_cmd_system_hphase_set(message->payload[6] == 0x02 ? 1 : 0);
             break;
         case 0x5b:
-            p = parse_retarded_integer_encoding(payload, 6, 3);
+            p = parse_retarded_integer_encoding(message, 6, 3);
             bridge_cmd_system_hphase_direct(p);
             break;
         case 0x06:
-            bridge_cmd_system_pan_reverse(payload->data[6]);
+            bridge_cmd_system_pan_reverse(message->payload[6]);
             break;
         case 0x09:
-            bridge_cmd_system_tilt_reverse(payload->data[6]);
+            bridge_cmd_system_tilt_reverse(message->payload[6]);
             break;
         case 0x0a:
-            switch (payload->data[6]) {
+            switch (message->payload[6]) {
                 case 0x00:
-                    bridge_cmd_tarry_set(payload->data[6] == 0x02 ? 1 : 0);
+                    bridge_cmd_tarry_set(message->payload[6] == 0x02 ? 1 : 0);
                     break;
                 case 0x01:
-                    p = payload->data[6];
+                    p = message->payload[6];
                     switch (p) {
                         case 0:
                             bridge_cmd_tarry_tally_mode(0);
@@ -866,25 +863,25 @@ static void dispatch_7e_01(const buffer_t *payload, uint32_t seq_number, buffer_
             }
             break;
         case 0x1e:
-            p = parse_retarded_integer_encoding(payload, 5, 2);
+            p = parse_retarded_integer_encoding(message, 5, 2);
             hdmi_parameter_to_specs(p, &w, &h, &f, &l);
             bridge_cmd_hdmi_video_format_change(w, h, f, l);
             break;
         case 0x03:
-            bridge_cmd_hdmi_color_space(payload->data[6]);
+            bridge_cmd_hdmi_color_space(message->payload[6]);
             break;
         default:
             bad_byte(4);
     }
 }
 
-static void dispatch_7e_04(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static void dispatch_7e_04(const struct message_t *message, const struct event_t *event)
 {
     uint64_t p;
 
-    switch (payload->data[5]) {
+    switch (message->payload[5]) {
         case 0x15:
-            switch (payload->data[6]) {
+            switch (message->payload[6]) {
                 case 0x00:
                     bridge_cmd_gamma_black_level_reset();
                     break;
@@ -899,28 +896,28 @@ static void dispatch_7e_04(const buffer_t *payload, uint32_t seq_number, buffer_
             }
             break;
         case 0x45:
-            p = parse_retarded_integer_encoding(payload, 5, 2);
+            p = parse_retarded_integer_encoding(message, 5, 2);
             bridge_cmd_gamma_black_level_direct((int)p - 48);
             break;
         case 0x5f:
-            bridge_cmd_picture_profile_mode(payload->data[5] + 1);
+            bridge_cmd_picture_profile_mode(message->payload[5] + 1);
             break;
         case 0x36:
-            bridge_cmd_zoom_teleconvert_mode(payload->data[5] == 2 ? 1 : 0);
+            bridge_cmd_zoom_teleconvert_mode(message->payload[5] == 2 ? 1 : 0);
             break;
         case 0x3d:
-            bridge_cmd_preset_mode(payload->data[5]);
+            bridge_cmd_preset_mode(message->payload[5]);
             break;
         case 0x20:
-            switch (payload->data[6]) {
+            switch (message->payload[6]) {
                 case 0x00:
-                    bridge_cmd_ptz_trace_rec(payload->data[7] == 2 ? 1 : 0, payload->data[6] & 0x0f);
+                    bridge_cmd_ptz_trace_rec(message->payload[7] == 2 ? 1 : 0, message->payload[6] & 0x0fu);
                     break;
                 case 0x01:
-                    bridge_cmd_ptz_trace_play(payload->data[7] - 1, payload->data[6] & 0x0f);
+                    bridge_cmd_ptz_trace_play(message->payload[7] - 1, message->payload[6] & 0x0fu);
                     break;
                 case 0x02:
-                    bridge_cmd_ptz_trace_delete(payload->data[6] & 0x0f);
+                    bridge_cmd_ptz_trace_delete(message->payload[6] & 0x0fu);
                     break;
                 default:
                     bad_byte(6);
@@ -931,38 +928,38 @@ static void dispatch_7e_04(const buffer_t *payload, uint32_t seq_number, buffer_
     }
 }
 
-static void dispatch_7e(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+static void dispatch_7e(const struct message_t *message, const struct event_t *event)
 {
-    switch (payload->data[3]) {
+    switch (message->payload[3]) {
         case 0x01:
-            dispatch_7e_01(payload, seq_number, response);
+            dispatch_7e_01(message, event);
             break;
         case 0x04:
-            dispatch_7e_04(payload, seq_number, response);
+            dispatch_7e_04(message, event);
             break;
         default:
             bad_byte(3);
     }
 }
 
-void visca_commands_dispatch(const buffer_t *payload, uint32_t seq_number, buffer_t *response)
+void visca_commands_dispatch(const struct message_t *message, const struct event_t *event)
 {
-    switch (payload->data[2]) {
+    switch (message->payload[2]) {
         case 0x04:
-            dispatch_04(payload, seq_number, response);
+            dispatch_04(message, event);
             break;
         case 0x05:
-            dispatch_05(payload, seq_number, response);
+            dispatch_05(message, event);
             break;
         case 0x06:
-            if (payload->data[3] == 0x06) {
+            if (message->payload[3] == 0x06) {
                 bridge_cmd_menu_display_off();
             } else {
-                dispatch_pan_tilt_drive(payload, response, seq_number);
+                dispatch_pan_tilt_drive(message, event);
             }
             break;
         case 0x7e:
-            dispatch_7e(payload, seq_number, response);
+            dispatch_7e(message, event);
             break;
         default:
             bad_byte(2);
