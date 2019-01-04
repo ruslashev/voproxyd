@@ -8,103 +8,103 @@ static buffer_t* dispatch_09_04(const struct message_t *message)
     switch (message->payload[3]) {
         case 0x39:
             bridge_inq_exposure_mode();
-            break;
+            return cons_buffer(1);
         case 0x4b:
             bridge_inq_exposure_iris();
-            break;
+            return cons_buffer(1);
         case 0x4c:
             bridge_inq_exposure_gain();
-            break;
+            return cons_buffer(1);
         case 0x2c:
             bridge_inq_exposure_gain_limit();
-            break;
+            return cons_buffer(1);
         case 0x4a:
             bridge_inq_exposure_shutter();
-            break;
+            return cons_buffer(1);
         case 0x5d:
             bridge_inq_exposure_ae_speed();
-            break;
+            return cons_buffer(1);
         case 0x3e:
             bridge_inq_exposure_ex_comp_on();
-            break;
+            return cons_buffer(1);
         case 0x4e:
             bridge_inq_exposure_ex_comp_level();
-            break;
+            return cons_buffer(1);
         case 0x33:
             bridge_inq_exposure_back_light();
-            break;
+            return cons_buffer(1);
         case 0x3a:
             bridge_inq_exposure_spot_light();
-            break;
+            return cons_buffer(1);
         case 0x3d:
             bridge_inq_exposure_vis_enh_on();
-            break;
+            return cons_buffer(1);
         case 0x2d:
             bridge_inq_exposure_vis_enh();
-            break;
+            return cons_buffer(1);
         case 0x35:
             bridge_inq_color_white_balance_mode();
-            break;
+            return cons_buffer(1);
         case 0x43:
             bridge_inq_color_r_gain();
-            break;
+            return cons_buffer(1);
         case 0x44:
             bridge_inq_color_b_gain();
-            break;
+            return cons_buffer(1);
         case 0x56:
             bridge_inq_color_speed();
-            break;
+            return cons_buffer(1);
         case 0x5f:
             bridge_inq_color_chroma_suppress();
-            break;
+            return cons_buffer(1);
         case 0x49:
             bridge_inq_color_level();
-            break;
+            return cons_buffer(1);
         case 0x4f:
             bridge_inq_color_phase();
-            break;
+            return cons_buffer(1);
         case 0x42:
             bridge_inq_detail_level();
-            break;
+            return cons_buffer(1);
         case 0x5b:
             bridge_inq_gamma_mode();
-            break;
+            return cons_buffer(1);
         case 0x1e:
             bridge_inq_gamma_offset();
-            break;
+            return cons_buffer(1);
         case 0x32:
             bridge_inq_flicker_reduction_on();
-            break;
+            return cons_buffer(1);
         case 0x53:
             bridge_inq_noise_reduction_mode_level();
-            break;
+            return cons_buffer(1);
         case 0x47:
             bridge_inq_zoom_position();
-            break;
+            return cons_buffer(1);
         case 0x38:
             bridge_inq_focus_mode();
-            break;
+            return cons_buffer(1);
         case 0x48:
             bridge_inq_focus_position();
-            break;
+            return cons_buffer(1);
         case 0x58:
             bridge_inq_focus_sensitivity();
-            break;
+            return cons_buffer(1);
         case 0x28:
             bridge_inq_focus_near_limit();
-            break;
+            return cons_buffer(1);
         case 0x11:
             bridge_inq_focus_ir_correction();
-            break;
+            return cons_buffer(1);
         case 0x3f:
             bridge_inq_preset();
-            break;
+            return cons_buffer(1);
         case 0x66:
             bridge_inq_system_img_flip();
-            break;
+            return cons_buffer(1);
         case 0x00:
             bridge_inq_power_on();
-            break;
+            return cons_buffer(1);
         default:
             bad_byte_null(3);
     }
@@ -117,57 +117,59 @@ static buffer_t* dispatch_09_05(const struct message_t *message)
     switch (message->payload[3]) {
         case 0x4c:
             bridge_inq_exposure_gain_point_position();
-            break;
+            return cons_buffer(1);
         case 0x2a:
             if (message->payload[4] == 0) {
                 bridge_inq_exposure_max_shutter();
+                return cons_buffer(1);
             } else {
                 bridge_inq_exposure_min_shutter();
+                return cons_buffer(1);
             }
-            break;
         case 0x39:
             bridge_inq_exposure_low_light_basis_brightness_on();
-            break;
+            return cons_buffer(1);
         case 0x49:
             bridge_inq_exposure_low_light_basis_brightness();
-            break;
+            return cons_buffer(1);
         case 0x42:
             switch (message->payload[4]) {
                 case 0x01:
                     bridge_inq_detail_mode();
-                    break;
+                    return cons_buffer(1);
                 case 0x02:
                     bridge_inq_detail_bandwidth();
-                    break;
+                    return cons_buffer(1);
                 case 0x03:
                     bridge_inq_detail_crispening();
-                    break;
+                    return cons_buffer(1);
                 case 0x04:
                     bridge_inq_detail_hv_balance();
-                    break;
+                    return cons_buffer(1);
                 case 0x05:
                     bridge_inq_detail_bw_balance();
-                    break;
+                    return cons_buffer(1);
                 case 0x06:
                     bridge_inq_detail_limit();
-                    break;
+                    return cons_buffer(1);
                 case 0x07:
                     bridge_inq_detail_highlight_detail();
-                    break;
+                    return cons_buffer(1);
                 case 0x08:
                     bridge_inq_detail_superlow();
-                    break;
+                    return cons_buffer(1);
+                default:
+                    bad_byte_null(4);
             }
-            break;
         case 0x5b:
             bridge_inq_gamma_pattern();
-            break;
+            return cons_buffer(1);
         case 0x5c:
             bridge_inq_gamma_black_gamma_range();
-            break;
+            return cons_buffer(1);
         case 0x53:
             bridge_inq_noise_reduction_manual_setting();
-            break;
+            return cons_buffer(1);
         default:
             bad_byte_null(3);
     }
@@ -180,25 +182,25 @@ static buffer_t* dispatch_09_06(const struct message_t *message)
     switch (message->payload[3]) {
         case 0x12:
             bridge_inq_pan_tilt_position();
-            break;
+            return cons_buffer(1);
         case 0x10:
             bridge_inq_pan_tilt_status();
-            break;
+            return cons_buffer(1);
         case 0x31:
             bridge_inq_pan_tilt_ramp_curve();
-            break;
+            return cons_buffer(1);
         case 0x44:
             bridge_inq_pan_tilt_slow_mode();
-            break;
+            return cons_buffer(1);
         case 0x08:
             bridge_inq_system_ir_receive();
-            break;
+            return cons_buffer(1);
         case 0x23:
             bridge_inq_hdmi_video_format();
-            break;
+            return cons_buffer(1);
         case 0x06:
             bridge_inq_menu_display_status();
-            break;
+            return cons_buffer(1);
         default:
             bad_byte_null(3);
     }
@@ -213,76 +215,75 @@ static buffer_t* dispatch_09_7e(const struct message_t *message)
             switch (message->payload[4]) {
                 case 0x2e:
                     bridge_inq_color_offset();
-                    break;
+                    return cons_buffer(1);
                 case 0x3d:
                     bridge_inq_color_matrix();
-                    break;
+                    return cons_buffer(1);
                 case 0x7a:
                     bridge_inq_color_rg();
-                    break;
+                    return cons_buffer(1);
                 case 0x7b:
                     bridge_inq_color_rb();
-                    break;
+                    return cons_buffer(1);
                 case 0x7c:
                     bridge_inq_color_gr();
-                    break;
+                    return cons_buffer(1);
                 case 0x7d:
                     bridge_inq_color_gb();
-                    break;
+                    return cons_buffer(1);
                 case 0x7e:
                     bridge_inq_color_br();
-                    break;
+                    return cons_buffer(1);
                 case 0x7f:
                     bridge_inq_color_bg();
-                    break;
+                    return cons_buffer(1);
                 case 0x6d:
                     bridge_inq_knee_setting();
-                    break;
+                    return cons_buffer(1);
                 case 0x54:
                     bridge_inq_knee_mode();
-                    break;
+                    return cons_buffer(1);
                 case 0x6f:
                     bridge_inq_knee_slope();
-                    break;
+                    return cons_buffer(1);
                 case 0x6e:
                     bridge_inq_knee_point();
-                    break;
+                    return cons_buffer(1);
                 case 0x71:
                     bridge_inq_gamma_level();
-                    break;
+                    return cons_buffer(1);
                 case 0x72:
                     bridge_inq_gamma_black_gamma_level();
-                    break;
+                    return cons_buffer(1);
                 case 0x0b:
                     bridge_inq_preset_driven_speed();
-                    break;
+                    return cons_buffer(1);
                 case 0x0a:
                     bridge_inq_tally_on();
-                    break;
+                    return cons_buffer(1);
                 case 0x3e:
                     bridge_inq_system_hphase();
-                    break;
+                    return cons_buffer(1);
                 case 0x06:
                     bridge_inq_system_pan_reverse();
-                    break;
+                    return cons_buffer(1);
                 case 0x09:
                     bridge_inq_system_tilt_reverse();
-                    break;
+                    return cons_buffer(1);
                 case 0x03:
                     bridge_inq_hdmi_color_space();
-                    break;
+                    return cons_buffer(1);
                 default:
                     bad_byte_null(4);
             }
-            break;
         case 0x04:
             switch (message->payload[4]) {
                 case 0x45:
                     bridge_inq_gamma_black_level();
-                    break;
+                    return cons_buffer(1);
                 case 0x3d:
                     bridge_inq_preset_mode();
-                    break;
+                    return cons_buffer(1);
                 default:
                     bad_byte_null(4);
             }
@@ -295,11 +296,13 @@ static buffer_t* dispatch_09_7e(const struct message_t *message)
 
 static buffer_t* dispatch_09_00(const struct message_t *message)
 {
-    buffer_t* response = cons_buffer(7);
+    buffer_t* response;
 
     if (message->payload[3] != 0x02) {
         bad_byte_null(3);
     }
+
+    response = cons_buffer(7);
 
     bridge_inq_software_version();
 
@@ -330,15 +333,16 @@ static buffer_t* dispatch_01(const struct message_t *message)
         case 0x7e:
             if (message->payload[3] == 0x01) {
                 bridge_inq_exposure_nd_filter();
+                return cons_buffer(1);
             } else if (message->payload[3] == 0x04) {
                 bridge_inq_preset_mode();
+                return cons_buffer(1);
             } else {
                 bad_byte_null(3);
             }
-            break;
         case 0x06:
             bridge_inq_pan_tilt_limit();
-            break;
+            return cons_buffer(1);
     }
 
     return NULL;
