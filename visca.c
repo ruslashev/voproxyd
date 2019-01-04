@@ -38,28 +38,31 @@ void compose_ack(buffer_t *response)
     response->data[2] = 0xff;
 }
 
-void compose_completition(buffer_t *response, const uint8_t data[], size_t data_len)
+buffer_t* compose_completition(buffer_t *data)
 {
+    size_t data_len = (data == NULL) ? 0 : data->length;
+    buffer_t *response = cons_buffer(3 + data_len);
+
     if (3 + data_len > VOIP_MAX_MESSAGE_LENGTH) {
         log("compose_completition: buffer length too big: %zu", data_len);
-        return;
+        return NULL;
     }
-
-    response->length = 3 + data_len;
 
     response->data[0] = 0x90;
     response->data[1] = 0x50;
 
     for (size_t i = 0; i < data_len; ++i) {
-        response->data[2 + i] = data[i];
+        response->data[2 + i] = data->data[i];
     }
 
     response->data[2 + data_len] = 0xff;
+
+    return response;
 }
 
-void compose_empty_completition(buffer_t *response)
+buffer_t* compose_empty_completition()
 {
-    compose_completition(response, NULL, 0);
+    return compose_completition(NULL);
 }
 
 void compose_control_reply(buffer_t *response, uint32_t seq_number)
@@ -99,6 +102,8 @@ static void handle_visca_command(const struct message_t *message, const struct e
 
 static void handle_visca_inquiry(const struct message_t *message, const struct event_t *event)
 {
+    buffer_t *inquiry_data, *response;
+
     log("handle_visca_inquiry");
 
     if (message->payload_length < 5) {
@@ -111,7 +116,13 @@ static void handle_visca_inquiry(const struct message_t *message, const struct e
         return;
     }
 
-    visca_inquiries_dispatch(message);
+    inquiry_data = visca_inquiries_dispatch(message);
+
+    if (inquiry_data != NULL) {
+        response = compose_completition(inquiry_data);
+        socket_send_message_udp_event(event, response);
+        free(response);
+    }
 }
 
 static void handle_visca_reply(const struct message_t *message, const struct event_t *event)

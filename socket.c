@@ -135,7 +135,7 @@ int socket_send_message_udp(int fd, const buffer_t *message, struct sockaddr *ad
 
 int socket_send_message_udp_event(const struct event_t *event, const buffer_t *message)
 {
-    return socket_send_message_udp(event->fd, message, event->addr);
+    return (message == NULL) ? 0 : socket_send_message_udp(event->fd, message, event->addr);
 }
 
 void socket_handle_error(int sock_fd)
