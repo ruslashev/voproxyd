@@ -11,16 +11,16 @@ static buffer_t* dispatch_09_04(const struct message_t *message)
             return cons_buffer(1);
         case 0x4b:
             bridge_inq_exposure_iris();
-            return cons_buffer(1);
+            return cons_buffer(4);
         case 0x4c:
             bridge_inq_exposure_gain();
-            return cons_buffer(1);
+            return cons_buffer(4);
         case 0x2c:
             bridge_inq_exposure_gain_limit();
             return cons_buffer(1);
         case 0x4a:
             bridge_inq_exposure_shutter();
-            return cons_buffer(1);
+            return cons_buffer(4);
         case 0x5d:
             bridge_inq_exposure_ae_speed();
             return cons_buffer(1);
@@ -29,7 +29,7 @@ static buffer_t* dispatch_09_04(const struct message_t *message)
             return cons_buffer(1);
         case 0x4e:
             bridge_inq_exposure_ex_comp_level();
-            return cons_buffer(1);
+            return cons_buffer(4);
         case 0x33:
             bridge_inq_exposure_back_light();
             return cons_buffer(1);
@@ -41,16 +41,16 @@ static buffer_t* dispatch_09_04(const struct message_t *message)
             return cons_buffer(1);
         case 0x2d:
             bridge_inq_exposure_vis_enh();
-            return cons_buffer(1);
+            return cons_buffer(8);
         case 0x35:
             bridge_inq_color_white_balance_mode();
             return cons_buffer(1);
         case 0x43:
             bridge_inq_color_r_gain();
-            return cons_buffer(1);
+            return cons_buffer(4);
         case 0x44:
             bridge_inq_color_b_gain();
-            return cons_buffer(1);
+            return cons_buffer(4);
         case 0x56:
             bridge_inq_color_speed();
             return cons_buffer(1);
@@ -59,10 +59,10 @@ static buffer_t* dispatch_09_04(const struct message_t *message)
             return cons_buffer(1);
         case 0x49:
             bridge_inq_color_level();
-            return cons_buffer(1);
+            return cons_buffer(4);
         case 0x4f:
             bridge_inq_color_phase();
-            return cons_buffer(1);
+            return cons_buffer(4);
         case 0x42:
             bridge_inq_detail_level();
             return cons_buffer(1);
@@ -71,7 +71,7 @@ static buffer_t* dispatch_09_04(const struct message_t *message)
             return cons_buffer(1);
         case 0x1e:
             bridge_inq_gamma_offset();
-            return cons_buffer(1);
+            return cons_buffer(6);
         case 0x32:
             bridge_inq_flicker_reduction_on();
             return cons_buffer(1);
@@ -80,19 +80,19 @@ static buffer_t* dispatch_09_04(const struct message_t *message)
             return cons_buffer(1);
         case 0x47:
             bridge_inq_zoom_position();
-            return cons_buffer(1);
+            return cons_buffer(4);
         case 0x38:
             bridge_inq_focus_mode();
             return cons_buffer(1);
         case 0x48:
             bridge_inq_focus_position();
-            return cons_buffer(1);
+            return cons_buffer(4);
         case 0x58:
             bridge_inq_focus_sensitivity();
             return cons_buffer(1);
         case 0x28:
             bridge_inq_focus_near_limit();
-            return cons_buffer(1);
+            return cons_buffer(4);
         case 0x11:
             bridge_inq_focus_ir_correction();
             return cons_buffer(1);
@@ -163,13 +163,13 @@ static buffer_t* dispatch_09_05(const struct message_t *message)
             }
         case 0x5b:
             bridge_inq_gamma_pattern();
-            return cons_buffer(1);
+            return cons_buffer(3);
         case 0x5c:
             bridge_inq_gamma_black_gamma_range();
             return cons_buffer(1);
         case 0x53:
             bridge_inq_noise_reduction_manual_setting();
-            return cons_buffer(1);
+            return cons_buffer(2);
         default:
             bad_byte_null(3);
     }
@@ -182,10 +182,10 @@ static buffer_t* dispatch_09_06(const struct message_t *message)
     switch (message->payload[3]) {
         case 0x12:
             bridge_inq_pan_tilt_position();
-            return cons_buffer(1);
+            return cons_buffer(9);
         case 0x10:
             bridge_inq_pan_tilt_status();
-            return cons_buffer(1);
+            return cons_buffer(2);
         case 0x31:
             bridge_inq_pan_tilt_ramp_curve();
             return cons_buffer(1);
@@ -221,22 +221,22 @@ static buffer_t* dispatch_09_7e(const struct message_t *message)
                     return cons_buffer(1);
                 case 0x7a:
                     bridge_inq_color_rg();
-                    return cons_buffer(1);
+                    return cons_buffer(4);
                 case 0x7b:
                     bridge_inq_color_rb();
-                    return cons_buffer(1);
+                    return cons_buffer(4);
                 case 0x7c:
                     bridge_inq_color_gr();
-                    return cons_buffer(1);
+                    return cons_buffer(4);
                 case 0x7d:
                     bridge_inq_color_gb();
-                    return cons_buffer(1);
+                    return cons_buffer(4);
                 case 0x7e:
                     bridge_inq_color_br();
-                    return cons_buffer(1);
+                    return cons_buffer(4);
                 case 0x7f:
                     bridge_inq_color_bg();
-                    return cons_buffer(1);
+                    return cons_buffer(4);
                 case 0x6d:
                     bridge_inq_knee_setting();
                     return cons_buffer(1);
@@ -245,16 +245,16 @@ static buffer_t* dispatch_09_7e(const struct message_t *message)
                     return cons_buffer(1);
                 case 0x6f:
                     bridge_inq_knee_slope();
-                    return cons_buffer(1);
+                    return cons_buffer(4);
                 case 0x6e:
                     bridge_inq_knee_point();
-                    return cons_buffer(1);
+                    return cons_buffer(4);
                 case 0x71:
                     bridge_inq_gamma_level();
-                    return cons_buffer(1);
+                    return cons_buffer(4);
                 case 0x72:
                     bridge_inq_gamma_black_gamma_level();
-                    return cons_buffer(1);
+                    return cons_buffer(4);
                 case 0x0b:
                     bridge_inq_preset_driven_speed();
                     return cons_buffer(1);
@@ -263,7 +263,7 @@ static buffer_t* dispatch_09_7e(const struct message_t *message)
                     return cons_buffer(1);
                 case 0x3e:
                     bridge_inq_system_hphase();
-                    return cons_buffer(1);
+                    return cons_buffer(4);
                 case 0x06:
                     bridge_inq_system_pan_reverse();
                     return cons_buffer(1);
@@ -280,7 +280,7 @@ static buffer_t* dispatch_09_7e(const struct message_t *message)
             switch (message->payload[4]) {
                 case 0x45:
                     bridge_inq_gamma_black_level();
-                    return cons_buffer(1);
+                    return cons_buffer(2);
                 case 0x3d:
                     bridge_inq_preset_mode();
                     return cons_buffer(1);
@@ -342,7 +342,7 @@ static buffer_t* dispatch_01(const struct message_t *message)
             }
         case 0x06:
             bridge_inq_pan_tilt_limit();
-            return cons_buffer(1);
+            return cons_buffer(9);
     }
 
     return NULL;
