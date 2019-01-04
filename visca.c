@@ -111,28 +111,7 @@ static void handle_visca_inquiry(const struct message_t *message, const struct e
         return;
     }
 
-    if (message->payload[1] == 0x01) {
-        switch (message->payload[2]) {
-            case 0x7e:
-                if (message->payload[3] == 0x01) {
-                    bridge_inq_exposure_nd_filter();
-                } else if (message->payload[3] == 0x04) {
-                    bridge_inq_preset_mode();
-                } else {
-                    log("handle_visca_inquiry: unexpected byte 0x%02x", message->payload[3]);
-                    return;
-                }
-                break;
-            case 0x06:
-                bridge_inq_pan_tilt_limit();
-                break;
-        }
-    } else if (message->payload[1] == 0x09) {
-        visca_inquiries_dispatch(message);
-    } else {
-        log("handle_visca_inquiry: invalid packet continuation 0x%02x", message->payload[1]);
-        return;
-    }
+    visca_inquiries_dispatch(message);
 }
 
 static void handle_visca_reply(const struct message_t *message, const struct event_t *event)
@@ -159,7 +138,7 @@ static void handle_control_command(const struct message_t *message, const struct
     switch (message->payload[0]) {
         case 0x01:
             log("control command RESET");
-            // seq_number = 0;
+            /* seq_number = 0; */
             break;
         case 0x0F:
             log("control command ERROR");

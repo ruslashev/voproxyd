@@ -3,7 +3,7 @@
 #include "visca.h"
 #include "visca_inquiries.h"
 
-static buffer_t* dispatch_04(const struct message_t *message)
+static buffer_t* dispatch_09_04(const struct message_t *message)
 {
     switch (message->payload[3]) {
         case 0x39:
@@ -112,7 +112,7 @@ static buffer_t* dispatch_04(const struct message_t *message)
     return NULL;
 }
 
-static buffer_t* dispatch_05(const struct message_t *message)
+static buffer_t* dispatch_09_05(const struct message_t *message)
 {
     switch (message->payload[3]) {
         case 0x4c:
@@ -175,7 +175,7 @@ static buffer_t* dispatch_05(const struct message_t *message)
     return NULL;
 }
 
-static buffer_t* dispatch_06(const struct message_t *message)
+static buffer_t* dispatch_09_06(const struct message_t *message)
 {
     switch (message->payload[3]) {
         case 0x12:
@@ -206,7 +206,7 @@ static buffer_t* dispatch_06(const struct message_t *message)
     return NULL;
 }
 
-static buffer_t* dispatch_7e(const struct message_t *message)
+static buffer_t* dispatch_09_7e(const struct message_t *message)
 {
     switch (message->payload[3]) {
         case 0x01:
@@ -296,7 +296,7 @@ static buffer_t* dispatch_7e(const struct message_t *message)
     return NULL;
 }
 
-static buffer_t* dispatch_00(const struct message_t *message)
+static buffer_t* dispatch_09_00(const struct message_t *message)
 {
     buffer_t* response = cons_buffer(7);
 
@@ -309,22 +309,54 @@ static buffer_t* dispatch_00(const struct message_t *message)
     return response;
 }
 
-buffer_t* visca_inquiries_dispatch(const struct message_t *message)
+static buffer_t* dispatch_09(const struct message_t *message)
 {
     switch (message->payload[2]) {
         case 0x00:
-            return dispatch_00(message);
+            return dispatch_09_00(message);
         case 0x04:
-            return dispatch_04(message);
+            return dispatch_09_04(message);
         case 0x05:
-            return dispatch_05(message);
+            return dispatch_09_05(message);
         case 0x06:
-            return dispatch_06(message);
+            return dispatch_09_06(message);
         case 0x7e:
-            return dispatch_7e(message);
+            return dispatch_09_7e(message);
         default:
             log("visca_inquiries_dispatch: invalid byte 0x%02x", message->payload[2]);
             return NULL;
+    }
+}
+
+static buffer_t* dispatch_01(const struct message_t *message)
+{
+    switch (message->payload[2]) {
+        case 0x7e:
+            if (message->payload[3] == 0x01) {
+                bridge_inq_exposure_nd_filter();
+            } else if (message->payload[3] == 0x04) {
+                bridge_inq_preset_mode();
+            } else {
+                bad_byte_null(3);
+            }
+            break;
+        case 0x06:
+            bridge_inq_pan_tilt_limit();
+            break;
+    }
+
+    return NULL;
+}
+
+buffer_t* visca_inquiries_dispatch(const struct message_t *message)
+{
+    switch (message->payload[1]) {
+        case 0x01:
+            return dispatch_01(message);
+        case 0x09:
+            return dispatch_09(message);
+        default:
+            bad_byte_null(1);
     }
 }
 
