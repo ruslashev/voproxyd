@@ -51,7 +51,7 @@ static void ll_push_event(struct tracking_ll_t **head, struct event_t *event)
     *head = new_node;
 }
 
-static void ll_delete_node(struct tracking_ll_t **head, struct tracking_ll_t *node)
+void ll_delete_node(struct tracking_ll_t **head, struct tracking_ll_t *node)
 {
     while (*head != node) {
         head = &(*head)->next;
@@ -120,7 +120,7 @@ void epoll_handle_event_errors(struct ap_state *state, const struct epoll_event 
     }
 
     if (state->current_event->type == FDT_TCP_LISTEN) {
-        handle_socket_error(state->current);
+        socket_handle_error(state->current);
     }
 
     epoll_close_fd(state, state->current);

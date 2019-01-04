@@ -11,7 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 
-void create_listening_tcp_socket(int *sock_fd)
+void socket_create_tcp(int *sock_fd)
 {
     struct addrinfo ai_hint = { 0 }, *ai_result;
     int err;
@@ -46,16 +46,14 @@ void create_listening_tcp_socket(int *sock_fd)
     }
 }
 
-void create_udp_socket(int *sock_fd)
+void socket_create_udp(int *sock_fd)
 {
-    struct sockaddr_in addr;
+    struct sockaddr_in addr = { 0 };
 
     *sock_fd = socket(AF_INET, (unsigned)SOCK_DGRAM | (unsigned)SOCK_NONBLOCK, 0);
     if (*sock_fd == -1) {
         die(ERR_SOCKET, "failed to create socket: %s", strerror(errno));
     }
-
-    memset(&addr, 0, sizeof(addr));
 
     addr.sin_family = AF_INET;
     addr.sin_port = htons(VOPROXYD_UDP_PORT);
@@ -66,14 +64,14 @@ void create_udp_socket(int *sock_fd)
     }
 }
 
-int accept_on_socket(int sock_fd)
+int socket_accept(int sock_fd)
 {
     int client_fd, err;
     struct sockaddr addr;
     socklen_t addr_len = sizeof(struct sockaddr);
     char host_str[NI_MAXHOST], serv_str[NI_MAXSERV];
 
-    client_fd = accept4(sock_fd, &addr, &addr_len, (unsigned)SOCK_NONBLOCK);
+    client_fd = accept4(sock_fd, &addr, &addr_len, SOCK_NONBLOCK);
     if (client_fd == -1) {
         die(ERR_ACCEPT, "accept4() failed: %s", strerror(errno));
     }
@@ -90,7 +88,7 @@ int accept_on_socket(int sock_fd)
     return client_fd;
 }
 
-int send_message(int fd, const void *message, ssize_t length)
+int socket_send_message_tcp(int fd, const void *message, ssize_t length)
 {
     ssize_t total_sent = 0, remaining = length, sent;
 
@@ -112,7 +110,7 @@ int send_message(int fd, const void *message, ssize_t length)
     return total_sent == length;
 }
 
-int send_message_udp(int fd, const buffer_t *message, struct sockaddr *addr)
+int socket_send_message_udp(int fd, const buffer_t *message, struct sockaddr *addr)
 {
     ssize_t total = message->length, total_sent = 0, remaining = total, sent;
     socklen_t addr_len = sizeof(struct sockaddr_in);
@@ -124,8 +122,7 @@ int send_message_udp(int fd, const buffer_t *message, struct sockaddr *addr)
                 continue;
             }
 
-            log("failed to send message of length %zd to fd = %d: %s", total, fd,
-                    strerror(errno));
+            log("failed to send message of length %zd to fd = %d: %s", total, fd, strerror(errno));
             return 0;
         }
 
@@ -136,12 +133,12 @@ int send_message_udp(int fd, const buffer_t *message, struct sockaddr *addr)
     return total_sent == total;
 }
 
-int send_message_udp_event(const struct event_t *event, const buffer_t *message)
+int socket_send_message_udp_event(const struct event_t *event, const buffer_t *message)
 {
-    return send_message_udp(event->fd, message, event->addr);
+    return socket_send_message_udp(event->fd, message, event->addr);
 }
 
-void handle_socket_error(int sock_fd)
+void socket_handle_error(int sock_fd)
 {
     int err;
     socklen_t err_len = sizeof(err);

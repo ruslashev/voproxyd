@@ -37,4 +37,5 @@ void epoll_add_fd(struct ap_state *state, int fd, int in, int type);
 void epoll_close_fd(struct ap_state *state, int fd);
 void epoll_handle_event_errors(struct ap_state *state, const struct epoll_event *event);
 void ll_free_list(struct tracking_ll_t **head);
+void ll_delete_node(struct tracking_ll_t **head, struct tracking_ll_t *node);
 

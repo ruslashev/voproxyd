@@ -5,11 +5,11 @@
 #include <netdb.h>
 #include <sys/types.h>
 
-void create_listening_tcp_socket(int *sock_fd);
-void create_udp_socket(int *sock_fd);
-int accept_on_socket(int sock_fd);
-int send_message(int fd, const void *message, ssize_t length);
-int send_message_udp(int fd, const buffer_t *message, struct sockaddr *addr);
-int send_message_udp_event(const struct event_t *event, const buffer_t *message);
-void handle_socket_error(int sock_fd);
+void socket_create_tcp(int *sock_fd);
+void socket_create_udp(int *sock_fd);
+int socket_accept(int sock_fd);
+int socket_send_message_tcp(int fd, const void *message, ssize_t length);
+int socket_send_message_udp(int fd, const buffer_t *message, struct sockaddr *addr);
+int socket_send_message_udp_event(const struct event_t *event, const buffer_t *message);
+void socket_handle_error(int sock_fd);
 

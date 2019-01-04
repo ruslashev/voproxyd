@@ -43,7 +43,7 @@ static int handle_udp_message(const struct ap_state *state, uint8_t *message, ss
         log("output of visca_handle_message:");
         print_buffer(response, 16);
 
-        send_message_udp(state->current, response, state->current_event->addr);
+        socket_send_message_udp(state->current, response, state->current_event->addr);
 
         free(response);
     }
@@ -153,7 +153,7 @@ static void epoll_handle_event(struct ap_state *state, const struct epoll_event 
 
     switch (state->current_event->type) {
         case FDT_TCP_LISTEN:
-            client_fd = accept_on_socket(state->current);
+            client_fd = socket_accept(state->current);
             epoll_add_fd(state, client_fd, FDT_TCP, 1);
             break;
         /* case FDT_TCP: */
@@ -213,7 +213,7 @@ void start_worker(void)
     /* epoll_add_fd(&state, state.tcp_sock_fd, FDT_TCP_LISTEN, 1); */
     tcp_sock_fd = -1;
 
-    create_udp_socket(&udp_sock_fd);
+    socket_create_udp(&udp_sock_fd);
     epoll_add_fd(&state, udp_sock_fd, FDT_UDP, 1);
 
     log("epoll fd = %d, tcp fd = %d udp fd = %d", state.epoll_fd, tcp_sock_fd, udp_sock_fd);
