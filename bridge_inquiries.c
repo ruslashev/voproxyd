@@ -286,6 +286,11 @@ void bridge_inq_hdmi_video_format()
     log("bridge_inq_hdmi_video_format STUB");
 }
 
+void bridge_inq_ir_cut_filter()
+{
+    log("bridge_inq_ir_cut_filter STUB");
+}
+
 void bridge_inq_knee_mode()
 {
     log("bridge_inq_knee_mode STUB");
@@ -364,6 +369,26 @@ void bridge_inq_preset_driven_speed()
 void bridge_inq_preset_mode()
 {
     log("bridge_inq_preset_mode STUB");
+}
+
+void bridge_inq_ptz_trace_playback_prep_status()
+{
+    log("bridge_inq_ptz_trace_playback_prep_status STUB");
+}
+
+void bridge_inq_ptz_trace_record_status_bulk()
+{
+    log("bridge_inq_ptz_trace_record_status_bulk STUB");
+}
+
+void bridge_inq_ptz_trace_record_status_individual()
+{
+    log("bridge_inq_ptz_trace_record_status_individual STUB");
+}
+
+void bridge_inq_ptz_trace_status()
+{
+    log("bridge_inq_ptz_trace_status STUB");
 }
 
 void bridge_inq_software_version()
