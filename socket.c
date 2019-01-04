@@ -4,7 +4,6 @@
 #include "log.h"
 #include "socket.h"
 #include "tempconfig.h"
-
 #include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -135,6 +134,11 @@ int send_message_udp(int fd, const buffer_t *message, struct sockaddr *addr)
     }
 
     return total_sent == total;
+}
+
+int send_message_udp_event(const struct event_t *event, const buffer_t *message)
+{
+    return send_message_udp(event->fd, message, event->addr);
 }
 
 void handle_socket_error(int sock_fd)
