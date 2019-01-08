@@ -37,6 +37,13 @@ struct message_t
 #define bad_byte_null(X) bad_byte_detail(X, NULL)
 #define bad_byte(X) bad_byte_detail(X, )
 
+#define visca_send_response(E, R) \
+    do { \
+        log("%s: send response", __func__); \
+        print_buffer(R, 16); \
+        socket_send_message_udp_event(E, R); \
+    } while (0)
+
 void compose_ack(buffer_t *response);
 buffer_t* compose_completition(buffer_t *data);
 buffer_t* compose_empty_completition();

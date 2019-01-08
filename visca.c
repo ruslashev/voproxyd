@@ -121,7 +121,7 @@ static void handle_visca_inquiry(const struct message_t *message, const struct e
     if (inquiry_data != NULL) {
         response = compose_completition(inquiry_data);
 
-        socket_send_message_udp_event(event, response);
+        visca_send_response(event, response);
 
         free(response);
         free(inquiry_data);
@@ -179,7 +179,7 @@ static void handle_control_command(const struct message_t *message, const struct
     }
 
     compose_control_reply(response, message->header->seq_number);
-    socket_send_message_udp_event(event, response);
+    visca_send_response(event, response);
 }
 
 static void handle_control_reply(const struct message_t *message, const struct event_t *event)
@@ -198,7 +198,6 @@ void visca_handle_message(const buffer_t *message_buf, const struct event_t *eve
         .payload_length = message_buf->length - 8,
     };
 
-    log(" ");
     log("got msg:");
     print_buffer(message_buf, 16);
 

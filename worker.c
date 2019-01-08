@@ -99,7 +99,7 @@ static int epoll_handle_read_queue_udp(struct ap_state *state)
     state->current_event->addr = (struct sockaddr*)&addr;
 
     log("recvfrom fd = %d message_length = %zd %s", state->current, message_length,
-            (errno == EAGAIN || errno == EWOULDBLOCK) ? "(eagain | ewouldblock)" : "");
+            (errno == EAGAIN || errno == EWOULDBLOCK) ? "eagain" : "");
 
     if (message_length == 0) {
         log("close connection on socket fd = %d", state->current);
@@ -132,6 +132,7 @@ static void epoll_handle_event(struct ap_state *state, const struct epoll_event 
 {
     int continue_reading = 1, client_fd;
 
+    log(" ");
     log("new event on fd = %d", state->current);
 
     epoll_handle_event_errors(state, event);
@@ -162,7 +163,6 @@ static void epoll_handle_event(struct ap_state *state, const struct epoll_event 
             die(ERR_EPOLL_EVENT, "epoll_handle_event: unknown event type %d",
                     state->current_event->type);
     }
-
 }
 
 static void main_loop(struct ap_state *state)
