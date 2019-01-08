@@ -44,9 +44,9 @@ struct message_t
         socket_send_message_udp_event(E, R); \
     } while (0)
 
-void compose_ack(buffer_t *response);
+buffer_t* compose_ack();
 buffer_t* compose_completition(buffer_t *data);
 buffer_t* compose_empty_completition();
-void compose_control_reply(buffer_t *response, uint32_t seq_number);
+buffer_t* compose_control_reply(uint32_t seq_number);
 void visca_handle_message(const buffer_t *message_buf, const struct event_t *event);
 

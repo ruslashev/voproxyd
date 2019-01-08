@@ -29,13 +29,15 @@ static void visca_header_convert_endianness_hton(struct visca_header_t *header)
     header->seq_number = htonl(header->seq_number);
 }
 
-void compose_ack(buffer_t *response)
+buffer_t* compose_ack()
 {
-    response->length = 3;
+    buffer_t *response = cons_buffer(3);
 
     response->data[0] = 0x90;
     response->data[1] = 0x40;
     response->data[2] = 0xff;
+
+    return response;
 }
 
 buffer_t* compose_completition(buffer_t *data)
@@ -65,8 +67,9 @@ buffer_t* compose_empty_completition()
     return compose_completition(NULL);
 }
 
-void compose_control_reply(buffer_t *response, uint32_t seq_number)
+buffer_t* compose_control_reply(uint32_t seq_number)
 {
+    buffer_t *response = cons_buffer(VOIP_HEADER_LENGTH + 1);
     struct visca_header_t header = {
         .payload_type = 0x0201,
         .payload_length = 0x01,
@@ -75,16 +78,21 @@ void compose_control_reply(buffer_t *response, uint32_t seq_number)
 
     visca_header_convert_endianness_hton(&header);
 
-    response->length = VOIP_HEADER_LENGTH + 1;
-
     memcpy(response->data, &header, VOIP_HEADER_LENGTH);
 
     response->data[VOIP_HEADER_LENGTH] = 0x01; /* ACK: reply for RESET */
+
+    return response;
 }
 
 static void handle_visca_command(const struct message_t *message, const struct event_t *event)
 {
+    buffer_t *response = compose_ack();
+
     log("handle_visca_command");
+
+    visca_send_response(event, response);
+    free(response);
 
     if (message->payload_length < 5) {
         log("handle_visca_command: bad length %zu", message->payload_length);
@@ -98,6 +106,10 @@ static void handle_visca_command(const struct message_t *message, const struct e
     }
 
     visca_commands_dispatch(message, event);
+
+    response = compose_empty_completition();
+    visca_send_response(event, response);
+    free(response);
 }
 
 static void handle_visca_inquiry(const struct message_t *message, const struct event_t *event)
@@ -147,7 +159,7 @@ static void handle_visca_device_setting_cmd(const struct message_t *message, con
 static void handle_control_command(const struct message_t *message, const struct event_t *event)
 {
     log("handle_control_command");
-    buffer_t *response = cons_buffer(VOIP_MAX_MESSAGE_LENGTH);
+    buffer_t *response;
 
     switch (message->payload[0]) {
         case 0x01:
@@ -178,8 +190,9 @@ static void handle_control_command(const struct message_t *message, const struct
             return;
     }
 
-    compose_control_reply(response, message->header->seq_number);
+    response = compose_control_reply(message->header->seq_number);
     visca_send_response(event, response);
+    free(response);
 }
 
 static void handle_control_reply(const struct message_t *message, const struct event_t *event)
