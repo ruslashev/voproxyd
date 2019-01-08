@@ -67,7 +67,7 @@ void ll_delete_node(struct tracking_ll_t **head, struct tracking_ll_t *node)
     ll_free_entitiy(node);
 }
 
-void epoll_add_fd(struct ap_state *state, int fd, int in, int type)
+void epoll_add_fd(struct ap_state *state, int fd, int type, int in)
 {
     struct event_t *event = mk_event_t();
     struct epoll_event ep_event = { 0 };

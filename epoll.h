@@ -33,7 +33,7 @@ struct ap_state
     struct tracking_ll_t *tracked_events;
 };
 
-void epoll_add_fd(struct ap_state *state, int fd, int in, int type);
+void epoll_add_fd(struct ap_state *state, int fd, int type, int in);
 void epoll_close_fd(struct ap_state *state, int fd);
 void epoll_handle_event_errors(struct ap_state *state, const struct epoll_event *event);
 void ll_free_list(struct tracking_ll_t **head);
