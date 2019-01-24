@@ -47,9 +47,8 @@ all:
 prepare-onvif: unzip-gsoap wsdl2h soapcpp
 
 unzip-gsoap:
-	@mkdir -p deps
-	@echo "unzip gsoap_2.8.74.zip"
-	@unzip -q gsoap_2.8.74.zip -d deps
+	@echo "unzip deps/gsoap_2.8.74.zip"
+	@unzip -q deps/gsoap_2.8.74.zip -d deps
 
 wsdl2h: unzip-gsoap
 	@mkdir -p deps/onvif
