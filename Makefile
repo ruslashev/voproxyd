@@ -38,11 +38,29 @@ wsdls = https://www.onvif.org/ver10/device/wsdl/devicemgmt.wsdl \
         https://www.onvif.org/ver10/advancedsecurity/wsdl/advancedsecurity.wsdl \
         https://www.onvif.org/ver10/thermal/wsdl/thermal.wsdl \
         https://www.onvif.org/ver10/uplink/wsdl/uplink.wsdl
+build_dir = .obj
+objs = $(sources:%=$(build_dir)/%.o)
+cc = gcc
+cpp = g++
 
-all:
-	@echo "gcc $(binname)"
-	@gcc $(sources) $(cflags) $(ldflags) -o $(binname)
+all: $(binname)
 	./$(binname)
+
+$(binname): $(objs)
+	@echo "ld $@"
+	@$(cc) $(objs) $(ldflags) -o $@
+
+$(build_dir)/%.c.o: %.c
+	@echo "cc $<"
+	@$(cc) -c $< $(cflags) -o $@
+
+$(objs): | $(build_dir)
+
+$(build_dir):
+	@mkdir -p $(build_dir)
+
+clean:
+	@rm -rf $(build_dir)
 
 prepare-onvif: unzip-gsoap wsdl2h soapcpp
 
