@@ -59,20 +59,25 @@ $(objs): | $(build_dir)
 $(build_dir):
 	@mkdir -p $(build_dir)
 
-clean:
-	@rm -rf $(build_dir)
-
 prepare-onvif: unzip-gsoap wsdl2h soapcpp
 
 unzip-gsoap:
 	@echo "unzip deps/gsoap_2.8.74.zip"
 	@unzip -q deps/gsoap_2.8.74.zip -d deps
 
+
 wsdl2h: unzip-gsoap
 	@mkdir -p deps/onvif
 	@echo wsdl2h -o deps/onvif/onvif.h
-	@wsdl2h -c -P -x -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h $(wsdls)
+	@wsdl2h -c++11 -P -x -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h $(wsdls)
 
 soapcpp: wsdl2h
-	cat deps/onvif/onvif.h | soapcpp2 -2 -c -L -x -d deps/onvif -I 'deps/gsoap-2.8/gsoap/import/;deps/gsoap-2.8/gsoap/'
+	soapcpp2 -2 -j -c++11 -L -x -d deps/onvif deps/onvif/onvif.h
+
+clean:
+	@rm -rf $(build_dir)
+
+clean-onvif:
+	@rm -rf deps/gsoap-2.8/
+	@rm -rf deps/onvif/
 
