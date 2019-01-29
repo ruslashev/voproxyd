@@ -49,7 +49,6 @@ wsdls_all = https://www.onvif.org/ver10/actionengine.wsdl \
             https://www.onvif.org/ver20/media/wsdl/media.wsdl \
             https://www.onvif.org/ver20/ptz/wsdl/ptz.wsdl \
             https://www.onvif.org/ver10/network/wsdl/remotediscovery.wsdl
-
 build_dir = .obj
 objs = $(sources:%=$(build_dir)/%.o)
 cc = gcc
@@ -77,26 +76,37 @@ $(build_dir):
 	@mkdir -p $(build_dir)/deps/onvif
 	@mkdir -p $(build_dir)/deps/gsoap-2.8/gsoap
 
-prepare-onvif: unzip-gsoap wsdl2h soapcpp copy-gsoap-sources
+prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp copy-gsoap-sources
 
 unzip-gsoap:
 	@echo "unzip deps/gsoap_2.8.74.zip"
 	@unzip -q deps/gsoap_2.8.74.zip -d deps
 
 compile-gsoap: unzip-gsoap
-	@cd deps/gsoap-2.8 && ./configure
-	@cd deps/gsoap-2.8 && make -j 1
-	@mkdir -p deps/gsoap-bin
-	@cd deps/gsoap-2.8 && sudo make install exec_prefix="$(pwd)/../gsoap-bin"
+	@echo configure gsoap
+	@cd deps/gsoap-2.8 && ./configure # > ../configure.log 2>&1
+	@echo make gsoap
+	@cd deps/gsoap-2.8 && make -j 1 # > ../make.log 2>&1
 
-wsdl2h: compile-gsoap
+install-gsoap: compile-gsoap
+	@echo install gsoap
+	@mkdir -p deps/gsoap-install/bin
+	@cp deps/gsoap-2.8/gsoap/wsdl/wsdl2h  deps/gsoap-install/bin
+	@cp deps/gsoap-2.8/gsoap/src/soapcpp2 deps/gsoap-install/bin
+	@mkdir -p deps/gsoap-install/lib
+	@cp deps/gsoap-2.8/gsoap/libgsoap++.a    deps/gsoap-install/lib
+	@cp deps/gsoap-2.8/gsoap/libgsoapssl++.a deps/gsoap-install/lib
+	@cp deps/gsoap-2.8/gsoap/libgsoap.a      deps/gsoap-install/lib
+	@cp deps/gsoap-2.8/gsoap/libgsoapssl.a   deps/gsoap-install/lib
+
+wsdl2h: install-gsoap
 	@mkdir -p deps/onvif
 	@echo wsdl2h -o deps/onvif/onvif.h
-	@./deps/gsoap-bin/wsdl2h -c++11 -P -x -s -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h $(wsdls)
+	@./deps/gsoap-install/bin/wsdl2h -c++11 -P -x -s -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h $(wsdls)
 
 soapcpp: wsdl2h
 	@echo soapcpp2 deps/onvif/onvif.h
-	@./deps/gsoap-bin/soapcpp2 -2 -j -c++11 -x -d deps/onvif deps/onvif/onvif.h || true
+	@./deps/gsoap-install/bin/soapcpp2 -2 -j -c++11 -x -d deps/onvif deps/onvif/onvif.h || true
 
 copy-gsoap-sources: unzip-gsoap
 	@mkdir -p deps/onvif
@@ -108,6 +118,8 @@ clean:
 
 clean-onvif:
 	@rm -rf deps/gsoap-2.8/
-	@sudo rm -rf deps/gsoap-bin/
+	@rm -rf deps/gsoap-install/
+	@rm -f deps/configure.log
+	@rm -f deps/make.log
 	@rm -rf deps/onvif/
 
