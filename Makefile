@@ -17,44 +17,36 @@ cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable -Wno-unused-
 cxxflags = $(cflags) -Wno-nonnull-compare -Wno-address -Wno-misleading-indentation -O0
 ldflags =
 binname = voproxyd
-wsdls = https://www.onvif.org/ver10/advancedsecurity/wsdl/advancedsecurity.wsdl \
-        https://www.onvif.org/ver10/deviceio.wsdl \
-        https://www.onvif.org/ver10/device/wsdl/devicemgmt.wsdl \
+wsdls = https://www.onvif.org/ver10/device/wsdl/devicemgmt.wsdl \
         https://www.onvif.org/ver10/events/wsdl/event.wsdl \
-        https://www.onvif.org/ver10/media/wsdl/media.wsdl \
-        https://www.onvif.org/ver10/network/wsdl/remotediscovery.wsdl \
+        https://www.onvif.org/ver10/pacs/accesscontrol.wsdl \
+        https://www.onvif.org/ver10/actionengine.wsdl \
+        https://www.onvif.org/ver20/analytics/wsdl/analytics.wsdl \
+        https://www.onvif.org/ver10/authenticationbehavior/wsdl/authenticationbehavior.wsdl \
+        https://www.onvif.org/ver10/credential/wsdl/credential.wsdl \
+        https://www.onvif.org/ver10/deviceio.wsdl \
+        https://www.onvif.org/ver10/display.wsdl \
+        https://www.onvif.org/ver10/pacs/doorcontrol.wsdl \
         https://www.onvif.org/ver20/imaging/wsdl/imaging.wsdl \
-        https://www.onvif.org/ver20/ptz/wsdl/ptz.wsdl
-wsdls_all = https://www.onvif.org/ver10/actionengine.wsdl \
-            https://www.onvif.org/ver10/advancedsecurity/wsdl/advancedsecurity.wsdl \
-            https://www.onvif.org/ver10/authenticationbehavior/wsdl/authenticationbehavior.wsdl \
-            https://www.onvif.org/ver10/credential/wsdl/credential.wsdl \
-            https://www.onvif.org/ver10/deviceio.wsdl \
-            https://www.onvif.org/ver10/device/wsdl/devicemgmt.wsdl \
-            https://www.onvif.org/ver10/display.wsdl \
-            https://www.onvif.org/ver10/events/wsdl/event.wsdl \
-            https://www.onvif.org/ver10/media/wsdl/media.wsdl \
-            https://www.onvif.org/ver10/pacs/accesscontrol.wsdl \
-            https://www.onvif.org/ver10/pacs/doorcontrol.wsdl \
-            https://www.onvif.org/ver10/provisioning/wsdl/provisioning.wsdl \
-            https://www.onvif.org/ver10/receiver.wsdl \
-            https://www.onvif.org/ver10/recording.wsdl \
-            https://www.onvif.org/ver10/replay.wsdl \
-            https://www.onvif.org/ver10/schedule/wsdl/schedule.wsdl \
-            https://www.onvif.org/ver10/search.wsdl \
-            https://www.onvif.org/ver10/thermal/wsdl/thermal.wsdl \
-            https://www.onvif.org/ver10/uplink/wsdl/uplink.wsdl \
-            https://www.onvif.org/ver20/analytics/wsdl/analytics.wsdl \
-            https://www.onvif.org/ver20/imaging/wsdl/imaging.wsdl \
-            https://www.onvif.org/ver20/media/wsdl/media.wsdl \
-            https://www.onvif.org/ver20/ptz/wsdl/ptz.wsdl \
-            https://www.onvif.org/ver10/network/wsdl/remotediscovery.wsdl
+        https://www.onvif.org/ver10/media/wsdl/media.wsdl \
+        https://www.onvif.org/ver20/media/wsdl/media.wsdl \
+        https://www.onvif.org/ver10/network/wsdl/remotediscovery.wsdl \
+        https://www.onvif.org/ver10/provisioning/wsdl/provisioning.wsdl \
+        https://www.onvif.org/ver20/ptz/wsdl/ptz.wsdl \
+        https://www.onvif.org/ver10/receiver.wsdl \
+        https://www.onvif.org/ver10/recording.wsdl \
+        https://www.onvif.org/ver10/search.wsdl \
+        https://www.onvif.org/ver10/replay.wsdl \
+        https://www.onvif.org/ver10/schedule/wsdl/schedule.wsdl \
+        https://www.onvif.org/ver10/advancedsecurity/wsdl/advancedsecurity.wsdl \
+        https://www.onvif.org/ver10/thermal/wsdl/thermal.wsdl \
+        https://www.onvif.org/ver10/uplink/wsdl/uplink.wsdl
 build_dir = .obj
 objs = $(sources:%=$(build_dir)/%.o)
 cc = gcc
 cxx = g++
-wsdlflags = -c++11 -P -x -s -O4 -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h $(wsdls)
-soapcppflags = -2 -j -c++11 -x -d deps/onvif deps/onvif/onvif.h
+wsdlflags = -c++11 -P -x -O4 -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h $(wsdls)
+soapcppflags = -2 -L -j -c++11 -x -C -d deps/onvif deps/onvif/onvif.h
 verbose = 0
 ifeq ($(verbose),0)
     configure_verbosity = > ../configure.log 2>&1
