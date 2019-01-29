@@ -53,6 +53,20 @@ build_dir = .obj
 objs = $(sources:%=$(build_dir)/%.o)
 cc = gcc
 cxx = g++
+wsdlflags = -c++11 -P -x -s -O4 -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h $(wsdls)
+soapcppflags = -2 -j -c++11 -x -d deps/onvif deps/onvif/onvif.h
+verbose = 0
+ifeq ($(verbose),0)
+    configure_verbosity = > ../configure.log 2>&1
+    make_verbosity = > ../make.log 2>&1
+    wsdl_verbosity = > deps/wsdl.log 2>&1
+    soapcpp_verbosity = > deps/soapcpp.log 2>&1 || true
+else
+    configure_verbosity =
+    make_verbosity =
+    wsdl_verbosity =
+    soapcpp_verbosity = || true
+endif
 
 all: $(binname)
 	./$(binname)
@@ -84,9 +98,9 @@ unzip-gsoap:
 
 compile-gsoap: unzip-gsoap
 	@echo configure gsoap
-	@cd deps/gsoap-2.8 && ./configure # > ../configure.log 2>&1
+	@cd deps/gsoap-2.8 && ./configure $(configure_verbosity)
 	@echo make gsoap
-	@cd deps/gsoap-2.8 && make -j 1 # > ../make.log 2>&1
+	@cd deps/gsoap-2.8 && make -j 1 $(make_verbosity)
 
 install-gsoap: compile-gsoap
 	@echo install gsoap
@@ -102,11 +116,11 @@ install-gsoap: compile-gsoap
 wsdl2h: install-gsoap
 	@mkdir -p deps/onvif
 	@echo wsdl2h -o deps/onvif/onvif.h
-	@./deps/gsoap-install/bin/wsdl2h -c++11 -P -x -s -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h $(wsdls)
+	@./deps/gsoap-install/bin/wsdl2h $(wsdlflags) $(wsdl_verbosity)
 
 soapcpp: wsdl2h
 	@echo soapcpp2 deps/onvif/onvif.h
-	@./deps/gsoap-install/bin/soapcpp2 -2 -j -c++11 -x -d deps/onvif deps/onvif/onvif.h || true
+	@./deps/gsoap-install/bin/soapcpp2 $(soapcppflags) $(soapcpp_verbosity)
 
 copy-gsoap-sources: unzip-gsoap
 	@mkdir -p deps/onvif
@@ -121,5 +135,9 @@ clean-onvif:
 	@rm -rf deps/gsoap-install/
 	@rm -f deps/configure.log
 	@rm -f deps/make.log
+	@rm -f deps/wsdl.log
+	@rm -f deps/soapcpp.log
 	@rm -rf deps/onvif/
+
+clean-all: clean clean-onvif
 
