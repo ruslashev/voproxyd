@@ -46,7 +46,7 @@ objs = $(sources:%=$(build_dir)/%.o)
 cc = gcc
 cxx = g++
 wsdlflags = -c++11 -P -x -O4 -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h $(wsdls)
-soapcppflags = -2 -L -j -c++11 -x -C -d deps/onvif deps/onvif/onvif.h
+soapcppflags = -2 -L -j -c++11 -x -C -d deps/onvif deps/onvif/onvif.h -I 'deps/gsoap-2.8/gsoap/'
 verbose = 0
 ifeq ($(verbose),0)
     configure_verbosity = > ../configure.log 2>&1
@@ -108,7 +108,10 @@ install-gsoap: compile-gsoap
 wsdl2h: install-gsoap
 	@mkdir -p deps/onvif
 	@echo wsdl2h -o deps/onvif/onvif.h
+	@echo 'xsd__duration = #import "custom/duration.h" | xsd__duration' >> deps/gsoap-2.8/gsoap/typemap.dat
 	@./deps/gsoap-install/bin/wsdl2h $(wsdlflags) $(wsdl_verbosity)
+	sed -i '/#import/ a #import "wsse.h"' deps/onvif/onvif.h
+	sed -i 's/wsdd10.h/wsdd5.h/g' deps/onvif/onvif.h
 
 soapcpp: wsdl2h
 	@echo soapcpp2 deps/onvif/onvif.h
@@ -116,8 +119,22 @@ soapcpp: wsdl2h
 
 copy-gsoap-sources: unzip-gsoap
 	@mkdir -p deps/onvif
-	@cp deps/gsoap-2.8/gsoap/stdsoap2.cpp deps/onvif/
-	@cp deps/gsoap-2.8/gsoap/stdsoap2.h deps/onvif/
+	@echo copy gsoap sources
+	@cp deps/gsoap-2.8/gsoap/stdsoap2.cpp      deps/onvif
+	@cp deps/gsoap-2.8/gsoap/stdsoap2.h        deps/onvif
+	@cp deps/gsoap-2.8/gsoap/dom.cpp           deps/onvif
+	@cp deps/gsoap-2.8/gsoap/plugin/wsaapi.c   deps/onvif/wsaapi.cpp
+	@cp deps/gsoap-2.8/gsoap/plugin/wsaapi.h   deps/onvif
+	@cp deps/gsoap-2.8/gsoap/plugin/wsseapi.c  deps/onvif/wsseapi.cpp
+	@cp deps/gsoap-2.8/gsoap/plugin/wsseapi.h  deps/onvif
+	@cp deps/gsoap-2.8/gsoap/plugin/threads.c  deps/onvif/threads.cpp
+	@cp deps/gsoap-2.8/gsoap/plugin/threads.h  deps/onvif
+	@cp deps/gsoap-2.8/gsoap/plugin/smdevp.c   deps/onvif/smdevp.cpp
+	@cp deps/gsoap-2.8/gsoap/plugin/smdevp.h   deps/onvif
+	@cp deps/gsoap-2.8/gsoap/plugin/mecevp.c   deps/onvif/mecevp.cpp
+	@cp deps/gsoap-2.8/gsoap/plugin/mecevp.h   deps/onvif
+	@cp deps/gsoap-2.8/gsoap/custom/duration.c deps/onvif/duration.cpp
+	@cp deps/gsoap-2.8/gsoap/custom/duration.h deps/onvif
 
 clean:
 	@rm -rf $(build_dir)
