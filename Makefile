@@ -15,7 +15,8 @@ sources = avltree.c \
           $(wildcard deps/onvif/wsdd/*.cpp)
 cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \
          -Wno-unused-but-set-variable
-cxxflags = $(cflags) -Wno-nonnull-compare -Wno-address -Wno-misleading-indentation -O0
+cxxflags = $(cflags) -Wno-nonnull-compare -Wno-address -Wno-misleading-indentation -O0 \
+           -DWITH_OPENSSL -DWITH_DOM -DWITH_ZLIB -I deps/onvif/
 ldflags =
 binname = voproxyd
 wsdls = https://www.onvif.org/ver10/device/wsdl/devicemgmt.wsdl \
@@ -48,7 +49,7 @@ cc = gcc
 cxx = g++
 wsdlflags = -c++11 -x -O4 -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h $(wsdls)
 soapcppflags = -2 -L -j -c++11 -x -C -d deps/onvif -I deps/gsoap-2.8/gsoap/
-soapcpp_wsdd_flags = -a -L -j -c++11 -x -C -pwsdd -d deps/onvif/wsdd/ -I deps/gsoap-2.8/gsoap/import/
+soapcpp_wsdd_flags = -a -L -c++11 -x -C -pwsdd -d deps/onvif/wsdd/ -I deps/gsoap-2.8/gsoap/import/
 verbose = 0
 ifeq ($(verbose),0)
     configure_verbosity = > ../logs/configure.log 2>&1
@@ -57,6 +58,27 @@ ifeq ($(verbose),0)
     soapcpp_verbosity = > deps/logs/soapcpp.log 2>&1
     soapcpp_wsdd_verbosity = > deps/logs/soapcpp.log 2>&1
 endif
+example_sources = onvif_example/main.cpp \
+                  deps/onvif/soapAdvancedSecurityServiceBindingProxy.cpp \
+                  deps/onvif/soapDeviceBindingProxy.cpp \
+                  deps/onvif/soapDeviceIOBindingProxy.cpp \
+                  deps/onvif/soapImagingBindingProxy.cpp \
+                  deps/onvif/soapMediaBindingProxy.cpp \
+                  deps/onvif/soapPTZBindingProxy.cpp \
+                  deps/onvif/soapPullPointSubscriptionBindingProxy.cpp \
+                  deps/onvif/soapRemoteDiscoveryBindingProxy.cpp \
+                  deps/onvif/stdsoap2.cpp \
+                  deps/onvif/dom.cpp \
+                  deps/onvif/soapC.cpp \
+                  deps/onvif/wsdd/wsddClient.cpp \
+                  deps/onvif/smdevp.cpp \
+                  deps/onvif/mecevp.cpp \
+                  deps/onvif/wsaapi.cpp \
+                  deps/onvif/wsseapi.cpp \
+                  deps/onvif/wsddapi.cpp
+example_objs = $(example_sources:%=$(build_dir)/%.o)
+example_ldflags = -L deps/gsoap-install/lib -lssl -lcrypto -lz
+example_binname = example
 
 all: $(binname)
 	./$(binname)
@@ -74,11 +96,18 @@ $(build_dir)/%.cpp.o: %.cpp
 	@$(cxx) -c $< $(cxxflags) -o $@
 
 $(objs): | $(build_dir)
+$(example_objs): | $(build_dir)
 
 $(build_dir):
 	@mkdir -p $(build_dir)
 	@mkdir -p $(build_dir)/deps/onvif
+	@mkdir -p $(build_dir)/deps/onvif/wsdd
 	@mkdir -p $(build_dir)/deps/gsoap-2.8/gsoap
+	@mkdir -p $(build_dir)/onvif_example
+
+$(example_binname): $(example_objs)
+	@echo "ld $@"
+	@$(cxx) $(example_objs) $(example_ldflags) -o $@
 
 prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp soapcpp-wsdd copy-gsoap-sources
 
