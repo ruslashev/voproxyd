@@ -46,18 +46,15 @@ objs = $(sources:%=$(build_dir)/%.o)
 cc = gcc
 cxx = g++
 wsdlflags = -c -x -O4 -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h $(wsdls)
-soapcppflags = -2 -L -c -x -C -d deps/onvif deps/onvif/onvif.h -I 'deps/gsoap-2.8/gsoap/'
+soapcppflags = -2 -L -c -x -C -d deps/onvif -I deps/gsoap-2.8/gsoap/
+soapcpp_wsdd_flags = -a -L -c -x -C -pwsdd -d deps/onvif/wsdd/ -I deps/gsoap-2.8/gsoap/import/
 verbose = 0
 ifeq ($(verbose),0)
     configure_verbosity = > ../logs/configure.log 2>&1
     make_verbosity = > ../logs/make.log 2>&1
     wsdl_verbosity = > deps/logs/wsdl.log 2>&1
     soapcpp_verbosity = > deps/logs/soapcpp.log 2>&1
-else
-    configure_verbosity =
-    make_verbosity =
-    wsdl_verbosity =
-    soapcpp_verbosity =
+    soapcpp_wsdd_verbosity = > deps/logs/soapcpp.log 2>&1
 endif
 
 all: $(binname)
@@ -82,7 +79,7 @@ $(build_dir):
 	@mkdir -p $(build_dir)/deps/onvif
 	@mkdir -p $(build_dir)/deps/gsoap-2.8/gsoap
 
-prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp copy-gsoap-sources
+prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp soapcpp-wsdd copy-gsoap-sources
 
 unzip-gsoap:
 	@echo "unzip deps/gsoap_2.8.74.zip"
@@ -109,14 +106,21 @@ install-gsoap: compile-gsoap
 wsdl2h: install-gsoap
 	@mkdir -p deps/onvif
 	@echo wsdl2h -o deps/onvif/onvif.h
-	@echo 'xsd__duration = #import "custom/duration.h" | xsd__duration' >> deps/gsoap-2.8/gsoap/typemap.dat
+	@echo 'xsd__duration = #import "custom/duration.h" | xsd__duration' >> \
+		deps/gsoap-2.8/gsoap/typemap.dat
 	@./deps/gsoap-install/bin/wsdl2h $(wsdlflags) $(wsdl_verbosity)
 	@sed -i '/#import/ a #import "wsse.h"' deps/onvif/onvif.h
 	@sed -i 's/wsdd10.h/wsdd5.h/g' deps/onvif/onvif.h
 
 soapcpp: wsdl2h
 	@echo soapcpp2 deps/onvif/onvif.h
-	@./deps/gsoap-install/bin/soapcpp2 $(soapcppflags) $(soapcpp_verbosity)
+	@./deps/gsoap-install/bin/soapcpp2 $(soapcppflags) deps/onvif/onvif.h $(soapcpp_verbosity)
+
+soapcpp-wsdd: wsdl2h
+	@echo soapcpp2 deps/gsoap-2.8/gsoap/import/wsdd5.h
+	@mkdir -p deps/onvif/wsdd
+	@./deps/gsoap-install/bin/soapcpp2 $(soapcpp_wsdd_flags) deps/gsoap-2.8/gsoap/import/wsdd5.h \
+		$(soapcpp_wsdd_verbosity)
 
 copy-gsoap-sources: unzip-gsoap
 	@mkdir -p deps/onvif
@@ -139,6 +143,7 @@ copy-gsoap-sources: unzip-gsoap
 
 clean:
 	@rm -rf $(build_dir)
+	@rm -f $(binname)
 
 clean-onvif:
 	@rm -rf deps/gsoap-2.8/
