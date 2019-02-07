@@ -49,10 +49,10 @@ wsdlflags = -c -x -O4 -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h 
 soapcppflags = -2 -L -c -x -C -d deps/onvif deps/onvif/onvif.h -I 'deps/gsoap-2.8/gsoap/'
 verbose = 0
 ifeq ($(verbose),0)
-    configure_verbosity = > ../configure.log 2>&1
-    make_verbosity = > ../make.log 2>&1
-    wsdl_verbosity = > deps/wsdl.log 2>&1
-    soapcpp_verbosity = > deps/soapcpp.log 2>&1
+    configure_verbosity = > ../logs/configure.log 2>&1
+    make_verbosity = > ../logs/make.log 2>&1
+    wsdl_verbosity = > deps/logs/wsdl.log 2>&1
+    soapcpp_verbosity = > deps/logs/soapcpp.log 2>&1
 else
     configure_verbosity =
     make_verbosity =
@@ -90,6 +90,7 @@ unzip-gsoap:
 
 compile-gsoap: unzip-gsoap
 	@echo configure gsoap
+	@mkdir -p deps/logs
 	@cd deps/gsoap-2.8 && ./configure $(configure_verbosity)
 	@echo make gsoap
 	@cd deps/gsoap-2.8 && make -j 1 $(make_verbosity)
@@ -142,10 +143,7 @@ clean:
 clean-onvif:
 	@rm -rf deps/gsoap-2.8/
 	@rm -rf deps/gsoap-install/
-	@rm -f deps/configure.log
-	@rm -f deps/make.log
-	@rm -f deps/wsdl.log
-	@rm -f deps/soapcpp.log
+	@rm -rf deps/logs/
 	@rm -rf deps/onvif/
 
 clean-all: clean clean-onvif
