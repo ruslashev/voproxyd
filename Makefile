@@ -16,7 +16,7 @@ sources = avltree.c \
 cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \
          -Wno-unused-but-set-variable
 cxxflags = $(cflags) -Wno-nonnull-compare -Wno-address -Wno-misleading-indentation -O0 \
-           -DWITH_OPENSSL -DWITH_DOM -DWITH_ZLIB -I deps/onvif/
+           -DWITH_OPENSSL -DWITH_DOM -DWITH_ZLIB -I deps/onvif/ -std=c++14
 ldflags =
 binname = voproxyd
 wsdls = https://www.onvif.org/ver10/device/wsdl/devicemgmt.wsdl \
@@ -48,7 +48,7 @@ objs = $(sources:%=$(build_dir)/%.o)
 cc = gcc
 cxx = g++
 wsdlflags = -c++11 -x -O4 -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h $(wsdls)
-soapcppflags = -2 -L -j -c++11 -x -C -d deps/onvif -I deps/gsoap-2.8/gsoap/
+soapcppflags = -2 -L -j -c++11 -x -C -d deps/onvif -I 'deps/gsoap-2.8/gsoap/:deps/gsoap-2.8/gsoap/import'
 soapcpp_wsdd_flags = -a -L -c++11 -x -C -pwsdd -d deps/onvif/wsdd/ -I deps/gsoap-2.8/gsoap/import/
 verbose = 0
 ifeq ($(verbose),0)
@@ -56,7 +56,7 @@ ifeq ($(verbose),0)
     make_verbosity = > ../logs/make.log 2>&1
     wsdl_verbosity = > deps/logs/wsdl.log 2>&1
     soapcpp_verbosity = > deps/logs/soapcpp.log 2>&1
-    soapcpp_wsdd_verbosity = > deps/logs/soapcpp.log 2>&1
+    soapcpp_wsdd_verbosity = > deps/logs/soapcpp_wsdd.log 2>&1
 endif
 example_sources = onvif_example/main.cpp \
                   deps/onvif/soapAdvancedSecurityServiceBindingProxy.cpp \
@@ -75,7 +75,8 @@ example_sources = onvif_example/main.cpp \
                   deps/onvif/mecevp.cpp \
                   deps/onvif/wsaapi.cpp \
                   deps/onvif/wsseapi.cpp \
-                  deps/onvif/wsddapi.cpp
+                  deps/onvif/wsddapi.cpp \
+                  deps/onvif/duration.cpp
 example_objs = $(example_sources:%=$(build_dir)/%.o)
 example_ldflags = -L deps/gsoap-install/lib -lssl -lcrypto -lz
 example_binname = example
