@@ -18,7 +18,7 @@ static char* find_xaddr(services_t *services, const char *namespace)
         if (strcmp(services->Service[i].Namespace, namespace) == 0)
             return services->Service[i].XAddr;
 
-    return NULL;
+    die(ERR_SOAP, "failed to find namespace '%s'", namespace);
 }
 
 char* soap_get_media_xaddr(services_t *services)

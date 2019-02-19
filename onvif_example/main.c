@@ -136,12 +136,8 @@ void worker(struct soap *soap)
     get_services(soap, &get_services_trt, &services);
 
     media_xaddr = soap_get_media_xaddr(&services);
-    if (media_xaddr == NULL)
-        die(1, "get_media_xaddr() failed");
 
     ptz_xaddr = soap_get_ptz_xaddr(&services);
-    if (ptz_xaddr == NULL)
-        die(1, "get_ptz_xaddr() failed");
 
     get_profiles(soap, &get_profiles_trt, &profiles, media_xaddr);
 
