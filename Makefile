@@ -11,13 +11,10 @@ sources = avltree.c \
           visca_commands.c \
           visca_inquiries.c \
           worker.c \
-          $(wildcard deps/onvif/*.cpp) \
-          $(wildcard deps/onvif/wsdd/*.cpp)
+          $(wildcard deps/onvif/*.c)
 cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \
          -Wno-unused-but-set-variable -Wno-misleading-indentation -Wno-deprecated-declarations \
-         -DWITH_OPENSSL -DWITH_DOM -DWITH_ZLIB
-cxxflags = $(cflags) -Wno-nonnull-compare -Wno-address -Wno-misleading-indentation -O0 \
-           -DWITH_OPENSSL -DWITH_DOM -DWITH_ZLIB -I deps/onvif/ -std=c++14
+         -DWITH_OPENSSL -DWITH_DOM -DWITH_ZLIB -I deps/onvif
 ldflags =
 binname = voproxyd
 wsdls = https://www.onvif.org/ver10/device/wsdl/devicemgmt.wsdl \
@@ -47,7 +44,6 @@ wsdls = https://www.onvif.org/ver10/device/wsdl/devicemgmt.wsdl \
 build_dir = .obj
 objs = $(sources:%=$(build_dir)/%.o)
 cc = gcc
-cxx = g++
 wsdlflags = -c -x -O4 -t deps/gsoap-2.8/gsoap/typemap.dat -o deps/onvif/onvif.h $(wsdls)
 soapcppflags = -2 -L -c -x -C -d deps/onvif -I 'deps/gsoap-2.8/gsoap/:deps/gsoap-2.8/gsoap/import'
 soapcpp_wsdd_flags = -a -L -c -x -C -pwsdd -d deps/onvif/wsdd/ -I deps/gsoap-2.8/gsoap/import/
@@ -69,15 +65,11 @@ all: $(binname)
 
 $(binname): $(objs)
 	@echo "ld $@"
-	@$(cxx) $(objs) $(ldflags) -o $@
+	@$(cc) $(objs) $(ldflags) -o $@
 
 $(build_dir)/%.c.o: %.c
 	@echo "cc $<"
 	@$(cc) -c $< $(cflags) -o $@
-
-$(build_dir)/%.cpp.o: %.cpp
-	@echo "cxx $<"
-	@$(cxx) -c $< $(cxxflags) -o $@
 
 $(objs): | $(build_dir)
 $(example_objs): | $(build_dir)
@@ -90,7 +82,7 @@ $(build_dir):
 
 $(example_binname): $(example_objs)
 	@echo "ld $@"
-	@$(cxx) $(example_objs) $(example_ldflags) -o $@
+	@$(cc) $(example_objs) $(example_ldflags) -o $@
 
 prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp soapcpp-wsdd copy-gsoap-sources move-nsmaps
 
