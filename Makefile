@@ -110,7 +110,7 @@ $(example_binname): $(example_objs)
 	@echo "ld $@"
 	@$(cxx) $(example_objs) $(example_ldflags) -o $@
 
-prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp soapcpp-wsdd copy-gsoap-sources
+prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp soapcpp-wsdd copy-gsoap-sources move-nsmaps
 
 unzip-gsoap:
 	@echo "unzip deps/gsoap_2.8.74.zip"
@@ -174,9 +174,15 @@ copy-gsoap-sources: unzip-gsoap
 	@cp deps/gsoap-2.8/gsoap/custom/duration.c deps/onvif/duration.cpp
 	@cp deps/gsoap-2.8/gsoap/custom/duration.h deps/onvif
 
+move-nsmaps: soapcpp
+	@mkdir -p deps/onvif/nsmaps
+	@echo move nsmaps
+	@mv deps/onvif/*.nsmap deps/onvif/nsmaps
+
 clean:
 	@rm -rf $(build_dir)
 	@rm -f $(binname)
+	@rm -f $(example_binname)
 
 clean-onvif:
 	@rm -rf deps/gsoap-2.8/
