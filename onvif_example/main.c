@@ -73,22 +73,29 @@ void worker(soap_t *soap)
 {
     services_t services;
     profiles_t profiles;
+    char *snapshot_uri;
 
     soap_utils_set_credentials(soap, ONVIF_USER, ONVIF_PASSWORD);
 
+    log("device info:");
     soap_utils_print_device_info(soap, SERVICE_ENDPOINT);
+    log(" ");
 
     soap_utils_get_services(soap, SERVICE_ENDPOINT, &services);
 
     soap_utils_get_profiles(soap, soap_utils_get_media_xaddr(&services), &profiles);
 
-    if (profiles.Profiles->Name != NULL)
-        log("profiles name: %s", profiles.Profiles->Name);
+    log("iterating %d profile(s):", profiles.__sizeProfiles);
+    for (int i = 0; i < profiles.__sizeProfiles; ++i) {
+        log("%2d) name: %s", i + 1, profiles.Profiles[i].Name);
+        log("    token: %s", profiles.Profiles[i].token);
 
-    if (profiles.Profiles->VideoEncoderConfiguration != NULL)
-        log("profiles token: %s", profiles.Profiles->VideoEncoderConfiguration->Name);
+        soap_utils_get_snapshot_uri(soap, SERVICE_ENDPOINT, profiles.Profiles[i].token, &snapshot_uri);
 
-    go_to_home_pos(soap, &profiles, soap_utils_get_ptz_xaddr(&services));
+        log("    snapshot uri: %s", snapshot_uri);
+    }
+
+    /* go_to_home_pos(soap, &profiles, soap_utils_get_ptz_xaddr(&services)); */
 }
 
 int main()

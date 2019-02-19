@@ -23,4 +23,6 @@ void soap_utils_get_services(soap_t *soap, const char *endpoint, services_t *ser
 void soap_utils_get_profiles(soap_t *soap, const char *media_xaddr, profiles_t *profiles);
 void soap_utils_get_device_information(soap_t *soap, const char *endpoint, device_info_t *device_info);
 void soap_utils_print_device_info(soap_t *soap, const char *endpoint);
+void soap_utils_get_snapshot_uri(soap_t *soap, const char *endpoint, char *profile_token,
+        char **snapshot_uri);
 

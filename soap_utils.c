@@ -75,3 +75,18 @@ void soap_utils_print_device_info(soap_t *soap, const char *endpoint)
     log("HardwareId:      %s", device_info.HardwareId);
 }
 
+void soap_utils_get_snapshot_uri(soap_t *soap, const char *endpoint, char *profile_token,
+        char **snapshot_uri)
+{
+    struct _trt__GetSnapshotUri get_snapshot_uri_trt;
+    struct _trt__GetSnapshotUriResponse snapshot_uri_response;
+
+    get_snapshot_uri_trt.ProfileToken = profile_token;
+
+    if (soap_call___trt__GetSnapshotUri(soap, endpoint, NULL, &get_snapshot_uri_trt,
+                &snapshot_uri_response) != SOAP_OK || snapshot_uri_response.MediaUri == NULL)
+        soap_die(soap, "failed to get snapshot URI");
+
+    *snapshot_uri = snapshot_uri_response.MediaUri->Uri;
+}
+
