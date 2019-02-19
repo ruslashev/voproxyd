@@ -1,12 +1,11 @@
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-
+#include "../wsdd_stubs.h"
 #include "../deps/onvif/soapH.h"
 #include "../deps/onvif/soapStub.h"
 #include "../deps/onvif/wsseapi.h"
-#include "../deps/onvif/wsddapi.h"
 #include "../deps/onvif/nsmaps/wsdd.nsmap"
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 
 #define ONVIF_USER          "x"
 #define ONVIF_PASSWORD      "x"
@@ -14,114 +13,98 @@
 #define SERVICE_ENDPOINT    "http://x.x.x.x:2000/onvif/device_service"
 
 #define log(...) do { printf(__VA_ARGS__); puts(""); } while (0)
-
 #define die(...) do { log(__VA_ARGS__); exit(1); } while (0)
+#define log_soap_error(X) \
+    log("error=%d faultstring=%s faultcode=%s faultsubcode=%s faultdetail=%s", (X)->error, \
+            *soap_faultstring((X)), *soap_faultcode((X)),*soap_faultsubcode((X)), \
+            *soap_faultdetail((X)));
+#define soap_die(X, ...) do { log_soap_error(X); die(__VA_ARGS__); } while (0)
 
-void wsdd_event_Hello(struct soap *soap, unsigned int InstanceId, const char *SequenceId, unsigned int MessageNumber, const char *MessageID, const char *RelatesTo, const char *EndpointReference, const char *Types, const char *Scopes, const char *MatchBy, const char *XAddrs, unsigned int MetadataVersion)
-{ }
-
-void wsdd_event_Bye(struct soap *soap, unsigned int InstanceId, const char *SequenceId, unsigned int MessageNumber, const char *MessageID, const char *RelatesTo, const char *EndpointReference, const char *Types, const char *Scopes, const char *MatchBy, const char *XAddrs, unsigned int *MetadataVersion)
-{ }
-
-soap_wsdd_mode wsdd_event_Probe(struct soap *soap, const char *MessageID, const char *ReplyTo, const char *Types, const char *Scopes, const char *MatchBy, struct wsdd__ProbeMatchesType *ProbeMatches)
+char* get_services_xaddr(struct soap *soap, struct _tds__GetServices *get_services_trt,
+        struct _tds__GetServicesResponse *services)
 {
-    return SOAP_WSDD_ADHOC;
-}
+    int result;
 
-void wsdd_event_ProbeMatches(struct soap *soap, unsigned int InstanceId, const char *SequenceId, unsigned int MessageNumber, const char *MessageID, const char *RelatesTo, struct wsdd__ProbeMatchesType *ProbeMatches)
-{ }
-
-soap_wsdd_mode wsdd_event_Resolve(struct soap *soap, const char *MessageID, const char *ReplyTo, const char *EndpointReference, struct wsdd__ResolveMatchType *match)
-{
-    return SOAP_WSDD_ADHOC;
-}
-
-void wsdd_event_ResolveMatches(struct soap *soap, unsigned int InstanceId, const char * SequenceId, unsigned int MessageNumber, const char *MessageID, const char *RelatesTo, struct wsdd__ResolveMatchType *match)
-{ }
-
-struct soap* create_soap_instance()
-{
-    struct soap* soap = soap_new();
-
-    /* soap->recv_timeout = 50; */
-    /* soap_set_namespaces(soap, namespaces); */
-
-    return soap;
-}
-
-char* GetDeviceServices(struct soap* soap, struct _tds__GetServices *getServices, struct _tds__GetServicesResponse *getServicesResponse)
-{
-    char* mediaEndPoint = NULL;
-    getServices->IncludeCapability = xsd__boolean__false_;
+    get_services_trt->IncludeCapability = xsd__boolean__false_;
 
     printf("[%d][%s][---- Getting Device Services ----]\n", __LINE__, __func__);
-    soap_wsse_add_UsernameTokenDigest(soap,"user", ONVIF_USER, ONVIF_PASSWORD);
-    int result = soap_call___tds__GetServices(soap, SERVICE_ENDPOINT, NULL, getServices, getServicesResponse);
-    printf("[%d][%s<%s!>][result = %d][soap_error = %d]\n", __LINE__, __func__, result ? "失败":"成功", result, soap->error);
 
-    int i;
-    if (getServicesResponse->Service != NULL) {
-        for(i = 0; i < getServicesResponse->__sizeService; i++) {
-            if (!strcmp(getServicesResponse->Service[i].Namespace, SOAP_NAMESPACE_OF_trt)) {
-                mediaEndPoint = getServicesResponse->Service[i].XAddr;
-                printf("[%d][%s][MediaServiceAddress:%s]\n",__LINE__, __func__, mediaEndPoint);
-                break;
-            }
+    soap_wsse_add_UsernameTokenDigest(soap, "user", ONVIF_USER, ONVIF_PASSWORD);
+
+    result = soap_call___tds__GetServices(soap, SERVICE_ENDPOINT, NULL, get_services_trt, services);
+
+    printf("[%d][%s][result = %d]\n", __LINE__, __func__, result);
+
+    if (services->Service == NULL)
+        soap_die(soap, "failed to get services");
+
+    for (int i = 0; i < services->__sizeService; i++) {
+        if (!strcmp(services->Service[i].Namespace, SOAP_NAMESPACE_OF_trt)) {
+            printf("[%d][%s][MediaServiceAddress:%s]\n", __LINE__, __func__,
+                    services->Service[i].XAddr);
+            return services->Service[i].XAddr;
         }
     }
 
-    return mediaEndPoint;
+    return NULL;
 }
 
-char* GetPTZServier(struct _tds__GetServicesResponse *getServicesResponse)
+char* get_ptz_xaddr(struct _tds__GetServicesResponse *services)
 {
-    char *ep = "";
-    int i;
-    if (getServicesResponse->Service != NULL) {
-        for(i = 0; i < getServicesResponse->__sizeService; i++) {
-            //SOAP_NAMESPACE_OF_tptz
-            if (!strcmp(getServicesResponse->Service[i].Namespace, "http://www.onvif.org/ver20/ptz/wsdl")) {
-                ep = getServicesResponse->Service[i].XAddr;
-                printf("[%d][%s][MediaServiceAddress:%s]\n",__LINE__, __func__, ep);
-                break;
-            }
+    for (int i = 0; i < services->__sizeService; i++) {
+        if (!strcmp(services->Service[i].Namespace, "http://www.onvif.org/ver20/ptz/wsdl")) {
+            printf("[%d][%s][MediaServiceAddress:%s]\n", __LINE__, __func__,
+                    services->Service[i].XAddr);
+            return services->Service[i].XAddr;
         }
     }
-    return ep;
+
+    return NULL;
 }
 
-int GetProfiles(struct soap* soap, struct _trt__GetProfiles *trt__GetProfiles,
-                  struct _trt__GetProfilesResponse *trt__GetProfilesResponse, char* media_ep)
+int get_profiles(struct soap *soap, struct _trt__GetProfiles *get_profiles_trt,
+                  struct _trt__GetProfilesResponse *profiles, char *services_xaddr)
 {
-    int result=0;
+    int result;
+
     printf("[%d][%s][---- Getting Profiles ----]\n", __LINE__, __func__);
-    soap_wsse_add_UsernameTokenDigest(soap,"user", ONVIF_USER, ONVIF_PASSWORD);
-    result = soap_call___trt__GetProfiles(soap, media_ep, NULL, trt__GetProfiles, trt__GetProfilesResponse);
 
-    printf("[%d][%s<%s!>][result = %d][soap_error = %d]\n", __LINE__, __func__, result ? "失败":"成功", result, soap->error);
+    /* TODO needed? */
+    soap_wsse_add_UsernameTokenDigest(soap, "user", ONVIF_USER, ONVIF_PASSWORD);
+
+    result = soap_call___trt__GetProfiles(soap, services_xaddr, NULL, get_profiles_trt, profiles);
+
+    printf("[%d][%s][result = %d][soap_error = %d]\n", __LINE__, __func__, result, soap->error);
+
     if (result == SOAP_EOF) {
-        printf("[%d][%s][Error Number:%d] [Falut Code:%s] [Falut Reason:%s]\n", __LINE__, __func__, soap->error, *soap_faultcode(soap), *soap_faultstring(soap));
+        printf("[%d][%s][Error Number:%d] [Fault Code:%s] [Fault Reason:%s]\n", __LINE__, __func__,
+                soap->error, *soap_faultcode(soap), *soap_faultstring(soap));
         return -1;
     }
-    if(trt__GetProfilesResponse->Profiles != NULL) {
-        if(trt__GetProfilesResponse->Profiles->Name != NULL)
-            printf("[%d][%s][Profiles Name:%s]\n",__LINE__, __func__, trt__GetProfilesResponse->Profiles->Name);
-        if(trt__GetProfilesResponse->Profiles->VideoEncoderConfiguration != NULL)
-            printf("[%d][%s][Profiles Token:%s]\n",__LINE__, __func__, trt__GetProfilesResponse->Profiles->VideoEncoderConfiguration->Name);
+
+    if (profiles->Profiles != NULL) {
+        if (profiles->Profiles->Name != NULL)
+            printf("[%d][%s][Profiles Name:%s]\n",__LINE__, __func__, profiles->Profiles->Name);
+        if (profiles->Profiles->VideoEncoderConfiguration != NULL)
+            printf("[%d][%s][Profiles Token:%s]\n",__LINE__, __func__,
+                    profiles->Profiles->VideoEncoderConfiguration->Name);
     }
+
     return result;
 }
 
-int ContinuousMove(struct soap* soap, struct _trt__GetProfilesResponse *profiles, char* ptz_ep)
+int ContinuousMove(struct soap* soap, struct _trt__GetProfilesResponse *profiles, char* ptz_xaddr)
 {
-    struct _tptz__ContinuousMove *move = (struct _tptz__ContinuousMove*)soap_malloc(soap, sizeof(struct _tptz__ContinuousMove));
+    struct _tptz__ContinuousMove *move = soap_malloc(soap, sizeof(struct _tptz__ContinuousMove));
+
     soap_default__tptz__ContinuousMove(soap, move);
 
-    struct _tptz__ContinuousMoveResponse *moveResp = (struct _tptz__ContinuousMoveResponse*)soap_malloc(soap, sizeof(struct _tptz__ContinuousMoveResponse));
+    struct _tptz__ContinuousMoveResponse *moveResp = soap_malloc(soap,
+            sizeof(struct _tptz__ContinuousMoveResponse));
 
     printf("[%d][%s] setprofiles\n", __LINE__, __func__);
     move->ProfileToken = profiles->Profiles[0].token;
-    struct tt__PTZSpeed *speed = (struct tt__PTZSpeed*)soap_malloc(soap, sizeof(struct tt__PTZSpeed));
+    struct tt__PTZSpeed *speed = soap_malloc(soap, sizeof(struct tt__PTZSpeed));
     struct tt__Vector2D pantilt;
     struct tt__Vector1D zoom;
     pantilt.x = 0.2;
@@ -138,58 +121,68 @@ int ContinuousMove(struct soap* soap, struct _trt__GetProfilesResponse *profiles
     printf("[%d][%s] setArg timeout\n", __LINE__, __func__);
     printf("[%d][%s] tokendigest\n", __LINE__, __func__);
     soap_wsse_add_UsernameTokenDigest(soap, "user", ONVIF_USER, ONVIF_PASSWORD);
-    printf("[%d][%s] [endpoint : %s]\n", __LINE__, __func__, ptz_ep);
-    int result = soap_call___tptz__ContinuousMove(soap, ptz_ep, NULL, move, moveResp);
+    printf("[%d][%s] [endpoint : %s]\n", __LINE__, __func__, ptz_xaddr);
+    int result = soap_call___tptz__ContinuousMove(soap, ptz_xaddr, NULL, move, moveResp);
 
-    printf("[%d][%s<%s!>][result = %d][soap_error = %d]\n", __LINE__, __func__, result ? "失败":"成功", result, soap->error);
+    printf("[%d][%s][result = %d][soap_error = %d]\n", __LINE__, __func__, result, soap->error);
     if (result == SOAP_EOF) {
-        printf("[%d][%s][Error Number:%d] [Falut Code:%s] [Falut Reason:%s]\n", __LINE__, __func__, soap->error, *soap_faultcode(soap), *soap_faultstring(soap));
+        printf("[%d][%s][Error Number:%d] [Fault Code:%s] [Fault Reason:%s]\n", __LINE__, __func__,
+                soap->error, *soap_faultcode(soap), *soap_faultstring(soap));
         return SOAP_ERR;
     }
+
     return result;
 }
 
-int GotoHomePos(struct soap* soap, struct _trt__GetProfilesResponse *profiles, char* ep)
+int go_to_home_pos(struct soap* soap, struct _trt__GetProfilesResponse *profiles, char* ptz_xaddr)
 {
-    // get/set/goto 3setp;
-    struct _tptz__GotoHomePosition *gohome = (struct _tptz__GotoHomePosition*)soap_malloc(soap, sizeof(struct _tptz__GotoHomePosition));
-    struct _tptz__GotoHomePositionResponse *gohomeresp = (struct _tptz__GotoHomePositionResponse*)soap_malloc(soap, sizeof(struct _tptz__GotoHomePositionResponse));
+    struct _tptz__GotoHomePosition *gohome = soap_malloc(soap,
+            sizeof(struct _tptz__GotoHomePosition));
+    struct _tptz__GotoHomePositionResponse *gohomeresp = soap_malloc(soap,
+            sizeof(struct _tptz__GotoHomePositionResponse));
 
     gohome->ProfileToken = profiles->Profiles[0].token;
     gohome->Speed = profiles[0].Profiles->PTZConfiguration->DefaultPTZSpeed;
 
-    int result = soap_call___tptz__GotoHomePosition(soap, ep, NULL, gohome, gohomeresp);
+    int result = soap_call___tptz__GotoHomePosition(soap, ptz_xaddr, NULL, gohome, gohomeresp);
 
-    printf("[%d][%s<%s!>][result = %d][soap_error = %d]\n", __LINE__, __func__, result ? "失败":"成功", result, soap->error);
+    printf("[%d][%s][result = %d][soap_error = %d]\n", __LINE__, __func__, result, soap->error);
     if (result == SOAP_EOF) {
-        printf("[%d][%s][Error Number:%d][Falut Code:%s] [Falut Reason:%s]\n", __LINE__, __func__, soap->error, *soap_faultcode(soap), *soap_faultstring(soap));
+        printf("[%d][%s][Error Number:%d][Fault Code:%s] [Fault Reason:%s]\n", __LINE__, __func__,
+                soap->error, *soap_faultcode(soap), *soap_faultstring(soap));
         return SOAP_ERR;
     }
-    return result;
 
+    return result;
 }
 
 void worker(struct soap *soap)
 {
-    struct _trt__GetProfiles trt__GetProfiles;
+    struct _trt__GetProfiles get_profiles_trt;
     struct _trt__GetProfilesResponse profiles;
+    struct _tds__GetServices get_services_trt;
+    struct _tds__GetServicesResponse services;
+    char *services_xaddr;
+    char *ptz_xaddr;
 
-    struct _tds__GetServices getServices;
-    soap_default__tds__GetServices(soap, &getServices);
-    struct _tds__GetServicesResponse getServicesResponse;
+    soap_default__tds__GetServices(soap, &get_services_trt);
 
-    char *ptz_ep;
-    char *media_ep = GetDeviceServices(soap, &getServices, &getServicesResponse);
-    if (media_ep != NULL) {
-        ptz_ep = GetPTZServier(&getServicesResponse);
-        GetProfiles(soap, &trt__GetProfiles, &profiles, media_ep);
-        GotoHomePos(soap, &profiles, ptz_ep);
-    }
+    services_xaddr = get_services_xaddr(soap, &get_services_trt, &services);
+    if (services_xaddr == NULL)
+        die("get_services_xaddr() failed");
+
+    ptz_xaddr = get_ptz_xaddr(&services);
+    if (ptz_xaddr == NULL)
+        die("get_ptz_xaddr() failed");
+
+    get_profiles(soap, &get_profiles_trt, &profiles, services_xaddr);
+
+    go_to_home_pos(soap, &profiles, ptz_xaddr);
 }
 
 int main()
 {
-    struct soap *soap = create_soap_instance();
+    struct soap *soap = soap_new();
     if (soap == NULL)
         die("failed to create soap instance");
 
