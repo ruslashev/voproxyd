@@ -14,7 +14,8 @@ sources = avltree.c \
           $(wildcard deps/onvif/*.cpp) \
           $(wildcard deps/onvif/wsdd/*.cpp)
 cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \
-         -Wno-unused-but-set-variable
+         -Wno-unused-but-set-variable -Wno-misleading-indentation -Wno-deprecated-declarations \
+         -DWITH_OPENSSL -DWITH_DOM -DWITH_ZLIB
 cxxflags = $(cflags) -Wno-nonnull-compare -Wno-address -Wno-misleading-indentation -O0 \
            -DWITH_OPENSSL -DWITH_DOM -DWITH_ZLIB -I deps/onvif/ -std=c++14
 ldflags =
@@ -58,7 +59,7 @@ ifeq ($(verbose),0)
     soapcpp_verbosity = > deps/logs/soapcpp.log 2>&1
     soapcpp_wsdd_verbosity = > deps/logs/soapcpp_wsdd.log 2>&1
 endif
-example_sources = onvif_example/main.c $(wildcard deps/onvif/*.c) $(wildcard deps/onvif/wsdd/*.c)
+example_sources = onvif_example/main.c $(wildcard deps/onvif/*.c)
 example_objs = $(example_sources:%=$(build_dir)/%.o)
 example_ldflags = -L deps/gsoap-install/lib -lssl -lcrypto -lz
 example_binname = example
