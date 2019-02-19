@@ -11,6 +11,7 @@ sources = avltree.c \
           visca_commands.c \
           visca_inquiries.c \
           worker.c \
+          soap_utils.c \
           $(wildcard deps/onvif/*.c)
 cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \
          -Wno-unused-but-set-variable -Wno-misleading-indentation -Wno-deprecated-declarations \
@@ -55,7 +56,7 @@ ifeq ($(verbose),0)
     soapcpp_verbosity = > deps/logs/soapcpp.log 2>&1
     soapcpp_wsdd_verbosity = > deps/logs/soapcpp_wsdd.log 2>&1
 endif
-example_sources = onvif_example/main.c $(wildcard deps/onvif/*.c)
+example_sources = onvif_example/main.c soap_utils.c $(wildcard deps/onvif/*.c)
 example_objs = $(example_sources:%=$(build_dir)/%.o)
 example_ldflags = -L deps/gsoap-install/lib -lssl -lcrypto -lz
 example_binname = example

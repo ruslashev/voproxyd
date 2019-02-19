@@ -28,6 +28,7 @@ enum {
     ERR_NOMEM          = 24,
     ERR_GETSOCKOPT     = 25,
     ERR_EPOLL_EVENT    = 26,
-    ERR_VISCA_PROTOCOL = 27
+    ERR_VISCA_PROTOCOL = 27,
+    ERR_SOAP           = 28
 };
 

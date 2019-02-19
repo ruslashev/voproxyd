@@ -1,4 +1,6 @@
-#include "../wsdd_stubs.h"
+#include "../onvif_wsdd_stubs.h"
+#include "../log.h"
+#include "../soap_utils.h"
 #include "../deps/onvif/soapH.h"
 #include "../deps/onvif/soapStub.h"
 #include "../deps/onvif/wsseapi.h"
@@ -11,14 +13,6 @@
 #define ONVIF_PASSWORD      "x"
 
 #define SERVICE_ENDPOINT    "http://x.x.x.x:2000/onvif/device_service"
-
-#define log(...) do { printf(__VA_ARGS__); puts(""); } while (0)
-#define die(...) do { log(__VA_ARGS__); exit(1); } while (0)
-#define log_soap_error(X) \
-    log("error=%d faultstring=%s faultcode=%s faultsubcode=%s faultdetail=%s", (X)->error, \
-            *soap_faultstring((X)), *soap_faultcode((X)),*soap_faultsubcode((X)), \
-            *soap_faultdetail((X)));
-#define soap_die(X, ...) do { log_soap_error(X); die(__VA_ARGS__); } while (0)
 
 char* get_services_xaddr(struct soap *soap, struct _tds__GetServices *get_services_trt,
         struct _tds__GetServicesResponse *services)
@@ -169,11 +163,11 @@ void worker(struct soap *soap)
 
     services_xaddr = get_services_xaddr(soap, &get_services_trt, &services);
     if (services_xaddr == NULL)
-        die("get_services_xaddr() failed");
+        die(1, "get_services_xaddr() failed");
 
     ptz_xaddr = get_ptz_xaddr(&services);
     if (ptz_xaddr == NULL)
-        die("get_ptz_xaddr() failed");
+        die(1, "get_ptz_xaddr() failed");
 
     get_profiles(soap, &get_profiles_trt, &profiles, services_xaddr);
 
@@ -184,7 +178,9 @@ int main()
 {
     struct soap *soap = soap_new();
     if (soap == NULL)
-        die("failed to create soap instance");
+        die(1, "failed to create soap instance");
+
+    soap->connect_timeout = soap->recv_timeout = soap->send_timeout = 5;
 
     worker(soap);
 
