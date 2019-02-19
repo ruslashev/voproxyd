@@ -69,6 +69,19 @@ int go_to_home_pos(struct soap* soap, profiles_t *profiles, char* ptz_xaddr)
     return result;
 }
 
+void print_device_info(soap_t *soap)
+{
+    device_info_t device_info;
+
+    soap_utils_get_device_information(soap, SERVICE_ENDPOINT, &device_info);
+
+    log("Manufacturer:    %s", device_info.Manufacturer);
+    log("Model:           %s", device_info.Model);
+    log("FirmwareVersion: %s", device_info.FirmwareVersion);
+    log("SerialNumber:    %s", device_info.SerialNumber);
+    log("HardwareId:      %s", device_info.HardwareId);
+}
+
 void worker(struct soap *soap)
 {
     services_t services;
@@ -77,6 +90,8 @@ void worker(struct soap *soap)
     profiles_t profiles;
 
     soap_utils_set_credentials(soap, ONVIF_USER, ONVIF_PASSWORD);
+
+    print_device_info(soap);
 
     soap_utils_get_services(soap, SERVICE_ENDPOINT, &services);
 

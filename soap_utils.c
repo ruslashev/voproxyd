@@ -57,3 +57,12 @@ void soap_utils_get_profiles(soap_t *soap, const char *media_xaddr, profiles_t *
         soap_die(soap, "failed to get profiles");
 }
 
+void soap_utils_get_device_information(soap_t *soap, const char *endpoint, device_info_t *device_info)
+{
+    struct _tds__GetDeviceInformation get_device_info_tds;
+
+    if (soap_call___tds__GetDeviceInformation(soap, endpoint, NULL, &get_device_info_tds,
+                device_info) != SOAP_OK)
+        soap_die(soap, "failed to get device information");
+}
+
