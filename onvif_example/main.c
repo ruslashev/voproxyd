@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdint.h>
 
-int ContinuousMove(struct soap* soap, profiles_t *profiles, char* ptz_xaddr)
+int ContinuousMove(soap_t* soap, profiles_t *profiles, char* ptz_xaddr)
 {
     struct _tptz__ContinuousMove *move = soap_malloc(soap, sizeof(struct _tptz__ContinuousMove));
 
@@ -47,7 +47,7 @@ int ContinuousMove(struct soap* soap, profiles_t *profiles, char* ptz_xaddr)
     return result;
 }
 
-int go_to_home_pos(struct soap* soap, profiles_t *profiles, char* ptz_xaddr)
+int go_to_home_pos(soap_t* soap, profiles_t *profiles, char* ptz_xaddr)
 {
     struct _tptz__GotoHomePosition *gohome = soap_malloc(soap,
             sizeof(struct _tptz__GotoHomePosition));
@@ -69,37 +69,18 @@ int go_to_home_pos(struct soap* soap, profiles_t *profiles, char* ptz_xaddr)
     return result;
 }
 
-void print_device_info(soap_t *soap)
-{
-    device_info_t device_info;
-
-    soap_utils_get_device_information(soap, SERVICE_ENDPOINT, &device_info);
-
-    log("Manufacturer:    %s", device_info.Manufacturer);
-    log("Model:           %s", device_info.Model);
-    log("FirmwareVersion: %s", device_info.FirmwareVersion);
-    log("SerialNumber:    %s", device_info.SerialNumber);
-    log("HardwareId:      %s", device_info.HardwareId);
-}
-
-void worker(struct soap *soap)
+void worker(soap_t *soap)
 {
     services_t services;
-    char *media_xaddr;
-    char *ptz_xaddr;
     profiles_t profiles;
 
     soap_utils_set_credentials(soap, ONVIF_USER, ONVIF_PASSWORD);
 
-    print_device_info(soap);
+    soap_utils_print_device_info(soap, SERVICE_ENDPOINT);
 
     soap_utils_get_services(soap, SERVICE_ENDPOINT, &services);
 
-    media_xaddr = soap_utils_get_media_xaddr(&services);
-
-    ptz_xaddr = soap_utils_get_ptz_xaddr(&services);
-
-    soap_utils_get_profiles(soap, media_xaddr, &profiles);
+    soap_utils_get_profiles(soap, soap_utils_get_media_xaddr(&services), &profiles);
 
     if (profiles.Profiles->Name != NULL)
         log("profiles name: %s", profiles.Profiles->Name);
@@ -107,12 +88,12 @@ void worker(struct soap *soap)
     if (profiles.Profiles->VideoEncoderConfiguration != NULL)
         log("profiles token: %s", profiles.Profiles->VideoEncoderConfiguration->Name);
 
-    go_to_home_pos(soap, &profiles, ptz_xaddr);
+    go_to_home_pos(soap, &profiles, soap_utils_get_ptz_xaddr(&services));
 }
 
 int main()
 {
-    struct soap *soap = soap_new();
+    soap_t *soap = soap_new();
     if (soap == NULL)
         die(1, "failed to create soap instance");
 

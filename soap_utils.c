@@ -62,3 +62,16 @@ void soap_utils_get_device_information(soap_t *soap, const char *endpoint, devic
         soap_die(soap, "failed to get device information");
 }
 
+void soap_utils_print_device_info(soap_t *soap, const char *endpoint)
+{
+    device_info_t device_info;
+
+    soap_utils_get_device_information(soap, endpoint, &device_info);
+
+    log("Manufacturer:    %s", device_info.Manufacturer);
+    log("Model:           %s", device_info.Model);
+    log("FirmwareVersion: %s", device_info.FirmwareVersion);
+    log("SerialNumber:    %s", device_info.SerialNumber);
+    log("HardwareId:      %s", device_info.HardwareId);
+}
+
