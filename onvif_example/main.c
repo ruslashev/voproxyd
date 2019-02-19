@@ -1,3 +1,4 @@
+#include "secrets.h"
 #include "../onvif_wsdd_stubs.h"
 #include "../log.h"
 #include "../soap_utils.h"
@@ -8,11 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-
-#define ONVIF_USER          "x"
-#define ONVIF_PASSWORD      "x"
-
-#define SERVICE_ENDPOINT    "http://x.x.x.x:2000/onvif/device_service"
 
 int ContinuousMove(struct soap* soap, profiles_t *profiles, char* ptz_xaddr)
 {
