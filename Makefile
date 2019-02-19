@@ -58,25 +58,7 @@ ifeq ($(verbose),0)
     soapcpp_verbosity = > deps/logs/soapcpp.log 2>&1
     soapcpp_wsdd_verbosity = > deps/logs/soapcpp_wsdd.log 2>&1
 endif
-example_sources = onvif_example/main.cpp \
-                  deps/onvif/soapAdvancedSecurityServiceBindingProxy.cpp \
-                  deps/onvif/soapDeviceBindingProxy.cpp \
-                  deps/onvif/soapDeviceIOBindingProxy.cpp \
-                  deps/onvif/soapImagingBindingProxy.cpp \
-                  deps/onvif/soapMediaBindingProxy.cpp \
-                  deps/onvif/soapPTZBindingProxy.cpp \
-                  deps/onvif/soapPullPointSubscriptionBindingProxy.cpp \
-                  deps/onvif/soapRemoteDiscoveryBindingProxy.cpp \
-                  deps/onvif/stdsoap2.cpp \
-                  deps/onvif/dom.cpp \
-                  deps/onvif/soapC.cpp \
-                  deps/onvif/wsdd/wsddClient.cpp \
-                  deps/onvif/smdevp.cpp \
-                  deps/onvif/mecevp.cpp \
-                  deps/onvif/wsaapi.cpp \
-                  deps/onvif/wsseapi.cpp \
-                  deps/onvif/wsddapi.cpp \
-                  deps/onvif/duration.cpp
+example_sources = onvif_example/main.c $(wildcard deps/onvif/*.c) $(wildcard deps/onvif/wsdd/*.c)
 example_objs = $(example_sources:%=$(build_dir)/%.o)
 example_ldflags = -L deps/gsoap-install/lib -lssl -lcrypto -lz
 example_binname = example
@@ -103,7 +85,6 @@ $(build_dir):
 	@mkdir -p $(build_dir)
 	@mkdir -p $(build_dir)/deps/onvif
 	@mkdir -p $(build_dir)/deps/onvif/wsdd
-	@mkdir -p $(build_dir)/deps/gsoap-2.8/gsoap
 	@mkdir -p $(build_dir)/onvif_example
 
 $(example_binname): $(example_objs)
