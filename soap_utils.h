@@ -5,6 +5,9 @@
 #include "log.h"
 #include "errors.h"
 
+typedef struct _tds__GetServicesResponse services_t;
+typedef struct _trt__GetProfilesResponse profiles_t;
+
 #define soap_log_error(S) \
     log("soap error: error=%d faultstring='%s' faultcode='%s' faultsubcode='%s' faultdetail='%s'", \
             (S)->error, *soap_faultstring((S)), *soap_faultcode((S)), *soap_faultsubcode((S)), \
@@ -12,4 +15,6 @@
 #define soap_die(S, ...) do { soap_log_error(S); die(ERR_SOAP, __VA_ARGS__); } while (0)
 
 void soap_set_credentials(struct soap *soap, const char *username, const char *pwd);
+char* soap_get_media_xaddr(services_t *services);
+char* soap_get_ptz_xaddr(services_t *services);
 

@@ -14,12 +14,9 @@
 
 #define SERVICE_ENDPOINT    "http://x.x.x.x:2000/onvif/device_service"
 
-char* get_services_xaddr(struct soap *soap, struct _tds__GetServices *get_services_trt,
-        struct _tds__GetServicesResponse *services)
+void get_services(struct soap *soap, struct _tds__GetServices *get_services_trt, services_t *services)
 {
     int result;
-
-    get_services_trt->IncludeCapability = xsd__boolean__false_;
 
     log("getting device services");
 
@@ -31,31 +28,10 @@ char* get_services_xaddr(struct soap *soap, struct _tds__GetServices *get_servic
 
     if (services->Service == NULL)
         soap_die(soap, "failed to get services");
-
-    for (int i = 0; i < services->__sizeService; i++) {
-        if (!strcmp(services->Service[i].Namespace, SOAP_NAMESPACE_OF_trt)) {
-            log("services xaddr: %s", services->Service[i].XAddr);
-            return services->Service[i].XAddr;
-        }
-    }
-
-    return NULL;
-}
-
-char* get_ptz_xaddr(struct _tds__GetServicesResponse *services)
-{
-    for (int i = 0; i < services->__sizeService; i++) {
-        if (!strcmp(services->Service[i].Namespace, SOAP_NAMESPACE_OF_tptz)) {
-            log("ptz xaddr: %s", services->Service[i].XAddr);
-            return services->Service[i].XAddr;
-        }
-    }
-
-    return NULL;
 }
 
 int get_profiles(struct soap *soap, struct _trt__GetProfiles *get_profiles_trt,
-                  struct _trt__GetProfilesResponse *profiles, char *services_xaddr)
+                  profiles_t *profiles, char *media_xaddr)
 {
     int result;
 
@@ -64,7 +40,7 @@ int get_profiles(struct soap *soap, struct _trt__GetProfiles *get_profiles_trt,
     /* TODO needed? */
     soap_wsse_add_UsernameTokenDigest(soap, "user", ONVIF_USER, ONVIF_PASSWORD);
 
-    result = soap_call___trt__GetProfiles(soap, services_xaddr, NULL, get_profiles_trt, profiles);
+    result = soap_call___trt__GetProfiles(soap, media_xaddr, NULL, get_profiles_trt, profiles);
 
     log("result=%d", result);
 
@@ -83,7 +59,7 @@ int get_profiles(struct soap *soap, struct _trt__GetProfiles *get_profiles_trt,
     return result;
 }
 
-int ContinuousMove(struct soap* soap, struct _trt__GetProfilesResponse *profiles, char* ptz_xaddr)
+int ContinuousMove(struct soap* soap, profiles_t *profiles, char* ptz_xaddr)
 {
     struct _tptz__ContinuousMove *move = soap_malloc(soap, sizeof(struct _tptz__ContinuousMove));
 
@@ -122,7 +98,7 @@ int ContinuousMove(struct soap* soap, struct _trt__GetProfilesResponse *profiles
     return result;
 }
 
-int go_to_home_pos(struct soap* soap, struct _trt__GetProfilesResponse *profiles, char* ptz_xaddr)
+int go_to_home_pos(struct soap* soap, profiles_t *profiles, char* ptz_xaddr)
 {
     struct _tptz__GotoHomePosition *gohome = soap_malloc(soap,
             sizeof(struct _tptz__GotoHomePosition));
@@ -147,23 +123,27 @@ int go_to_home_pos(struct soap* soap, struct _trt__GetProfilesResponse *profiles
 void worker(struct soap *soap)
 {
     struct _trt__GetProfiles get_profiles_trt;
-    struct _trt__GetProfilesResponse profiles;
+    profiles_t profiles;
     struct _tds__GetServices get_services_trt;
-    struct _tds__GetServicesResponse services;
-    char *services_xaddr;
+    services_t services;
+    char *media_xaddr;
     char *ptz_xaddr;
 
     soap_default__tds__GetServices(soap, &get_services_trt);
 
-    services_xaddr = get_services_xaddr(soap, &get_services_trt, &services);
-    if (services_xaddr == NULL)
-        die(1, "get_services_xaddr() failed");
+    get_services_trt.IncludeCapability = xsd__boolean__false_;
 
-    ptz_xaddr = get_ptz_xaddr(&services);
+    get_services(soap, &get_services_trt, &services);
+
+    media_xaddr = soap_get_media_xaddr(&services);
+    if (media_xaddr == NULL)
+        die(1, "get_media_xaddr() failed");
+
+    ptz_xaddr = soap_get_ptz_xaddr(&services);
     if (ptz_xaddr == NULL)
         die(1, "get_ptz_xaddr() failed");
 
-    get_profiles(soap, &get_profiles_trt, &profiles, services_xaddr);
+    get_profiles(soap, &get_profiles_trt, &profiles, media_xaddr);
 
     go_to_home_pos(soap, &profiles, ptz_xaddr);
 }

@@ -12,3 +12,22 @@ void soap_set_credentials(struct soap *soap, const char *username, const char *p
         soap_die(soap, "soap_set_credentials: failed to add username token digest");
 }
 
+static char* find_xaddr(services_t *services, const char *namespace)
+{
+    for (int i = 0; i < services->__sizeService; i++)
+        if (strcmp(services->Service[i].Namespace, namespace) == 0)
+            return services->Service[i].XAddr;
+
+    return NULL;
+}
+
+char* soap_get_media_xaddr(services_t *services)
+{
+    return find_xaddr(services, SOAP_NAMESPACE_OF_trt);
+}
+
+char* soap_get_ptz_xaddr(services_t *services)
+{
+    return find_xaddr(services, SOAP_NAMESPACE_OF_tptz);
+}
+
