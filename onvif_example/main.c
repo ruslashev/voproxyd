@@ -21,21 +21,20 @@ char* get_services_xaddr(struct soap *soap, struct _tds__GetServices *get_servic
 
     get_services_trt->IncludeCapability = xsd__boolean__false_;
 
-    printf("[%d][%s][---- Getting Device Services ----]\n", __LINE__, __func__);
+    log("getting device services");
 
     soap_wsse_add_UsernameTokenDigest(soap, "user", ONVIF_USER, ONVIF_PASSWORD);
 
     result = soap_call___tds__GetServices(soap, SERVICE_ENDPOINT, NULL, get_services_trt, services);
 
-    printf("[%d][%s][result = %d]\n", __LINE__, __func__, result);
+    log("result=%d", result);
 
     if (services->Service == NULL)
         soap_die(soap, "failed to get services");
 
     for (int i = 0; i < services->__sizeService; i++) {
         if (!strcmp(services->Service[i].Namespace, SOAP_NAMESPACE_OF_trt)) {
-            printf("[%d][%s][MediaServiceAddress:%s]\n", __LINE__, __func__,
-                    services->Service[i].XAddr);
+            log("services xaddr: %s", services->Service[i].XAddr);
             return services->Service[i].XAddr;
         }
     }
@@ -46,9 +45,8 @@ char* get_services_xaddr(struct soap *soap, struct _tds__GetServices *get_servic
 char* get_ptz_xaddr(struct _tds__GetServicesResponse *services)
 {
     for (int i = 0; i < services->__sizeService; i++) {
-        if (!strcmp(services->Service[i].Namespace, "http://www.onvif.org/ver20/ptz/wsdl")) {
-            printf("[%d][%s][MediaServiceAddress:%s]\n", __LINE__, __func__,
-                    services->Service[i].XAddr);
+        if (!strcmp(services->Service[i].Namespace, SOAP_NAMESPACE_OF_tptz)) {
+            log("ptz xaddr: %s", services->Service[i].XAddr);
             return services->Service[i].XAddr;
         }
     }
@@ -61,28 +59,26 @@ int get_profiles(struct soap *soap, struct _trt__GetProfiles *get_profiles_trt,
 {
     int result;
 
-    printf("[%d][%s][---- Getting Profiles ----]\n", __LINE__, __func__);
+    log("getting profiles");
 
     /* TODO needed? */
     soap_wsse_add_UsernameTokenDigest(soap, "user", ONVIF_USER, ONVIF_PASSWORD);
 
     result = soap_call___trt__GetProfiles(soap, services_xaddr, NULL, get_profiles_trt, profiles);
 
-    printf("[%d][%s][result = %d][soap_error = %d]\n", __LINE__, __func__, result, soap->error);
+    log("result=%d", result);
 
-    if (result == SOAP_EOF) {
-        printf("[%d][%s][Error Number:%d] [Fault Code:%s] [Fault Reason:%s]\n", __LINE__, __func__,
-                soap->error, *soap_faultcode(soap), *soap_faultstring(soap));
-        return -1;
-    }
+    if (result != SOAP_OK)
+        soap_die(soap, "failed to get profiles");
 
-    if (profiles->Profiles != NULL) {
-        if (profiles->Profiles->Name != NULL)
-            printf("[%d][%s][Profiles Name:%s]\n",__LINE__, __func__, profiles->Profiles->Name);
-        if (profiles->Profiles->VideoEncoderConfiguration != NULL)
-            printf("[%d][%s][Profiles Token:%s]\n",__LINE__, __func__,
-                    profiles->Profiles->VideoEncoderConfiguration->Name);
-    }
+    if (profiles->Profiles == NULL)
+        die(1, "null profiles");
+
+    if (profiles->Profiles->Name != NULL)
+        log("profiles name: %s", profiles->Profiles->Name);
+
+    if (profiles->Profiles->VideoEncoderConfiguration != NULL)
+        log("profiles token: %s", profiles->Profiles->VideoEncoderConfiguration->Name);
 
     return result;
 }
@@ -96,7 +92,7 @@ int ContinuousMove(struct soap* soap, struct _trt__GetProfilesResponse *profiles
     struct _tptz__ContinuousMoveResponse *moveResp = soap_malloc(soap,
             sizeof(struct _tptz__ContinuousMoveResponse));
 
-    printf("[%d][%s] setprofiles\n", __LINE__, __func__);
+    log("set profiles");
     move->ProfileToken = profiles->Profiles[0].token;
     struct tt__PTZSpeed *speed = soap_malloc(soap, sizeof(struct tt__PTZSpeed));
     struct tt__Vector2D pantilt;
@@ -110,20 +106,18 @@ int ContinuousMove(struct soap* soap, struct _trt__GetProfilesResponse *profiles
     speed->PanTilt = &pantilt;
     speed->Zoom = &zoom;
 
-    printf("[%d][%s] setArg speed\n", __LINE__, __func__);
     move->Velocity = speed;
-    printf("[%d][%s] setArg timeout\n", __LINE__, __func__);
-    printf("[%d][%s] tokendigest\n", __LINE__, __func__);
+
     soap_wsse_add_UsernameTokenDigest(soap, "user", ONVIF_USER, ONVIF_PASSWORD);
-    printf("[%d][%s] [endpoint : %s]\n", __LINE__, __func__, ptz_xaddr);
+
+    log("call continousmove");
+
     int result = soap_call___tptz__ContinuousMove(soap, ptz_xaddr, NULL, move, moveResp);
 
-    printf("[%d][%s][result = %d][soap_error = %d]\n", __LINE__, __func__, result, soap->error);
-    if (result == SOAP_EOF) {
-        printf("[%d][%s][Error Number:%d] [Fault Code:%s] [Fault Reason:%s]\n", __LINE__, __func__,
-                soap->error, *soap_faultcode(soap), *soap_faultstring(soap));
-        return SOAP_ERR;
-    }
+    log("result=%d", result);
+
+    if (result != SOAP_OK)
+        soap_die(soap, "continousmove failed");
 
     return result;
 }
@@ -138,14 +132,14 @@ int go_to_home_pos(struct soap* soap, struct _trt__GetProfilesResponse *profiles
     gohome->ProfileToken = profiles->Profiles[0].token;
     gohome->Speed = profiles[0].Profiles->PTZConfiguration->DefaultPTZSpeed;
 
+    log("call gotohomeposition");
+
     int result = soap_call___tptz__GotoHomePosition(soap, ptz_xaddr, NULL, gohome, gohomeresp);
 
-    printf("[%d][%s][result = %d][soap_error = %d]\n", __LINE__, __func__, result, soap->error);
-    if (result == SOAP_EOF) {
-        printf("[%d][%s][Error Number:%d][Fault Code:%s] [Fault Reason:%s]\n", __LINE__, __func__,
-                soap->error, *soap_faultcode(soap), *soap_faultstring(soap));
-        return SOAP_ERR;
-    }
+    log("result=%d", result);
+
+    if (result != SOAP_OK)
+        soap_die(soap, "gotohomeposition failed");
 
     return result;
 }
