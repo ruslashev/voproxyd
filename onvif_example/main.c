@@ -93,6 +93,11 @@ void worker(soap_t *soap)
         soap_utils_get_snapshot_uri(soap, SERVICE_ENDPOINT, profiles.Profiles[i].token, &snapshot_uri);
 
         log("    snapshot uri: %s", snapshot_uri);
+
+        soap_utils_save_snapshot("snapshot.jpg", snapshot_uri);
+        log("    snapshot saved");
+
+        break; /* all profiles are kinda same, so break after first one */
     }
 
     /* go_to_home_pos(soap, &profiles, soap_utils_get_ptz_xaddr(&services)); */

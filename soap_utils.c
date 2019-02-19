@@ -90,3 +90,36 @@ void soap_utils_get_snapshot_uri(soap_t *soap, const char *endpoint, char *profi
     *snapshot_uri = snapshot_uri_response.MediaUri->Uri;
 }
 
+void soap_utils_save_snapshot(const char *filename, const char *snapshot_uri)
+{
+    FILE *fd;
+    soap_t *soap;
+    size_t imagelen;
+    char *image;
+
+    fd = fopen(filename, "wb");
+    if (!fd)
+        die(ERR_OPEN, "failed to open file '%s' for writing", filename);
+
+    /* create a temporary context to retrieve the image with HTTP GET */
+    soap = soap_new();
+    if (soap == NULL)
+        soap_die(soap, "failed to create temporary context");
+
+    soap->connect_timeout = soap->recv_timeout = soap->send_timeout = 5;
+
+    if (soap_GET(soap, snapshot_uri, NULL) || soap_begin_recv(soap))
+        soap_die(soap, "error retrieving snapshot");
+
+    image = soap_http_get_body(soap, &imagelen);
+
+    soap_end_recv(soap);
+
+    fwrite(image, 1, imagelen, fd);
+    fclose(fd);
+
+    soap_destroy(soap);
+    soap_end(soap);
+    soap_free(soap);
+}
+

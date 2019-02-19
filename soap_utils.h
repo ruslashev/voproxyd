@@ -25,4 +25,5 @@ void soap_utils_get_device_information(soap_t *soap, const char *endpoint, devic
 void soap_utils_print_device_info(soap_t *soap, const char *endpoint);
 void soap_utils_get_snapshot_uri(soap_t *soap, const char *endpoint, char *profile_token,
         char **snapshot_uri);
+void soap_utils_save_snapshot(const char *filename, const char *snapshot_uri);
 
