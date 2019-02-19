@@ -76,15 +76,15 @@ void worker(struct soap *soap)
     char *ptz_xaddr;
     profiles_t profiles;
 
-    soap_set_credentials(soap, ONVIF_USER, ONVIF_PASSWORD);
+    soap_utils_set_credentials(soap, ONVIF_USER, ONVIF_PASSWORD);
 
-    soap_get_services(soap, SERVICE_ENDPOINT, &services);
+    soap_utils_get_services(soap, SERVICE_ENDPOINT, &services);
 
-    media_xaddr = soap_get_media_xaddr(&services);
+    media_xaddr = soap_utils_get_media_xaddr(&services);
 
-    ptz_xaddr = soap_get_ptz_xaddr(&services);
+    ptz_xaddr = soap_utils_get_ptz_xaddr(&services);
 
-    soap_get_profiles(soap, &profiles, media_xaddr);
+    soap_utils_get_profiles(soap, media_xaddr, &profiles);
 
     if (profiles.Profiles->Name != NULL)
         log("profiles name: %s", profiles.Profiles->Name);

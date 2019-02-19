@@ -1,15 +1,15 @@
 #include "soap_utils.h"
 #include <wsseapi.h>
 
-void soap_set_credentials(soap_t *soap, const char *username, const char *pwd)
+void soap_utils_set_credentials(soap_t *soap, const char *username, const char *pwd)
 {
     soap_wsse_delete_Security(soap);
 
     if (soap_wsse_add_Timestamp(soap, "Time", 10))
-        soap_die(soap, "soap_set_credentials: failed to add timestamp");
+        soap_die(soap, "soap_utils_set_credentials: failed to add timestamp");
 
     if (soap_wsse_add_UsernameTokenDigest(soap, "Auth", username, pwd))
-        soap_die(soap, "soap_set_credentials: failed to add username token digest");
+        soap_die(soap, "soap_utils_set_credentials: failed to add username token digest");
 }
 
 static char* find_xaddr(services_t *services, const char *namespace)
@@ -21,17 +21,17 @@ static char* find_xaddr(services_t *services, const char *namespace)
     die(ERR_SOAP, "failed to find namespace '%s'", namespace);
 }
 
-char* soap_get_media_xaddr(services_t *services)
+char* soap_utils_get_media_xaddr(services_t *services)
 {
     return find_xaddr(services, SOAP_NAMESPACE_OF_trt);
 }
 
-char* soap_get_ptz_xaddr(services_t *services)
+char* soap_utils_get_ptz_xaddr(services_t *services)
 {
     return find_xaddr(services, SOAP_NAMESPACE_OF_tptz);
 }
 
-void soap_get_services(soap_t *soap, const char *service_endpoint, services_t *services)
+void soap_utils_get_services(soap_t *soap, const char *service_endpoint, services_t *services)
 {
     struct _tds__GetServices get_services_trt;
     int result;
@@ -46,7 +46,7 @@ void soap_get_services(soap_t *soap, const char *service_endpoint, services_t *s
         soap_die(soap, "failed to get services");
 }
 
-void soap_get_profiles(soap_t *soap, profiles_t *profiles, const char *media_xaddr)
+void soap_utils_get_profiles(soap_t *soap, const char *media_xaddr, profiles_t *profiles)
 {
     int result;
     struct _trt__GetProfiles get_profiles_trt;
