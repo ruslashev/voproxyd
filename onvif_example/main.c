@@ -14,51 +14,6 @@
 
 #define SERVICE_ENDPOINT    "http://x.x.x.x:2000/onvif/device_service"
 
-void get_services(struct soap *soap, struct _tds__GetServices *get_services_trt, services_t *services)
-{
-    int result;
-
-    log("getting device services");
-
-    soap_wsse_add_UsernameTokenDigest(soap, "user", ONVIF_USER, ONVIF_PASSWORD);
-
-    result = soap_call___tds__GetServices(soap, SERVICE_ENDPOINT, NULL, get_services_trt, services);
-
-    log("result=%d", result);
-
-    if (services->Service == NULL)
-        soap_die(soap, "failed to get services");
-}
-
-int get_profiles(struct soap *soap, struct _trt__GetProfiles *get_profiles_trt,
-                  profiles_t *profiles, char *media_xaddr)
-{
-    int result;
-
-    log("getting profiles");
-
-    /* TODO needed? */
-    soap_wsse_add_UsernameTokenDigest(soap, "user", ONVIF_USER, ONVIF_PASSWORD);
-
-    result = soap_call___trt__GetProfiles(soap, media_xaddr, NULL, get_profiles_trt, profiles);
-
-    log("result=%d", result);
-
-    if (result != SOAP_OK)
-        soap_die(soap, "failed to get profiles");
-
-    if (profiles->Profiles == NULL)
-        die(1, "null profiles");
-
-    if (profiles->Profiles->Name != NULL)
-        log("profiles name: %s", profiles->Profiles->Name);
-
-    if (profiles->Profiles->VideoEncoderConfiguration != NULL)
-        log("profiles token: %s", profiles->Profiles->VideoEncoderConfiguration->Name);
-
-    return result;
-}
-
 int ContinuousMove(struct soap* soap, profiles_t *profiles, char* ptz_xaddr)
 {
     struct _tptz__ContinuousMove *move = soap_malloc(soap, sizeof(struct _tptz__ContinuousMove));
@@ -83,8 +38,6 @@ int ContinuousMove(struct soap* soap, profiles_t *profiles, char* ptz_xaddr)
     speed->Zoom = &zoom;
 
     move->Velocity = speed;
-
-    soap_wsse_add_UsernameTokenDigest(soap, "user", ONVIF_USER, ONVIF_PASSWORD);
 
     log("call continousmove");
 
@@ -122,24 +75,26 @@ int go_to_home_pos(struct soap* soap, profiles_t *profiles, char* ptz_xaddr)
 
 void worker(struct soap *soap)
 {
-    struct _trt__GetProfiles get_profiles_trt;
-    profiles_t profiles;
-    struct _tds__GetServices get_services_trt;
     services_t services;
     char *media_xaddr;
     char *ptz_xaddr;
+    profiles_t profiles;
 
-    soap_default__tds__GetServices(soap, &get_services_trt);
+    soap_set_credentials(soap, ONVIF_USER, ONVIF_PASSWORD);
 
-    get_services_trt.IncludeCapability = xsd__boolean__false_;
-
-    get_services(soap, &get_services_trt, &services);
+    soap_get_services(soap, SERVICE_ENDPOINT, &services);
 
     media_xaddr = soap_get_media_xaddr(&services);
 
     ptz_xaddr = soap_get_ptz_xaddr(&services);
 
-    get_profiles(soap, &get_profiles_trt, &profiles, media_xaddr);
+    soap_get_profiles(soap, &profiles, media_xaddr);
+
+    if (profiles.Profiles->Name != NULL)
+        log("profiles name: %s", profiles.Profiles->Name);
+
+    if (profiles.Profiles->VideoEncoderConfiguration != NULL)
+        log("profiles token: %s", profiles.Profiles->VideoEncoderConfiguration->Name);
 
     go_to_home_pos(soap, &profiles, ptz_xaddr);
 }
