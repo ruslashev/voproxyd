@@ -13,7 +13,7 @@ enum {
     ERR_GETADDRINFO    = 9,
     ERR_SOCKET         = 10,
     ERR_BIND           = 11,
-    ERR_SIGNALFD       = 12,
+    ERR_SIGNALS        = 12,
     ERR_LISTEN         = 13,
     ERR_EPOLL_CREATE   = 14,
     ERR_EPOLL_CTL      = 15,

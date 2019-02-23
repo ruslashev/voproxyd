@@ -9,6 +9,7 @@ enum fd_type
     FDT_TCP_LISTEN = 0,
     FDT_TCP,
     FDT_UDP,
+    FDT_SIGNAL,
 };
 
 struct event_t
