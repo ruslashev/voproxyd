@@ -1,5 +1,4 @@
 sources = avltree.c \
-          bridge.c \
           bridge_commands.c \
           bridge_inquiries.c \
           buffer.c \

@@ -1,4 +1,4 @@
-#include "bridge.h"
+#include "bridge_commands.h"
 #include "log.h"
 #include "visca.h"
 #include "visca_inquiries.h"

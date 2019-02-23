@@ -1,4 +1,3 @@
-#include "bridge.h"
 #include "buffer.h"
 #include "errors.h"
 #include "log.h"
