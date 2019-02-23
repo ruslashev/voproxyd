@@ -1,5 +1,7 @@
 #include "soap_utils.h"
+#include "onvif_wsdd_stubs.h"
 #include <wsseapi.h>
+#include <nsmaps/wsdd.nsmap>
 
 void soap_utils_set_credentials(soap_t *soap, const char *username, const char *pwd)
 {

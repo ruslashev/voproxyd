@@ -1,11 +1,8 @@
 #include "secrets.h"
-#include "../onvif_wsdd_stubs.h"
-#include "../log.h"
 #include "../soap_utils.h"
 #include "../deps/onvif/soapH.h"
 #include "../deps/onvif/soapStub.h"
 #include "../deps/onvif/wsseapi.h"
-#include "../deps/onvif/nsmaps/wsdd.nsmap"
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>

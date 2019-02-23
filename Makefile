@@ -15,7 +15,7 @@ sources = avltree.c \
 cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \
          -Wno-unused-but-set-variable -Wno-misleading-indentation -Wno-deprecated-declarations \
          -DWITH_OPENSSL -DWITH_DOM -DWITH_ZLIB -I deps/onvif
-ldflags =
+ldflags = -L deps/gsoap-install/lib -lssl -lcrypto -lz
 binname = voproxyd
 wsdls = https://www.onvif.org/ver10/device/wsdl/devicemgmt.wsdl \
         https://www.onvif.org/ver10/events/wsdl/event.wsdl \
@@ -57,7 +57,6 @@ ifeq ($(verbose),0)
 endif
 example_sources = onvif_example/main.c soap_utils.c $(wildcard deps/onvif/*.c)
 example_objs = $(example_sources:%=$(build_dir)/%.o)
-example_ldflags = -L deps/gsoap-install/lib -lssl -lcrypto -lz
 example_binname = example
 
 all: $(binname)
@@ -82,7 +81,7 @@ $(build_dir):
 
 $(example_binname): $(example_objs)
 	@echo "ld $@"
-	@$(cc) $(example_objs) $(example_ldflags) -o $@
+	@$(cc) $(example_objs) $(ldflags) -o $@
 
 prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp soapcpp-wsdd copy-gsoap-sources move-nsmaps
 
