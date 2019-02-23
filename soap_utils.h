@@ -1,7 +1,6 @@
 #pragma once
 
 #include <soapH.h>
-#include <soapStub.h>
 #include "log.h"
 #include "errors.h"
 
