@@ -11,6 +11,7 @@ sources = avltree.c \
           visca_inquiries.c \
           worker.c \
           soap_utils.c \
+          deps/inih/ini.c \
           $(wildcard deps/onvif/*.c)
 cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \
          -Wno-unused-but-set-variable -Wno-misleading-indentation -Wno-deprecated-declarations \
@@ -58,6 +59,7 @@ endif
 example_sources = onvif_example/main.c soap_utils.c $(wildcard deps/onvif/*.c)
 example_objs = $(example_sources:%=$(build_dir)/%.o)
 example_binname = example
+inih_src = https://raw.githubusercontent.com/benhoyt/inih/master
 
 all: $(binname)
 	./$(binname)
@@ -70,7 +72,7 @@ $(build_dir)/%.c.o: %.c
 	@echo "cc $<"
 	@$(cc) -c $< $(cflags) -o $@
 
-$(objs): | $(build_dir)
+$(objs): | $(build_dir) deps/inih/ini.c
 $(example_objs): | $(build_dir)
 
 $(build_dir):
@@ -78,10 +80,17 @@ $(build_dir):
 	@mkdir -p $(build_dir)/deps/onvif
 	@mkdir -p $(build_dir)/deps/onvif/wsdd
 	@mkdir -p $(build_dir)/onvif_example
+	@mkdir -p $(build_dir)/deps/inih
 
 $(example_binname): $(example_objs)
 	@echo "ld $@"
 	@$(cc) $(example_objs) $(ldflags) -o $@
+
+deps/inih/ini.c:
+	@echo "download inih"
+	@mkdir -p deps/inih
+	@wget -q -O deps/inih/ini.c $(inih_src)/ini.c
+	@wget -q -O deps/inih/ini.h $(inih_src)/ini.h
 
 prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp soapcpp-wsdd copy-gsoap-sources move-nsmaps
 
@@ -156,6 +165,7 @@ clean:
 	@rm -rf $(build_dir)
 	@rm -f $(binname)
 	@rm -f $(example_binname)
+	@rm -rf deps/inih
 
 clean-onvif:
 	@rm -rf deps/gsoap-2.8/
