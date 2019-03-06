@@ -30,6 +30,9 @@ enum {
     ERR_EPOLL_EVENT    = 26,
     ERR_VISCA_PROTOCOL = 27,
     ERR_SOAP           = 28,
-    ERR_OPEN           = 29
+    ERR_OPEN           = 29,
+    ERR_MKDIR          = 30,
+    ERR_GETENV         = 31,
+    ERR_WRITE          = 32,
 };
 

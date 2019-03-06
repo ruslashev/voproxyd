@@ -1,5 +1,6 @@
-#include "errors.h"
+#include "config.h"
 #include "daemonize.h"
+#include "errors.h"
 #include "log.h"
 #include "worker.h"
 
@@ -76,6 +77,8 @@ static void parse_arguments(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
     parse_arguments(argc, argv);
+
+    config_init();
 
     if (g_daemonize) {
         openlog("voproxyd", LOG_NDELAY | LOG_PID, LOG_USER);

@@ -2,6 +2,7 @@ sources = avltree.c \
           bridge_commands.c \
           bridge_inquiries.c \
           buffer.c \
+          config.c \
           daemonize.c \
           epoll.c \
           main.c \
