@@ -10,6 +10,7 @@
 #include "visca.h"
 #include "worker.h"
 #include <errno.h>
+#include <limits.h>
 #include <netdb.h>
 #include <signal.h>
 #include <stdio.h>
@@ -55,24 +56,29 @@ static int add_signal_handler(struct ap_state *state)
     return signal_fd;
 }
 
+static void watch_config_file(int inotify_fd)
+{
+    int watch_descriptor;
+    char *config_file = config_get_config_filename();
+
+    watch_descriptor = inotify_add_watch(inotify_fd, config_file, IN_ALL_EVENTS);
+    if (watch_descriptor < 0)
+        die(ERR_INOTIFY, "failed to watch file \"%s\": %s", config_file, strerror(errno));
+
+    free(config_file);
+}
+
 static int add_inotify(struct ap_state *state)
 {
-    int inotify_fd, watch_descriptor;
-    char *config_file;
+    int inotify_fd;
 
     inotify_fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
     if (inotify_fd < 0)
         die(ERR_INOTIFY, "failed to init inotify instance: %s", strerror(errno));
 
-    config_file = config_get_config_filename();
-
-    watch_descriptor = inotify_add_watch(inotify_fd, config_file, IN_MODIFY);
-    if (watch_descriptor < 0)
-        die(ERR_INOTIFY, "failed to watch file \"%s\": %s", config_file, strerror(errno));
-
-    free(config_file);
-
     epoll_add_fd(state, inotify_fd, FDT_INOTIFY, 1);
+
+    watch_config_file(inotify_fd);
 
     return inotify_fd;
 }
@@ -200,9 +206,51 @@ static void epoll_handle_signal(int signal_fd, int *running)
     *running = 0;
 }
 
+static void display_event_info(const struct inotify_event *i)
+{
+    log("wd = %d", i->wd);
+
+    log("mask = ");
+    if (i->mask & IN_ACCESS)        log("IN_ACCESS ");
+    if (i->mask & IN_ATTRIB)        log("IN_ATTRIB ");
+    if (i->mask & IN_CLOSE_NOWRITE) log("IN_CLOSE_NOWRITE ");
+    if (i->mask & IN_CLOSE_WRITE)   log("IN_CLOSE_WRITE ");
+    if (i->mask & IN_CREATE)        log("IN_CREATE ");
+    if (i->mask & IN_DELETE)        log("IN_DELETE ");
+    if (i->mask & IN_DELETE_SELF)   log("IN_DELETE_SELF ");
+    if (i->mask & IN_IGNORED)       log("IN_IGNORED ");
+    if (i->mask & IN_ISDIR)         log("IN_ISDIR ");
+    if (i->mask & IN_MODIFY)        log("IN_MODIFY ");
+    if (i->mask & IN_MOVE_SELF)     log("IN_MOVE_SELF ");
+    if (i->mask & IN_MOVED_FROM)    log("IN_MOVED_FROM ");
+    if (i->mask & IN_MOVED_TO)      log("IN_MOVED_TO ");
+    if (i->mask & IN_OPEN)          log("IN_OPEN ");
+    if (i->mask & IN_Q_OVERFLOW)    log("IN_Q_OVERFLOW ");
+    if (i->mask & IN_UNMOUNT)       log("IN_UNMOUNT ");
+}
+
 static void epoll_handle_inotify(int inotify_fd)
 {
-    log("it's inotify");
+    char read_buffer[10 * (sizeof(struct inotify_event) + NAME_MAX + 1)]
+        __attribute__ ((aligned(__alignof__(struct inotify_event))));
+    ssize_t len;
+    const struct inotify_event *event;
+
+    len = read(inotify_fd, read_buffer, sizeof(read_buffer));
+    if (len == -1 && errno != EAGAIN)
+        die(ERR_READ, "failed to read from inotify fd: %s", strerror(errno));
+
+    if (len <= 0)
+        return;
+
+    for (char *ptr = read_buffer; ptr < read_buffer + len;
+            ptr += sizeof(struct inotify_event) + event->len) {
+        event = (const struct inotify_event*)ptr;
+
+        display_event_info(event);
+
+        watch_config_file(inotify_fd);
+    }
 }
 
 static void epoll_handle_event(struct ap_state *state, const struct epoll_event *event, int *running)
