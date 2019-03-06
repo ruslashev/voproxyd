@@ -5,14 +5,21 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-
-#ifdef DAEMONIZE
 #include <syslog.h>
-#define log(...) syslog(LOG_NOTICE, __VA_ARGS__)
-#else
 #include <stdio.h>
-#define log(...) do { printf(__VA_ARGS__); puts(""); } while (0)
-#endif
+
+extern int g_daemonize;
+
+#define _log_syslog(...) syslog(LOG_NOTICE, __VA_ARGS__)
+#define _log_stdout(...) do { printf(__VA_ARGS__); puts(""); } while (0)
+
+#define log(...) \
+    do { \
+        if (g_daemonize) \
+            _log_syslog(__VA_ARGS__); \
+        else \
+            _log_stdout(__VA_ARGS__); \
+    } while (0)
 
 #define die_detail(X, ...) do { log(__VA_ARGS__); exit(X); } while (0)
 
