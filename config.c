@@ -6,11 +6,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define max_string_len 512
-#define config_name_xdg "config"
-#define config_name_home ".voproxyd.conf"
-#define config_name_cwd config_name_home
-#define xdg_dir_name "voproxyd"
+#define MAX_STRING_LEN 512
+#define CONFIG_NAME_XDG "config"
+#define CONFIG_NAME_HOME ".voproxyd.conf"
+#define CONFIG_NAME_CWD CONFIG_NAME_HOME
+#define XDG_DIR_NAME "voproxyd"
 
 static int file_exists(char *filename)
 {
@@ -32,7 +32,7 @@ static char* get_xdg_filename()
 {
     char *xdg_config_home = getenv("XDG_CONFIG_HOME");
     char *home = getenv("HOME");
-    char *filename = malloc(max_string_len);
+    char *filename = malloc(MAX_STRING_LEN);
 
     if (!filename)
         die(ERR_ALLOC, "failed to allocate string buffer");
@@ -41,9 +41,9 @@ static char* get_xdg_filename()
         die(ERR_GETENV, "$HOME is not defined");
 
     if (xdg_config_home)
-        snprintf(filename, max_string_len, "%s/%s/%s", xdg_config_home, xdg_dir_name, config_name_xdg);
+        snprintf(filename, MAX_STRING_LEN, "%s/%s/%s", xdg_config_home, XDG_DIR_NAME, CONFIG_NAME_XDG);
     else
-        snprintf(filename, max_string_len, "%s/%s/%s/%s", home, ".config", xdg_dir_name, config_name_xdg);
+        snprintf(filename, MAX_STRING_LEN, "%s/%s/%s/%s", home, ".config", XDG_DIR_NAME, CONFIG_NAME_XDG);
 
     return filename;
 }
@@ -51,7 +51,7 @@ static char* get_xdg_filename()
 static char* get_home_filename()
 {
     char *home = getenv("HOME");
-    char *filename = malloc(max_string_len);
+    char *filename = malloc(MAX_STRING_LEN);
 
     if (!filename)
         die(ERR_ALLOC, "failed to allocate string buffer");
@@ -59,22 +59,22 @@ static char* get_home_filename()
     if (!home)
         die(ERR_GETENV, "$HOME is not defined");
 
-    snprintf(filename, max_string_len, "%s/%s", home, config_name_home);
+    snprintf(filename, MAX_STRING_LEN, "%s/%s", home, CONFIG_NAME_HOME);
 
     return filename;
 }
 
 static char* get_cwd_filename()
 {
-    char *filename = malloc(max_string_len);
+    char *filename = malloc(MAX_STRING_LEN);
 
     if (!filename)
         die(ERR_ALLOC, "failed to allocate string buffer");
 
-    if (getcwd(filename, max_string_len) == NULL)
+    if (getcwd(filename, MAX_STRING_LEN) == NULL)
         die(ERR_GETENV, "failed to getcwd");
 
-    strcat(filename, "/" config_name_cwd);
+    strcat(filename, "/" CONFIG_NAME_CWD);
 
     return filename;
 }
@@ -107,14 +107,14 @@ static void create_xdg_dirs()
     if (!home)
         die(ERR_GETENV, "$HOME is not defined");
 
-    directory = malloc(max_string_len);
+    directory = malloc(MAX_STRING_LEN);
     if (!directory)
         die(ERR_ALLOC, "failed to allocate string buffer");
 
     if (xdg_config_home)
-        snprintf(directory, max_string_len, "%s/%s", xdg_config_home, xdg_dir_name);
+        snprintf(directory, MAX_STRING_LEN, "%s/%s", xdg_config_home, XDG_DIR_NAME);
     else
-        snprintf(directory, max_string_len, "%s/%s/%s", home, ".config", xdg_dir_name);
+        snprintf(directory, MAX_STRING_LEN, "%s/%s/%s", home, ".config", XDG_DIR_NAME);
 
     create_directory_if_not_exists(directory);
 
@@ -168,15 +168,15 @@ char* config_get_config_filename()
         "    %s\n"
         "\n"
         "a skeleton config file was created in $XDG_CONFIG_HOME/%s/%s",
-        xdg_dir_name,
-        config_name_xdg,
-        config_name_home,
-        config_name_cwd,
+        XDG_DIR_NAME,
+        CONFIG_NAME_XDG,
+        CONFIG_NAME_HOME,
+        CONFIG_NAME_CWD,
         xdg,
         home,
         cwd,
-        xdg_dir_name,
-        config_name_xdg);
+        XDG_DIR_NAME,
+        CONFIG_NAME_XDG);
 }
 
 void config_init()
