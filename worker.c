@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 
 #include "buffer.h"
+#include "config.h"
 #include "epoll.h"
 #include "errors.h"
 #include "log.h"
@@ -17,6 +18,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/signalfd.h>
+#include <sys/inotify.h>
 
 #define VOPROXYD_STRING_BUFFERS_EXTEND_LENGTH 4096
 #define VOPROXYD_MAX_EPOLL_EVENTS 128
@@ -40,6 +42,28 @@ static int add_signal_handler(struct ap_state *state)
     epoll_add_fd(state, signal_fd, FDT_SIGNAL, 1);
 
     return signal_fd;
+}
+
+static int add_inotify(struct ap_state *state)
+{
+    int inotify_fd, watch_descriptor;
+    char *config_file;
+
+    inotify_fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+    if (inotify_fd < 0)
+        die(ERR_INOTIFY, "failed to init inotify instance: %s", strerror(errno));
+
+    config_file = config_get_config_filename();
+
+    watch_descriptor = inotify_add_watch(inotify_fd, config_file, IN_MODIFY);
+    if (watch_descriptor < 0)
+        die(ERR_INOTIFY, "failed to watch file \"%s\": %s", config_file, strerror(errno));
+
+    free(config_file);
+
+    epoll_add_fd(state, inotify_fd, FDT_INOTIFY, 1);
+
+    return inotify_fd;
 }
 
 static int handle_tcp_message(struct ap_state *state, const uint8_t *message, ssize_t length,
@@ -165,6 +189,11 @@ static void epoll_handle_signal(int signal_fd, int *running)
     *running = 0;
 }
 
+static void epoll_handle_inotify(int inotify_fd)
+{
+    log("it's inotify");
+}
+
 static void epoll_handle_event(struct ap_state *state, const struct epoll_event *event, int *running)
 {
     int continue_reading = 1, client_fd;
@@ -193,6 +222,9 @@ static void epoll_handle_event(struct ap_state *state, const struct epoll_event 
             break;
         case FDT_SIGNAL:
             epoll_handle_signal(state->current, running);
+            break;
+        case FDT_INOTIFY:
+            epoll_handle_inotify(state->current);
             break;
         default:
             die(ERR_EPOLL_EVENT, "epoll_handle_event: unknown event type %d",
@@ -224,7 +256,7 @@ static void main_loop(struct ap_state *state)
 void start_worker(void)
 {
     struct ap_state state = { 0 };
-    int udp_sock_fd, signal_fd;
+    int udp_sock_fd, signal_fd, inotify_fd;
 
     state.epoll_fd = epoll_create1(0);
     if (state.epoll_fd == -1) {
@@ -236,7 +268,10 @@ void start_worker(void)
 
     signal_fd = add_signal_handler(&state);
 
-    log("epoll fd = %d udp fd = %d sig fd = %d", state.epoll_fd, udp_sock_fd, signal_fd);
+    inotify_fd = add_inotify(&state);
+
+    log("epoll fd = %d udp fd = %d sig fd = %d infy fd = %d", state.epoll_fd, udp_sock_fd,
+            signal_fd, inotify_fd);
 
     main_loop(&state);
 

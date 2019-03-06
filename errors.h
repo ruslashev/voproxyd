@@ -34,5 +34,6 @@ enum {
     ERR_MKDIR          = 30,
     ERR_GETENV         = 31,
     ERR_WRITE          = 32,
+    ERR_INOTIFY        = 33,
 };
 

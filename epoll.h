@@ -10,6 +10,7 @@ enum fd_type
     FDT_TCP,
     FDT_UDP,
     FDT_SIGNAL,
+    FDT_INOTIFY,
 };
 
 struct event_t
