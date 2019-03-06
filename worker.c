@@ -11,18 +11,29 @@
 #include "worker.h"
 #include <errno.h>
 #include <netdb.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/epoll.h>
-#include <unistd.h>
-#include <signal.h>
-#include <sys/signalfd.h>
 #include <sys/inotify.h>
+#include <sys/signalfd.h>
+#include <unistd.h>
 
 #define VOPROXYD_STRING_BUFFERS_EXTEND_LENGTH 4096
 #define VOPROXYD_MAX_EPOLL_EVENTS 128
 #define VOPROXYD_MAX_RX_MESSAGE_LENGTH 4096
+
+static int add_udp_socket(struct ap_state *state)
+{
+    int udp_sock_fd;
+
+    socket_create_udp(&udp_sock_fd);
+
+    epoll_add_fd(state, udp_sock_fd, FDT_UDP, 1);
+
+    return udp_sock_fd;
+}
 
 static int add_signal_handler(struct ap_state *state)
 {
@@ -263,8 +274,7 @@ void start_worker(void)
         die(ERR_EPOLL_CREATE, "epoll_create1() failed: %s", strerror(errno));
     }
 
-    socket_create_udp(&udp_sock_fd);
-    epoll_add_fd(&state, udp_sock_fd, FDT_UDP, 1);
+    udp_sock_fd = add_udp_socket(&state);
 
     signal_fd = add_signal_handler(&state);
 
@@ -277,6 +287,7 @@ void start_worker(void)
 
     ll_free_list(&state.tracked_events);
 
+    close(inotify_fd);
     close(signal_fd);
     close(udp_sock_fd);
     close(state.epoll_fd);
