@@ -390,10 +390,10 @@ static void dispatch_04(const struct message_t *message, const struct event_t *e
                     bridge_cmd_zoom_wide();
                     break;
                 default:
-                    if ((b4 & 0xf0) == 2) {
+                    if ((b4 & 0xf0) == 0x20) {
                         b4 = b4 & 0x0f;
                         bridge_cmd_zoom_tele_var(b4);
-                    } else if ((b4 & 0xf0) == 3) {
+                    } else if ((b4 & 0xf0) == 0x30) {
                         b4 = b4 & 0x0f;
                         bridge_cmd_zoom_wide_var(b4);
                     } else {
