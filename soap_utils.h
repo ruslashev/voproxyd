@@ -1,10 +1,9 @@
 #pragma once
 
-#include <soapH.h>
 #include "log.h"
 #include "errors.h"
+#include "soap_instance.h"
 
-typedef struct soap soap_t;
 typedef struct _tds__GetServicesResponse services_t;
 typedef struct _trt__GetProfilesResponse profiles_t;
 typedef struct _tds__GetDeviceInformationResponse device_info_t;

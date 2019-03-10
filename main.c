@@ -3,6 +3,8 @@
 #include "errors.h"
 #include "log.h"
 #include "worker.h"
+#include "soap_instance.h"
+#include "soap_utils.h"
 
 #include <assert.h>
 #include <getopt.h>
@@ -85,6 +87,13 @@ int main(int argc, char *argv[])
 
         daemonize();
     }
+
+    soap_instance_construct();
+#include "onvif_example/secrets.h"
+    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
+    log("device info:");
+    soap_utils_print_device_info(g_soap, SERVICE_ENDPOINT);
+    log(" ");
 
     start_worker();
 }
