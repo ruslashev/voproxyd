@@ -73,7 +73,7 @@ $(build_dir)/%.c.o: %.c
 	@echo "cc $<"
 	@$(cc) -c $< $(cflags) -o $@
 
-$(objs): | $(build_dir) deps/inih/ini.c
+$(objs): | $(build_dir)
 $(example_objs): | $(build_dir)
 
 $(build_dir):
