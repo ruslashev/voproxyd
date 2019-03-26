@@ -94,6 +94,7 @@ int main(int argc, char *argv[])
     log("device info:");
     soap_utils_print_device_info(g_soap, SERVICE_ENDPOINT);
     log(" ");
+    soap_instance_destruct();
 
     start_worker();
 }

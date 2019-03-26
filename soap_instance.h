@@ -8,5 +8,4 @@ extern soap_t *g_soap;
 
 void soap_instance_construct();
 void soap_instance_destruct();
-void soap_instance_set_credentials();
 
