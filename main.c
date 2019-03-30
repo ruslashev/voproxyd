@@ -18,7 +18,7 @@ int g_daemonize = 0;
 static void usage(const char *progname)
 {
     assert(progname != NULL);
-    printf("Usage %s [-h,--help]\n", progname);
+    printf("Usage: %s [-h,--help] [-d,--daemonize]\n", progname);
 }
 
 static void parse_daemonize()

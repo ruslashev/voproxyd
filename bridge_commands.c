@@ -1,5 +1,6 @@
 #include "bridge_commands.h"
 #include "log.h"
+#include "soap_ptz.h"
 
 static void log_p5t4(uint8_t p[5], uint8_t t[4])
 {
@@ -600,7 +601,12 @@ void bridge_cmd_pan_tilt_absolute_move(uint8_t speed, uint8_t p[5], uint8_t t[4]
 
 void bridge_cmd_pan_tilt_directionals(int vert, int horiz, uint8_t pan_speed, uint8_t tilt_speed)
 {
-    log("bridge_cmd_pan_tilt_directionals: % d, % d, (pan %d, tilt %d) STUB", vert, horiz, pan_speed, tilt_speed);
+    log("bridge_cmd_pan_tilt_directionals: % d, % d, (pan %d, tilt %d)", vert, horiz, pan_speed,
+            tilt_speed);
+
+    if (vert == 0 && horiz == 0) {
+        /* soap_ptz_stop_pantilt(g_soap) */
+    }
 }
 
 void bridge_cmd_pan_tilt_home()

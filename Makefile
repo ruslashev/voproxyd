@@ -94,7 +94,8 @@ deps/inih/ini.c:
 	@wget -q -O deps/inih/ini.c $(inih_src)/ini.c
 	@wget -q -O deps/inih/ini.h $(inih_src)/ini.h
 
-prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp soapcpp-wsdd copy-gsoap-sources move-nsmaps
+prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp soapcpp-wsdd \
+    copy-gsoap-sources move-nsmaps
 
 unzip-gsoap:
 	@echo "unzip deps/gsoap_2.8.74.zip"

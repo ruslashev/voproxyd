@@ -4,9 +4,9 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
-#include <stdio.h>
 
 extern int g_daemonize;
 
