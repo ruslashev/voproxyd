@@ -1,6 +1,8 @@
 #pragma once
 
-#include "soap_utils.h"
+#include <soapH.h>
+
+typedef struct soap soap_t;
 
 extern soap_t *g_soap;
 
