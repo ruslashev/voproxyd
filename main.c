@@ -89,13 +89,15 @@ int main(int argc, char *argv[])
     }
 
     soap_instance_construct();
+
 #include "onvif_example/secrets.h"
     soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
     log("device info:");
     soap_utils_print_device_info(g_soap, SERVICE_ENDPOINT);
     log(" ");
-    soap_instance_destruct();
 
     start_worker();
+
+    soap_instance_destruct();
 }
 

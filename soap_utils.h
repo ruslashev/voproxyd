@@ -9,9 +9,8 @@ typedef struct _trt__GetProfilesResponse profiles_t;
 typedef struct _tds__GetDeviceInformationResponse device_info_t;
 
 #define soap_utils_log_error(S) \
-    log("soap error: error=%d faultstring='%s' faultcode='%s' faultsubcode='%s' faultdetail='%s'", \
-            (S)->error, *soap_faultstring((S)), *soap_faultcode((S)), *soap_faultsubcode((S)), \
-            *soap_faultdetail((S)));
+    log("soap error #%d: %s in %s/%s: %s", (S)->error, *soap_faultstring((S)), \
+            *soap_faultcode((S)), *soap_faultsubcode((S)), *soap_faultdetail((S)));
 #define soap_die(S, ...) do { soap_utils_log_error(S); die(ERR_SOAP, __VA_ARGS__); } while (0)
 
 void soap_utils_set_credentials(soap_t *soap, const char *username, const char *pwd);
