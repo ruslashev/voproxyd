@@ -102,6 +102,12 @@ int main(int argc, char *argv[])
 
     soap_utils_get_profiles(g_soap, soap_utils_get_media_xaddr(&g_services), &g_profiles);
 
+    if (g_profiles.Profiles->Name != NULL)
+        log("profiles name: %s", g_profiles.Profiles->Name);
+
+    if (g_profiles.Profiles->VideoEncoderConfiguration != NULL)
+        log("profiles token: %s", g_profiles.Profiles->VideoEncoderConfiguration->Name);
+
     start_worker();
 
     soap_instance_destruct();
