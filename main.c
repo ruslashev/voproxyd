@@ -91,22 +91,23 @@ int main(int argc, char *argv[])
     soap_instance_construct();
 
 #include "onvif_example/secrets.h"
-    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
-    log("auth ok");
 
     log("device info:");
+    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
     soap_utils_print_device_info(g_soap, SERVICE_ENDPOINT);
     log(" ");
 
+    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
     soap_utils_get_services(g_soap, SERVICE_ENDPOINT, &g_services);
 
+    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
     soap_utils_get_profiles(g_soap, soap_utils_get_media_xaddr(&g_services), &g_profiles);
 
     if (g_profiles.Profiles->Name != NULL)
-        log("profiles name: %s", g_profiles.Profiles->Name);
-
+        log("profile 0 name: %s", g_profiles.Profiles->Name);
     if (g_profiles.Profiles->VideoEncoderConfiguration != NULL)
-        log("profiles token: %s", g_profiles.Profiles->VideoEncoderConfiguration->Name);
+        log("profile 0 token: %s", g_profiles.Profiles->VideoEncoderConfiguration->Name);
+    log(" ");
 
     start_worker();
 

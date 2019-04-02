@@ -1,6 +1,10 @@
 #include "bridge_commands.h"
 #include "log.h"
 #include "soap_ptz.h"
+#include "soap_utils.h"
+#include "soap_instance.h"
+
+#include "onvif_example/secrets.h"
 
 static void log_p5t4(uint8_t p[5], uint8_t t[4])
 {
@@ -601,17 +605,31 @@ void bridge_cmd_pan_tilt_absolute_move(uint8_t speed, uint8_t p[5], uint8_t t[4]
 
 void bridge_cmd_pan_tilt_directionals(int vert, int horiz, uint8_t pan_speed, uint8_t tilt_speed)
 {
+    /* speeds from 0 to 24 in visca */
+
+    float pan_x = (float)horiz * 0.1f,
+          pan_y = (float)vert * 0.1f;
+
     log("bridge_cmd_pan_tilt_directionals: % d, % d, (pan %d, tilt %d)", vert, horiz, pan_speed,
             tilt_speed);
 
+    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
+
     if (vert == 0 && horiz == 0) {
-        /* soap_ptz_stop_pantilt(g_soap) */
+        soap_ptz_stop_pantilt(g_soap, soap_utils_get_ptz_xaddr(&g_services), g_profiles.Profiles[0].token);
+        return;
     }
+
+    soap_ptz_continuous_move(g_soap, soap_utils_get_ptz_xaddr(&g_services), g_profiles.Profiles[0].token, pan_x, pan_y, 0);
 }
 
 void bridge_cmd_pan_tilt_home()
 {
-    log("bridge_cmd_pan_tilt_home STUB");
+    log("bridge_cmd_pan_tilt_home");
+
+    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
+
+    soap_ptz_goto_home(g_soap, soap_utils_get_ptz_xaddr(&g_services), g_profiles.Profiles[0].token);
 }
 
 void bridge_cmd_pan_tilt_limit_clear(uint8_t position)
@@ -738,7 +756,11 @@ void bridge_cmd_zoom_direct(uint32_t p)
 
 void bridge_cmd_zoom_stop()
 {
-    log("bridge_cmd_zoom_stop STUB");
+    log("bridge_cmd_zoom_stop");
+
+    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
+
+    soap_ptz_stop_zoom(g_soap, soap_utils_get_ptz_xaddr(&g_services), g_profiles.Profiles[0].token);
 }
 
 void bridge_cmd_zoom_tele()
@@ -753,7 +775,13 @@ void bridge_cmd_zoom_teleconvert_mode(uint8_t on)
 
 void bridge_cmd_zoom_tele_var(uint8_t p)
 {
-    log("bridge_cmd_zoom_tele_var STUB");
+    /* speed from 0 to 7 */
+
+    log("bridge_cmd_zoom_tele_var %d", p);
+
+    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
+
+    soap_ptz_continuous_move(g_soap, soap_utils_get_ptz_xaddr(&g_services), g_profiles.Profiles[0].token, 0, 0, 0.1f);
 }
 
 void bridge_cmd_zoom_wide()
@@ -763,6 +791,12 @@ void bridge_cmd_zoom_wide()
 
 void bridge_cmd_zoom_wide_var(uint8_t p)
 {
-    log("bridge_cmd_zoom_wide_var STUB");
+    /* speed from 0 to 7 */
+
+    log("bridge_cmd_zoom_wide_var %d", p);
+
+    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
+
+    soap_ptz_continuous_move(g_soap, soap_utils_get_ptz_xaddr(&g_services), g_profiles.Profiles[0].token, 0, 0, -0.1f);
 }
 
