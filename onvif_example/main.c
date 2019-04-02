@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdint.h>
 
+int g_daemonize = 0;
+
 int ContinuousMove(soap_t* soap, profiles_t *profiles, char* ptz_xaddr)
 {
     struct _tptz__ContinuousMove *move = soap_malloc(soap, sizeof(struct _tptz__ContinuousMove));
