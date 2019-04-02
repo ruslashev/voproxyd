@@ -178,3 +178,6 @@ clean-onvif:
 
 clean-all: clean clean-onvif
 
+wcl:
+	@wc -l $(wildcard *.c) $(wildcard *.h) Makefile
+
