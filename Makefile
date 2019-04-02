@@ -11,8 +11,9 @@ sources = avltree.c \
           visca_commands.c \
           visca_inquiries.c \
           worker.c \
-          soap_utils.c \
           soap_instance.c \
+          soap_ptz.c \
+          soap_utils.c \
           deps/inih/ini.c \
           $(wildcard deps/onvif/*.c)
 cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \

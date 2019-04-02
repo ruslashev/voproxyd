@@ -9,6 +9,8 @@
             *soap_faultcode((S)), *soap_faultsubcode((S)), *soap_faultdetail((S)));
 #define soap_die(S, ...) do { soap_utils_log_error(S); die(ERR_SOAP, __VA_ARGS__); } while (0)
 
+#define soap_utils_int_to_bool(X) ((X) ? xsd__boolean__true_ : xsd__boolean__false_ )
+
 void soap_utils_set_credentials(soap_t *soap, const char *username, const char *pwd);
 char* soap_utils_get_media_xaddr(services_t *services);
 char* soap_utils_get_ptz_xaddr(services_t *services);
