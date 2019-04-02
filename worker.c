@@ -161,8 +161,8 @@ static int epoll_handle_read_queue_udp(struct ap_state *state)
 
     state->current_event->addr = (struct sockaddr*)&addr;
 
-    log("recvfrom fd = %d message_length = %zd %s", state->current, message_length,
-            (errno == EAGAIN || errno == EWOULDBLOCK) ? "eagain" : "");
+    if (!(message_length == -1 && errno == EAGAIN))
+        log("recvfrom fd = %d message_length = %zd", state->current, message_length);
 
     if (message_length == 0) {
         log("close connection on socket fd = %d", state->current);
