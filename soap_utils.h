@@ -4,10 +4,6 @@
 #include "errors.h"
 #include "soap_instance.h"
 
-typedef struct _tds__GetServicesResponse services_t;
-typedef struct _trt__GetProfilesResponse profiles_t;
-typedef struct _tds__GetDeviceInformationResponse device_info_t;
-
 #define soap_utils_log_error(S) \
     log("soap error #%d: %s in %s/%s: %s", (S)->error, *soap_faultstring((S)), \
             *soap_faultcode((S)), *soap_faultsubcode((S)), *soap_faultdetail((S)));

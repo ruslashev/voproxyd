@@ -3,6 +3,8 @@
 #include "log.h"
 
 soap_t *g_soap;
+services_t g_services;
+profiles_t g_profiles;
 
 void soap_instance_construct()
 {
