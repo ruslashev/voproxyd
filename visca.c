@@ -88,7 +88,7 @@ static void handle_visca_command(const struct message_t *message, const struct e
 {
     buffer_t *response = compose_ack();
 
-    log("handle_visca_command");
+    log("visca: handle_visca_command");
 
     visca_send_response(event, response);
     free(response);
@@ -115,7 +115,7 @@ static void handle_visca_inquiry(const struct message_t *message, const struct e
 {
     buffer_t *inquiry_data, *response;
 
-    log("handle_visca_inquiry");
+    log("visca: handle_visca_inquiry");
 
     if (message->payload_length < 5) {
         log("handle_visca_inquiry: unexpected length %zu", message->payload_length);
@@ -144,7 +144,7 @@ static void handle_visca_reply(const struct message_t *message, const struct eve
     (void)message;
     (void)event;
 
-    log("handle_visca_reply");
+    log("visca: handle_visca_reply");
 }
 
 static void handle_visca_device_setting_cmd(const struct message_t *message, const struct event_t *event)
@@ -152,12 +152,12 @@ static void handle_visca_device_setting_cmd(const struct message_t *message, con
     (void)message;
     (void)event;
 
-    log("handle_visca_device_setting_cmd");
+    log("visca: handle_visca_device_setting_cmd");
 }
 
 static void handle_control_command(const struct message_t *message, const struct event_t *event)
 {
-    log("handle_control_command");
+    log("visca: handle_control_command");
     buffer_t *response;
 
     switch (message->payload[0]) {
@@ -199,7 +199,7 @@ static void handle_control_reply(const struct message_t *message, const struct e
     (void)message;
     (void)event;
 
-    log("handle_control_reply");
+    log("visca: handle_control_reply");
 }
 
 void visca_handle_message(const buffer_t *message_buf, const struct event_t *event)
@@ -210,7 +210,7 @@ void visca_handle_message(const buffer_t *message_buf, const struct event_t *eve
         .payload_length = message_buf->length - 8,
     };
 
-    log("got msg:");
+    log("visca: visca_handle_message: got msg:");
     print_buffer(message_buf, 16);
 
     visca_header_convert_endianness_ntoh(message.header);
