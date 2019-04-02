@@ -6,4 +6,5 @@ void soap_ptz_continuous_move(soap_t *soap, char *ptz_xaddr, char *profile_token
 void soap_ptz_goto_home(soap_t *soap, char *ptz_xaddr, char *profile_token);
 void soap_ptz_stop_pantilt(soap_t *soap, char *ptz_xaddr, char *profile_token);
 void soap_ptz_stop_zoom(soap_t *soap, char *ptz_xaddr, char *profile_token);
+void soap_ptz_stop_all(soap_t *soap, char *ptz_xaddr, char *profile_token);
 

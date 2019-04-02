@@ -67,3 +67,8 @@ void soap_ptz_stop_zoom(soap_t *soap, char *ptz_xaddr, char *profile_token)
     stop(soap, ptz_xaddr, 0, 1);
 }
 
+void soap_ptz_stop_all(soap_t *soap, char *ptz_xaddr, char *profile_token)
+{
+    stop(soap, ptz_xaddr, 1, 1);
+}
+
