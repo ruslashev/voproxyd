@@ -62,7 +62,7 @@ endif
 example_sources = onvif_example/main.c soap_utils.c $(wildcard deps/onvif/*.c)
 example_objs = $(example_sources:%=$(build_dir)/%.o)
 example_binname = example
-inih_src = https://raw.githubusercontent.com/benhoyt/inih/master
+inih_url = https://raw.githubusercontent.com/benhoyt/inih/master
 
 all: $(binname)
 	./$(binname)
@@ -75,7 +75,7 @@ $(build_dir)/%.c.o: %.c
 	@echo "cc $<"
 	@$(cc) -c $< $(cflags) -o $@
 
-$(objs): | $(build_dir)
+$(objs): deps/inih/ini.c | $(build_dir)
 $(example_objs): | $(build_dir)
 
 $(build_dir):
@@ -92,8 +92,8 @@ $(example_binname): $(example_objs)
 deps/inih/ini.c:
 	@echo "download inih"
 	@mkdir -p deps/inih
-	@wget -q -O deps/inih/ini.c $(inih_src)/ini.c
-	@wget -q -O deps/inih/ini.h $(inih_src)/ini.h
+	@wget -q -O deps/inih/ini.c $(inih_url)/ini.c
+	@wget -q -O deps/inih/ini.h $(inih_url)/ini.h
 
 prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp soapcpp-wsdd \
     copy-gsoap-sources move-nsmaps

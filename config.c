@@ -179,9 +179,11 @@ char* config_get_config_filename()
         CONFIG_NAME_XDG);
 }
 
-void config_init()
+void config_read()
 {
     char *filename = config_get_config_filename();
+
+    // can i get uhhhhhhhhhh
 
     free(filename);
 }
