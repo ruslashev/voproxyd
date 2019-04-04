@@ -35,5 +35,6 @@ enum {
     ERR_GETENV         = 31,
     ERR_WRITE          = 32,
     ERR_INOTIFY        = 33,
+    ERR_CONFIG         = 34,
 };
 

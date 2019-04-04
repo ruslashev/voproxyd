@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 {
     parse_arguments(argc, argv);
 
-    config_init();
+    config_read();
 
     if (g_daemonize) {
         openlog("voproxyd", LOG_NDELAY | LOG_PID, LOG_USER);

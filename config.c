@@ -12,6 +12,8 @@
 #define CONFIG_NAME_CWD CONFIG_NAME_HOME
 #define XDG_DIR_NAME "voproxyd"
 
+struct config g_config;
+
 static int file_exists(char *filename)
 {
     struct stat st = { 0 };
@@ -84,7 +86,13 @@ static void write_to_xdg_file()
     char *filename = get_xdg_filename();
     FILE *f;
     const char contents[] =
-        "asdf";
+        "# this is a check to make sure you've modified the example file\n"
+        "unmodified = true # remove this line\n"
+        "\n"
+        "username = user\n"
+        "password = pass\n"
+        "ip = 192.168.1.1\n"
+        "\n";
 
     f = fopen(filename, "w+");
     if (!f)
@@ -179,11 +187,28 @@ char* config_get_config_filename()
         CONFIG_NAME_XDG);
 }
 
+static int ini_cb(void *user, const char *section, const char *name, const char *value, int line)
+{
+    if (strcmp(name, "username") == 0)
+        g_config.username = strdup(value);
+    else if (strcmp(name, "password") == 0)
+        g_config.password = strdup(value);
+    else if (strcmp(name, "ip") == 0)
+        g_config.ip = strdup(value);
+    else if (strcmp(name, "unmodified") == 0)
+        die(ERR_CONFIG, "please edit autocreated config and remove line \"unmodified = true\"");
+    else
+        die(ERR_CONFIG, "config error: unknown option \"%s\" in %s:%d.", name, (char*)user, line);
+
+    return 1;
+}
+
 void config_read()
 {
     char *filename = config_get_config_filename();
 
-    // can i get uhhhhhhhhhh
+    if (ini_parse(filename, ini_cb, filename) < 0)
+        die(ERR_CONFIG, "failed to parse config file \"%s\"", filename);
 
     free(filename);
 }

@@ -8,6 +8,16 @@
 
 #include "deps/inih/ini.h"
 
+struct config
+{
+    const char *username;
+    const char *password; /* blame onvif for requiring to pass plaintext passwords */
+    const char *ip;
+    const char *port;
+};
+
+extern struct config g_config;
+
 char* config_get_config_filename();
 void config_read();
 
