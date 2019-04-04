@@ -257,6 +257,9 @@ static void epoll_handle_event(struct ap_state *state, const struct epoll_event 
 {
     int continue_reading = 1, client_fd;
 
+    if (state->current_event->type == FDT_INOTIFY)
+        return;
+
     log(" ");
     log("new event on fd = %d", state->current);
 
