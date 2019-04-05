@@ -143,5 +143,6 @@ void soap_utils_list_profiles()
     for (int i = 0; i < g_profiles.__sizeProfiles; ++i)
         log(" %d. name: %s, ref. token: %s, video encoder name: %s", i, g_profiles.Profiles[i].Name,
                 g_profiles.Profiles[i].token, g_profiles.Profiles[i].VideoEncoderConfiguration->Name);
+    log(" ");
 }
 
