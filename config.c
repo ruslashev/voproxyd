@@ -195,6 +195,8 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
         g_config.password = strdup(value);
     else if (strcmp(name, "ip") == 0)
         g_config.ip = strdup(value);
+    else if (strcmp(name, "port") == 0)
+        g_config.port = strdup(value);
     else if (strcmp(name, "unmodified") == 0)
         die(ERR_CONFIG, "please edit autocreated config and remove line \"unmodified = true\"");
     else
@@ -206,10 +208,43 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
 void config_read()
 {
     char *filename = config_get_config_filename();
+    const char *template =
+        "error in config file %s: no %s provided.\n"
+        "remove this file to regenerate example config.\n";
+    const char *default_port = "80";
+
+    g_config.username = g_config.password = g_config.ip = g_config.port = NULL;
 
     if (ini_parse(filename, ini_cb, filename) < 0)
         die(ERR_CONFIG, "failed to parse config file \"%s\"", filename);
 
+    if (g_config.username == NULL)
+        die(ERR_CONFIG, template, filename, "username");
+
+    if (g_config.password == NULL)
+        die(ERR_CONFIG, template, filename, "password");
+
+    if (g_config.ip == NULL)
+        die(ERR_CONFIG, template, filename, "ip");
+
+    if (g_config.port == NULL) {
+        g_config.port = strdup(default_port);
+        log("warning: using default port %s. to change add line \"port = ...\" to config.", default_port);
+    }
+
+    g_config.service_endpoint = malloc(MAX_STRING_LEN);
+    if (g_config.service_endpoint == NULL)
+        die(ERR_ALLOC, "failed to allocate service endpoint string");
+
+    if (snprintf(g_config.service_endpoint, MAX_STRING_LEN, "http://%s:%s/onvif/device_service",
+                g_config.ip, g_config.port) >= MAX_STRING_LEN)
+        die(ERR_WRITE, "serivce endpoint string overflow");
+
     free(filename);
+}
+
+void config_destruct()
+{
+    free(g_config.service_endpoint);
 }
 

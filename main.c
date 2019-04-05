@@ -112,5 +112,6 @@ int main(int argc, char *argv[])
     start_worker();
 
     soap_instance_destruct();
+    config_destruct();
 }
 
