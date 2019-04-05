@@ -15,6 +15,7 @@ struct config
     const char *ip;
     const char *port;
     char *service_endpoint;
+    int profile_idx;
 };
 
 extern struct config g_config;

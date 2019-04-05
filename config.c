@@ -92,6 +92,10 @@ static void write_to_xdg_file()
         "username = user\n"
         "password = pass\n"
         "ip = 192.168.1.1\n"
+        "\n"
+        "# optional parameters and their default values:\n"
+        "# port = 80\n"
+        "# profile_idx = 0\n"
         "\n";
 
     f = fopen(filename, "w+");
@@ -197,6 +201,8 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
         g_config.ip = strdup(value);
     else if (strcmp(name, "port") == 0)
         g_config.port = strdup(value);
+    else if (strcmp(name, "profile_idx") == 0)
+        g_config.profile_idx = atoi(value);
     else if (strcmp(name, "unmodified") == 0)
         die(ERR_CONFIG, "please edit autocreated config and remove line \"unmodified = true\"");
     else
@@ -214,6 +220,7 @@ void config_read()
     const char *default_port = "80";
 
     g_config.username = g_config.password = g_config.ip = g_config.port = NULL;
+    g_config.profile_idx = 0;
 
     if (ini_parse(filename, ini_cb, filename) < 0)
         die(ERR_CONFIG, "failed to parse config file \"%s\"", filename);
