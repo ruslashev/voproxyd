@@ -103,12 +103,6 @@ int main(int argc, char *argv[])
     soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
     soap_utils_get_profiles(g_soap, soap_utils_get_media_xaddr(&g_services), &g_profiles);
 
-    if (g_profiles.Profiles->Name != NULL)
-        log("profile 0 name: %s", g_profiles.Profiles->Name);
-    if (g_profiles.Profiles->VideoEncoderConfiguration != NULL)
-        log("profile 0 token: %s", g_profiles.Profiles->VideoEncoderConfiguration->Name);
-    log(" ");
-
     start_worker();
 
     soap_instance_destruct();
