@@ -4,8 +4,6 @@
 #include "soap_utils.h"
 #include "soap_instance.h"
 
-#include "onvif_example/secrets.h"
-
 static void log_p5t4(uint8_t p[5], uint8_t t[4])
 {
     log("%02x%02x%02x%02x%02x %02x%02x%02x%02x", p[0], p[1], p[2], p[3], p[4],
@@ -606,9 +604,8 @@ void bridge_cmd_pan_tilt_absolute_move(uint8_t speed, uint8_t p[5], uint8_t t[4]
 void bridge_cmd_pan_tilt_directionals(int vert, int horiz, uint8_t pan_speed, uint8_t tilt_speed)
 {
     /* speeds from 0 to 24 in visca */
-
-    float pan_x = (float)horiz * 0.1f,
-          pan_y = (float)vert * 0.1f;
+    float pan_x = (float)horiz / 24.f,
+          pan_y = (float)vert / 24.f;
 
     log("bridge_cmd_pan_tilt_directionals: % d, % d, (pan %d, tilt %d)", vert, horiz, pan_speed,
             tilt_speed);
@@ -624,8 +621,6 @@ void bridge_cmd_pan_tilt_directionals(int vert, int horiz, uint8_t pan_speed, ui
 void bridge_cmd_pan_tilt_home()
 {
     log("bridge_cmd_pan_tilt_home");
-
-    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
 
     soap_ptz_goto_home();
 }
@@ -756,8 +751,6 @@ void bridge_cmd_zoom_stop()
 {
     log("bridge_cmd_zoom_stop");
 
-    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
-
     soap_ptz_stop_zoom();
 }
 
@@ -774,12 +767,11 @@ void bridge_cmd_zoom_teleconvert_mode(uint8_t on)
 void bridge_cmd_zoom_tele_var(uint8_t p)
 {
     /* speed from 0 to 7 */
+    float speed = (float)p / 7.f;
 
     log("bridge_cmd_zoom_tele_var %d", p);
 
-    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
-
-    soap_ptz_continuous_move(0, 0, 0.1f);
+    soap_ptz_continuous_move(0, 0, speed);
 }
 
 void bridge_cmd_zoom_wide()
@@ -790,11 +782,10 @@ void bridge_cmd_zoom_wide()
 void bridge_cmd_zoom_wide_var(uint8_t p)
 {
     /* speed from 0 to 7 */
+    float speed = (float)p / 7.f;
 
     log("bridge_cmd_zoom_wide_var %d", p);
 
-    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
-
-    soap_ptz_continuous_move(0, 0, -0.1f);
+    soap_ptz_continuous_move(0, 0, -speed);
 }
 
