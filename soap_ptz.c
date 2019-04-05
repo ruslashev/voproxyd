@@ -1,7 +1,7 @@
 #include "soap_ptz.h"
 #include "soap_utils.h"
 
-void soap_ptz_continuous_move(soap_t *soap, char *ptz_xaddr, char *profile_token, float pan_x, float pan_y, float zoom)
+void soap_ptz_continuous_move(float pan_x, float pan_y, float zoom)
 {
     struct _tptz__ContinuousMove move;
     struct _tptz__ContinuousMoveResponse move_resp;
@@ -9,14 +9,14 @@ void soap_ptz_continuous_move(soap_t *soap, char *ptz_xaddr, char *profile_token
     struct tt__Vector2D pantilt;
     struct tt__Vector1D zoom_s;
 
+    soap_ptz_prelude();
+
     pantilt.x = pan_x;
     pantilt.y = pan_y;
-    /* TODO: bs */
-    pantilt.space = g_profiles.Profiles->PTZConfiguration->DefaultContinuousPanTiltVelocitySpace;
+    pantilt.space = profile->PTZConfiguration->DefaultContinuousPanTiltVelocitySpace;
 
     zoom_s.x = zoom;
-    /* TODO: also bs */
-    zoom_s.space = g_profiles.Profiles->PTZConfiguration->DefaultContinuousZoomVelocitySpace;
+    zoom_s.space = profile->PTZConfiguration->DefaultContinuousZoomVelocitySpace;
 
     velocity.PanTilt = &pantilt;
     velocity.Zoom = &zoom_s;
@@ -28,14 +28,15 @@ void soap_ptz_continuous_move(soap_t *soap, char *ptz_xaddr, char *profile_token
         soap_die(soap, "failed to do continous move");
 }
 
-void soap_ptz_goto_home(soap_t *soap, char *ptz_xaddr, char *profile_token)
+void soap_ptz_goto_home()
 {
     struct _tptz__GotoHomePosition gohome;
     struct _tptz__GotoHomePositionResponse gohome_resp;
 
+    soap_ptz_prelude();
+
     gohome.ProfileToken = profile_token;
-    /* TODO: identifying bs */
-    gohome.Speed = g_profiles.Profiles->PTZConfiguration->DefaultPTZSpeed;
+    gohome.Speed = profile->PTZConfiguration->DefaultPTZSpeed;
 
     log("call gotohomeposition");
 
@@ -43,13 +44,15 @@ void soap_ptz_goto_home(soap_t *soap, char *ptz_xaddr, char *profile_token)
         soap_die(soap, "failed to goto home position");
 }
 
-static void stop(soap_t *soap, char *ptz_xaddr, char *profile_token, int pantilt, int zoom)
+static void stop(int pantilt, int zoom)
 {
     struct _tptz__Stop stop;
     struct _tptz__StopResponse stop_resp;
 
     enum xsd__boolean pantilt_s = soap_utils_int_to_bool(pantilt);
     enum xsd__boolean zoom_s = soap_utils_int_to_bool(zoom);
+
+    soap_ptz_prelude();
 
     stop.ProfileToken = profile_token;
     stop.PanTilt = &pantilt_s;
@@ -61,13 +64,13 @@ static void stop(soap_t *soap, char *ptz_xaddr, char *profile_token, int pantilt
         soap_die(soap, "failed to stop ptz");
 }
 
-void soap_ptz_stop_pantilt(soap_t *soap, char *ptz_xaddr, char *profile_token)
+void soap_ptz_stop_pantilt()
 {
-    stop(soap, ptz_xaddr, profile_token, 1, 0);
+    stop(1, 0);
 }
 
-void soap_ptz_stop_zoom(soap_t *soap, char *ptz_xaddr, char *profile_token)
+void soap_ptz_stop_zoom()
 {
-    stop(soap, ptz_xaddr, profile_token, 0, 1);
+    stop(0, 1);
 }
 

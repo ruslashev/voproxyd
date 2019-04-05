@@ -37,7 +37,10 @@ void soap_utils_get_services(soap_t *soap, const char *endpoint, services_t *ser
 {
     struct _tds__GetServices get_services_trt;
 
-    soap_default__tds__GetServices(soap, &get_services_trt);
+    soap_utils_auth();
+
+    /* TODO: removeme */
+    /* soap_default__tds__GetServices(soap, &get_services_trt); */
 
     get_services_trt.IncludeCapability = xsd__boolean__false_;
 
@@ -50,31 +53,38 @@ void soap_utils_get_profiles(soap_t *soap, const char *media_xaddr, profiles_t *
 {
     struct _trt__GetProfiles get_profiles_trt;
 
+    soap_utils_auth();
+
     if (soap_call___trt__GetProfiles(soap, media_xaddr, NULL, &get_profiles_trt, profiles) != SOAP_OK
             || profiles->Profiles == NULL)
         soap_die(soap, "failed to get profiles");
 }
 
-void soap_utils_get_device_information(soap_t *soap, const char *endpoint, device_info_t *device_info)
+void soap_utils_get_device_information(soap_t *soap, const char *service_endpoint,
+        device_info_t *device_info)
 {
     struct _tds__GetDeviceInformation get_device_info_tds;
 
-    if (soap_call___tds__GetDeviceInformation(soap, endpoint, NULL, &get_device_info_tds,
+    soap_utils_auth();
+
+    if (soap_call___tds__GetDeviceInformation(soap, service_endpoint, NULL, &get_device_info_tds,
                 device_info) != SOAP_OK)
         soap_die(soap, "failed to get device information");
 }
 
-void soap_utils_print_device_info(soap_t *soap, const char *endpoint)
+void soap_utils_print_device_info(soap_t *soap, const char *service_endpoint)
 {
     device_info_t device_info;
 
-    soap_utils_get_device_information(soap, endpoint, &device_info);
+    soap_utils_get_device_information(soap, service_endpoint, &device_info);
 
+    log("device info:");
     log("Manufacturer:    %s", device_info.Manufacturer);
     log("Model:           %s", device_info.Model);
     log("FirmwareVersion: %s", device_info.FirmwareVersion);
     log("SerialNumber:    %s", device_info.SerialNumber);
     log("HardwareId:      %s", device_info.HardwareId);
+    log(" ");
 }
 
 void soap_utils_get_snapshot_uri(soap_t *soap, const char *endpoint, char *profile_token,
@@ -82,6 +92,8 @@ void soap_utils_get_snapshot_uri(soap_t *soap, const char *endpoint, char *profi
 {
     struct _trt__GetSnapshotUri get_snapshot_uri_trt;
     struct _trt__GetSnapshotUriResponse snapshot_uri_response;
+
+    soap_utils_auth();
 
     get_snapshot_uri_trt.ProfileToken = profile_token;
 

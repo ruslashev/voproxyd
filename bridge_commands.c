@@ -613,14 +613,12 @@ void bridge_cmd_pan_tilt_directionals(int vert, int horiz, uint8_t pan_speed, ui
     log("bridge_cmd_pan_tilt_directionals: % d, % d, (pan %d, tilt %d)", vert, horiz, pan_speed,
             tilt_speed);
 
-    soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
-
     if (vert == 0 && horiz == 0) {
-        soap_ptz_stop_pantilt(g_soap, soap_utils_get_ptz_xaddr(&g_services), g_profiles.Profiles[0].token);
+        soap_ptz_stop_pantilt();
         return;
     }
 
-    soap_ptz_continuous_move(g_soap, soap_utils_get_ptz_xaddr(&g_services), g_profiles.Profiles[0].token, pan_x, pan_y, 0);
+    soap_ptz_continuous_move(pan_x, pan_y, 0);
 }
 
 void bridge_cmd_pan_tilt_home()
@@ -629,7 +627,7 @@ void bridge_cmd_pan_tilt_home()
 
     soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
 
-    soap_ptz_goto_home(g_soap, soap_utils_get_ptz_xaddr(&g_services), g_profiles.Profiles[0].token);
+    soap_ptz_goto_home();
 }
 
 void bridge_cmd_pan_tilt_limit_clear(uint8_t position)
@@ -760,7 +758,7 @@ void bridge_cmd_zoom_stop()
 
     soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
 
-    soap_ptz_stop_zoom(g_soap, soap_utils_get_ptz_xaddr(&g_services), g_profiles.Profiles[0].token);
+    soap_ptz_stop_zoom();
 }
 
 void bridge_cmd_zoom_tele()
@@ -781,7 +779,7 @@ void bridge_cmd_zoom_tele_var(uint8_t p)
 
     soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
 
-    soap_ptz_continuous_move(g_soap, soap_utils_get_ptz_xaddr(&g_services), g_profiles.Profiles[0].token, 0, 0, 0.1f);
+    soap_ptz_continuous_move(0, 0, 0.1f);
 }
 
 void bridge_cmd_zoom_wide()
@@ -797,6 +795,6 @@ void bridge_cmd_zoom_wide_var(uint8_t p)
 
     soap_utils_set_credentials(g_soap, ONVIF_USER, ONVIF_PASSWORD);
 
-    soap_ptz_continuous_move(g_soap, soap_utils_get_ptz_xaddr(&g_services), g_profiles.Profiles[0].token, 0, 0, -0.1f);
+    soap_ptz_continuous_move(0, 0, -0.1f);
 }
 
