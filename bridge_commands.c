@@ -758,7 +758,9 @@ void bridge_cmd_zoom_stop()
 
 void bridge_cmd_zoom_tele()
 {
-    log("bridge_cmd_zoom_tele STUB");
+    log("bridge_cmd_zoom_tele");
+
+    soap_ptz_continuous_move(0, 0, 0.5f);
 }
 
 void bridge_cmd_zoom_teleconvert_mode(uint8_t on)
@@ -778,7 +780,9 @@ void bridge_cmd_zoom_tele_var(uint8_t p)
 
 void bridge_cmd_zoom_wide()
 {
-    log("bridge_cmd_zoom_wide STUB");
+    log("bridge_cmd_zoom_wide");
+
+    soap_ptz_continuous_move(0, 0, -0.5f);
 }
 
 void bridge_cmd_zoom_wide_var(uint8_t p)
