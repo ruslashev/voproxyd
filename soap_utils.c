@@ -137,12 +137,17 @@ void soap_utils_save_snapshot(const char *filename, const char *snapshot_uri)
     soap_free(soap);
 }
 
+#define str_safe_echo(X) ((X) == NULL ? "(null)" : (X))
+
 void soap_utils_list_profiles()
 {
     log("available profiles:");
     for (int i = 0; i < g_profiles.__sizeProfiles; ++i)
-        log(" %d. name: %s, ref. token: %s, video encoder name: %s", i, g_profiles.Profiles[i].Name,
-                g_profiles.Profiles[i].token, g_profiles.Profiles[i].VideoEncoderConfiguration->Name);
+        log(" %d. name: %s, ref. token: %s, video encoder name: %s", i,
+                str_safe_echo(g_profiles.Profiles[i].Name),
+                str_safe_echo(g_profiles.Profiles[i].token),
+                g_profiles.Profiles[i].VideoEncoderConfiguration == NULL ? "(missing)" :
+                str_safe_echo(g_profiles.Profiles[i].VideoEncoderConfiguration->Name));
     log(" ");
 }
 
