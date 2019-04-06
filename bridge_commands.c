@@ -604,11 +604,13 @@ void bridge_cmd_pan_tilt_absolute_move(uint8_t speed, uint8_t p[5], uint8_t t[4]
 void bridge_cmd_pan_tilt_directionals(int vert, int horiz, uint8_t pan_speed, uint8_t tilt_speed)
 {
     /* speeds from 0 to 24 in visca */
-    float pan_x = (float)horiz / 24.f,
-          pan_y = (float)vert / 24.f;
+    float trans_speed_x = (float)pan_speed / 24.f,
+          trans_speed_y = (float)tilt_speed / 24.f,
+          pan_x = (float)horiz * trans_speed_x,
+          pan_y = (float)vert * trans_speed_y;
 
-    log("bridge_cmd_pan_tilt_directionals: % d, % d, (pan %d, tilt %d)", vert, horiz, pan_speed,
-            tilt_speed);
+    log("bridge_cmd_pan_tilt_directionals: % d, % d, (%d, %d) -> (%.2f, %.2f)", vert, horiz,
+            pan_speed, tilt_speed, pan_x, pan_y);
 
     if (vert == 0 && horiz == 0) {
         soap_ptz_stop_pantilt();
