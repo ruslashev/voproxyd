@@ -124,6 +124,13 @@ static void create_xdg_dirs()
         die(ERR_ALLOC, "failed to allocate string buffer");
 
     if (xdg_config_home)
+        snprintf(directory, MAX_STRING_LEN, "%s", xdg_config_home);
+    else
+        snprintf(directory, MAX_STRING_LEN, "%s/%s", home, ".config");
+
+    create_directory_if_not_exists(directory);
+
+    if (xdg_config_home)
         snprintf(directory, MAX_STRING_LEN, "%s/%s", xdg_config_home, XDG_DIR_NAME);
     else
         snprintf(directory, MAX_STRING_LEN, "%s/%s/%s", home, ".config", XDG_DIR_NAME);
