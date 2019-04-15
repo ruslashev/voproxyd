@@ -773,7 +773,7 @@ void bridge_cmd_zoom_tele_var(uint8_t p)
     /* speed from 0 to 7 */
     float speed = (float)p / 7.f;
 
-    log("bridge_cmd_zoom_tele_var %d", p);
+    log("bridge_cmd_zoom_tele_var %d -> %.2f", p, speed);
 
     soap_ptz_continuous_move(0, 0, speed);
 }
