@@ -88,10 +88,9 @@ int main(int argc, char *argv[])
     }
 
     config_read();
-
     discovery_init();
-
     soap_global_construct();
+    address_mngr_init();
 
     discovery_do(3000);
 
@@ -101,5 +100,6 @@ int main(int argc, char *argv[])
 
     soap_global_destruct();
     discovery_destruct();
+    address_mngr_destruct();
 }
 

@@ -1,4 +1,5 @@
-sources = avltree.c \
+sources = address_manager.c \
+          avltree.c \
           bridge_commands.c \
           bridge_inquiries.c \
           buffer.c \

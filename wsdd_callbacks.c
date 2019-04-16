@@ -1,5 +1,6 @@
 #include "wsdd_callbacks.h"
 #include "log.h"
+#include "address_manager.h"
 
 #define log_match(X) do { \
     if ((X)->wsa5__EndpointReference.Address) \
@@ -35,6 +36,8 @@ void wsdd_event_ProbeMatches(struct soap *soap, unsigned int instance_id, const 
         log("match %d/%d", i + 1, matches->__sizeProbeMatch);
         log_match(&matches->ProbeMatch[i]);
         log(" ");
+
+        address_mngr_add_address();
     }
 }
 
