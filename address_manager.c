@@ -1,6 +1,8 @@
 #include "address_manager.h"
 #include "avltree.h"
-#include "soap_instance.h"
+#include "socket.h"
+#include "worker.h"
+#include "log.h"
 
 struct avl_tree_t *address_map;
 
@@ -9,7 +11,7 @@ void address_mngr_init()
     avl_tree_construct(address_map);
 }
 
-static void create_unique_port_from_ip(const char *ip)
+static int create_unique_port_from_ip(const char *ip)
 {
     return 0; /* idk lol */
 }
@@ -17,11 +19,24 @@ static void create_unique_port_from_ip(const char *ip)
 void address_mngr_add_address()
 {
     const char *fix_compilation_ip, *fix_compilation_port;
-    int port = create_unique_port_from_ip(fix_compilation_ip);
-    struct soap_instance *instance = soap_instance_allocate(fix_compilation_ip, fix_compilation_port);
+    int port, fd;
+    struct soap_instance *instance;
 
-    log("add address map %d -> %s", port, fix_compilation_ip);
-    avl_tree_insert(address_map, port, instance);
+    port = create_unique_port_from_ip(fix_compilation_ip);
+
+    fd = socket_create_udp(port);
+
+    instance = soap_instance_allocate(fix_compilation_ip, fix_compilation_port);
+
+    worker_add_udp_fd(fd);
+
+    log("add address map fd %d -> port %d -> ip %s", fd, port, fix_compilation_ip);
+    avl_tree_insert(address_map, fd, instance);
+}
+
+struct soap_instance* address_mngr_get_soap_instance_from_fd(int fd)
+{
+    return avl_tree_find(address_map, fd);
 }
 
 static void node_destruction_cb(struct avl_node_t *node)
