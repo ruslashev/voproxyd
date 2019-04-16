@@ -1,5 +1,6 @@
 #include "config.h"
 #include "log.h"
+#include "soap_instance.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -202,22 +203,29 @@ char* config_get_config_filename()
 
 static int ini_cb(void *user, const char *section, const char *name, const char *value, int line)
 {
-    if (strcmp(name, "username") == 0)
+#define streq(X, Y) (strcmp((X), (Y)) == 0)
+
+    if (section != NULL) {
+        struct soap_instance *instance = address_mngr_find_soap_instance_matching_ip(section);
+        if (instance == NULL) {
+            log("config file %s:%d warning: can't find ip \"%s\"", (char*)user, line, section);
+            return 1;
+        }
+
+        if (streq(name, "profile_idx"))
+            instance->profile_idx = atoi(value);
+        else
+            log("config file %s:%d warning: unknown option \"%s\"", name, (char*)user, line);
+    }
+
+    if (streq(name, "username"))
         g_config.username = strdup(value);
-    else if (strcmp(name, "password") == 0)
+    else if (streq(name, "password"))
         g_config.password = strdup(value);
-    /*
-    else if (strcmp(name, "ip") == 0)
-        g_config.ip = strdup(value);
-    else if (strcmp(name, "port") == 0)
-        g_config.port = strdup(value);
-    else if (strcmp(name, "profile_idx") == 0)
-        g_config.profile_idx = atoi(value);
-        */
-    else if (strcmp(name, "unmodified") == 0)
+    else if (streq(name, "unmodified"))
         die(ERR_CONFIG, "please edit autocreated config and remove line \"unmodified = true\"");
     else
-        die(ERR_CONFIG, "config error: unknown option \"%s\" in %s:%d.", name, (char*)user, line);
+        log("config file %s:%d warning: unknown option \"%s\"", name, (char*)user, line);
 
     return 1;
 }

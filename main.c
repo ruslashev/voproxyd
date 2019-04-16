@@ -88,12 +88,13 @@ int main(int argc, char *argv[])
         daemonize();
     }
 
-    config_read();
     discovery_init();
     soap_global_construct();
     address_mngr_init();
 
     discovery_do(3000);
+
+    config_read();
 
     worker_start();
 
