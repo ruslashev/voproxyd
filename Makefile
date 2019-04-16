@@ -14,6 +14,7 @@ sources = avltree.c \
           soap_instance.c \
           soap_ptz.c \
           soap_utils.c \
+          wsdd_callbacks.c \
           deps/inih/ini.c \
           $(wildcard deps/onvif/*.c)
 cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \

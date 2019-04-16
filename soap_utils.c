@@ -1,5 +1,4 @@
 #include "soap_utils.h"
-#include "onvif_wsdd_stubs.h"
 #include <wsseapi.h>
 #include <nsmaps/wsdd.nsmap>
 
