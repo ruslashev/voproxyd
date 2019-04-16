@@ -43,6 +43,35 @@ struct soap_instance* address_mngr_get_soap_instance_from_fd(int fd)
     return instance;
 }
 
+static struct soap_instance* find_soap_instance_matching_ip(struct avl_node_t *node, const char *ip)
+{
+    if (node == NULL)
+        return NULL;
+
+    struct soap_instance *res, *data;
+
+    if ((res = find_soap_instance_matching_ip(node->left, ip)) != NULL)
+        return res;
+
+    if ((res = find_soap_instance_matching_ip(node->right, ip)) != NULL)
+        return res;
+
+    data = node->data;
+
+    if (strstr(data->service_endpoint, ip) != NULL)
+        return data;
+
+    return NULL;
+}
+
+struct soap_instance* address_mngr_find_soap_instance_matching_ip(const char *ip)
+{
+    if (address_map == NULL)
+        return NULL;
+
+    return find_soap_instance_matching_ip(address_map->root, ip);
+}
+
 static void node_destruction_cb(struct avl_node_t *node)
 {
     close(node->key);
