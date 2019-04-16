@@ -151,10 +151,10 @@ static struct avl_node_t* delete_key(struct avl_node_t *x, int key)
     return balance(x);
 }
 
-static int find(struct avl_node_t *root, int key)
+static void* find(struct avl_node_t *root, int key)
 {
     if (root == NULL) {
-        return 0;
+        return NULL;
     }
 
     if (key < root->key) {
@@ -162,7 +162,7 @@ static int find(struct avl_node_t *root, int key)
     }
 
     if (key == root->key) {
-        return 1;
+        return root->data;
     }
 
     return find(root->right, key);
@@ -203,7 +203,7 @@ void avl_tree_delete(struct avl_tree_t *tree, int key)
     tree->root = delete_key(tree->root, key);
 }
 
-int avl_tree_find(struct avl_tree_t *tree, int key)
+void* avl_tree_find(struct avl_tree_t *tree, int key)
 {
     return find(tree->root, key);
 }
