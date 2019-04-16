@@ -10,8 +10,9 @@
 #include <string.h>
 #include <unistd.h>
 
-void socket_create_tcp(int *sock_fd, const char *port)
+int socket_create_tcp(const char *port)
 {
+    int fd;
     struct addrinfo ai_hint = { 0 }, *ai_result;
     int err;
 
@@ -24,33 +25,35 @@ void socket_create_tcp(int *sock_fd, const char *port)
         die(ERR_GETADDRINFO, "gettaddrinfo() failed: %s", gai_strerror(err));
     }
 
-    *sock_fd = socket(ai_result->ai_family,
-            (unsigned)ai_result->ai_socktype | (unsigned)SOCK_NONBLOCK,
+    fd = socket(ai_result->ai_family, (unsigned)ai_result->ai_socktype | (unsigned)SOCK_NONBLOCK,
             ai_result->ai_protocol);
-    if (*sock_fd == -1) {
+    if (fd == -1) {
         freeaddrinfo(ai_result);
         die(ERR_SOCKET, "socket() failed: %s", strerror(errno));
     }
 
-    if (bind(*sock_fd, ai_result->ai_addr, ai_result->ai_addrlen) == -1) {
+    if (bind(fd, ai_result->ai_addr, ai_result->ai_addrlen) == -1) {
         freeaddrinfo(ai_result);
-        close(*sock_fd);
+        close(fd);
         die(ERR_BIND, "failed to bind a socket: %s", strerror(errno));
     }
 
     freeaddrinfo(ai_result);
 
-    if (listen(*sock_fd, SOMAXCONN) == -1) {
+    if (listen(fd, SOMAXCONN) == -1) {
         die(ERR_LISTEN, "listen() failed: %s", strerror(errno));
     }
+
+    return fd;
 }
 
-void socket_create_udp(int *sock_fd, int port)
+int socket_create_udp(int port)
 {
+    int fd;
     struct sockaddr_in addr = { 0 };
 
-    *sock_fd = socket(AF_INET, (unsigned)SOCK_DGRAM | (unsigned)SOCK_NONBLOCK, 0);
-    if (*sock_fd == -1) {
+    fd = socket(AF_INET, (unsigned)SOCK_DGRAM | (unsigned)SOCK_NONBLOCK, 0);
+    if (fd == -1) {
         die(ERR_SOCKET, "failed to create socket: %s", strerror(errno));
     }
 
@@ -58,9 +61,11 @@ void socket_create_udp(int *sock_fd, int port)
     addr.sin_port = htons((uint16_t)port);
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    if (bind(*sock_fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+    if (bind(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
         die(ERR_BIND, "failed to bind() socket: %s", strerror(errno));
     }
+
+    return fd;
 }
 
 int socket_accept(int sock_fd)
