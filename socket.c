@@ -3,7 +3,6 @@
 #include "errors.h"
 #include "log.h"
 #include "socket.h"
-#include "tempconfig.h"
 #include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -11,7 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 
-void socket_create_tcp(int *sock_fd)
+void socket_create_tcp(int *sock_fd, const char *port)
 {
     struct addrinfo ai_hint = { 0 }, *ai_result;
     int err;
@@ -20,7 +19,7 @@ void socket_create_tcp(int *sock_fd)
     ai_hint.ai_socktype = SOCK_STREAM;
     ai_hint.ai_flags = AI_PASSIVE;
 
-    err = getaddrinfo(NULL, VOPROXYD_TCP_PORT, &ai_hint, &ai_result);
+    err = getaddrinfo(NULL, port, &ai_hint, &ai_result);
     if (err != 0) {
         die(ERR_GETADDRINFO, "gettaddrinfo() failed: %s", gai_strerror(err));
     }
@@ -46,7 +45,7 @@ void socket_create_tcp(int *sock_fd)
     }
 }
 
-void socket_create_udp(int *sock_fd)
+void socket_create_udp(int *sock_fd, int port)
 {
     struct sockaddr_in addr = { 0 };
 
@@ -56,7 +55,7 @@ void socket_create_udp(int *sock_fd)
     }
 
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(VOPROXYD_UDP_PORT);
+    addr.sin_port = htons((uint16_t)port);
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     if (bind(*sock_fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
