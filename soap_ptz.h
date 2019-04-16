@@ -1,12 +1,15 @@
 #pragma once
 
+#include "address_manager.h"
 #include "soap_global.h"
 #include "soap_utils.h"
+#include "worker.h"
 
 #define soap_ptz_prelude() \
     soap_t *soap = g_soap; \
-    const char *ptz_xaddr = soap_utils_get_ptz_xaddr(&g_services); \
-    profile_t* profile = &g_profiles.Profiles[g_config.profile_idx]; \
+    struct soap_instance *instance = address_mngr_get_soap_instance_from_fd(g_current_event_fd); \
+    const char *ptz_xaddr = soap_utils_get_ptz_xaddr(&instance->services); \
+    profile_t *profile = &instance->profiles.Profiles[instance->profile_idx]; \
     char *profile_token = profile->token; \
     soap_utils_auth();
 
