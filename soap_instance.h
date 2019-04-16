@@ -7,6 +7,7 @@ struct soap_instance
     char *service_endpoint;
     services_t services;
     profiles_t profiles;
+    int profile_idx;
 };
 
 struct soap_instance* soap_instance_allocate(const char *ip, const char *port);

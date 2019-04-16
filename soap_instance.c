@@ -21,6 +21,8 @@ struct soap_instance* soap_instance_allocate(const char *ip, const char *port)
     soap_utils_get_services(g_soap, instance->service_endpoint, &instance->services);
     soap_utils_get_profiles(g_soap, soap_utils_get_media_xaddr(&instance->services), &instance->profiles);
 
+    instance->profile_idx = 0;
+
     return instance;
 }
 
