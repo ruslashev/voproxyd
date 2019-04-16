@@ -36,7 +36,11 @@ void address_mngr_add_address()
 
 struct soap_instance* address_mngr_get_soap_instance_from_fd(int fd)
 {
-    return avl_tree_find(address_map, fd);
+    struct soap_instance* instance = avl_tree_find(address_map, fd);
+    if (instance == NULL)
+        die(ERR_SOCKET, "address manager: failed to find fd = %d", fd);
+
+    return instance;
 }
 
 static void node_destruction_cb(struct avl_node_t *node)
