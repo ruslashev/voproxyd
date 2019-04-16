@@ -65,11 +65,14 @@ example_binname = example
 inih_url = https://raw.githubusercontent.com/benhoyt/inih/master
 
 all: $(binname)
+
+exec: $(binname)
 	./$(binname)
 
 $(binname): $(objs)
 	@echo "ld $@"
 	@$(cc) $(objs) $(ldflags) -o $@
+	@echo "successfully compiled $@"
 
 $(build_dir)/%.c.o: %.c
 	@echo "cc $<"
@@ -97,6 +100,7 @@ deps/inih/ini.c:
 
 prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp soapcpp-wsdd \
     copy-gsoap-sources move-nsmaps
+	@echo "prepare successul"
 
 unzip-gsoap:
 	@echo "unzip deps/gsoap_2.8.74.zip"
