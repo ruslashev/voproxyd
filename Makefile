@@ -12,6 +12,7 @@ sources = avltree.c \
           visca_commands.c \
           visca_inquiries.c \
           worker.c \
+          soap_global.c \
           soap_instance.c \
           soap_ptz.c \
           soap_utils.c \

@@ -2,7 +2,7 @@
 
 #include "log.h"
 #include "errors.h"
-#include "soap_instance.h"
+#include "soap_global.h"
 #include "config.h"
 
 #define soap_utils_log_error(S) \

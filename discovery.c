@@ -1,5 +1,5 @@
 #include "discovery.h"
-#include "soap_instance.h"
+#include "soap_header.h"
 #include "soap_utils.h"
 #include <wsddapi.h>
 

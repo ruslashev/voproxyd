@@ -4,7 +4,7 @@
 #include "errors.h"
 #include "log.h"
 #include "worker.h"
-#include "soap_instance.h"
+#include "soap_global.h"
 #include "soap_utils.h"
 
 #include <assert.h>
@@ -91,9 +91,10 @@ int main(int argc, char *argv[])
 
     discovery_init();
 
+    soap_global_construct();
+
     discovery_do(3000);
 
-    soap_instance_construct();
     soap_utils_get_services(g_soap, g_config.service_endpoint, &g_services);
     soap_utils_get_profiles(g_soap, soap_utils_get_media_xaddr(&g_services), &g_profiles);
     soap_utils_print_device_info(g_soap, g_config.service_endpoint);
@@ -101,7 +102,7 @@ int main(int argc, char *argv[])
 
     start_worker();
 
-    soap_instance_destruct();
+    soap_global_destruct();
     config_destruct();
     discovery_destruct();
 }

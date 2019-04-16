@@ -1,5 +1,6 @@
 #pragma once
 
+#include "soap_global.h"
 #include "soap_utils.h"
 
 #define soap_ptz_prelude() \
