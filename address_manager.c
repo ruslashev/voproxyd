@@ -42,7 +42,7 @@ struct soap_instance* address_mngr_get_soap_instance_from_fd(int fd)
 static void node_destruction_cb(struct avl_node_t *node)
 {
     close(node->key);
-    soap_instance_deallocate(node->addr);
+    soap_instance_deallocate(node->data);
 }
 
 void address_mngr_destruct()

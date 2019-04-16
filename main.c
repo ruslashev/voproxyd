@@ -6,6 +6,7 @@
 #include "worker.h"
 #include "soap_global.h"
 #include "soap_utils.h"
+#include "address_manager.h"
 
 #include <assert.h>
 #include <getopt.h>
