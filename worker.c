@@ -24,6 +24,8 @@
 #define VOPROXYD_MAX_EPOLL_EVENTS 128
 #define VOPROXYD_MAX_RX_MESSAGE_LENGTH 4096
 
+static struct ap_state state;
+
 static int add_signal_handler(struct ap_state *state)
 {
     sigset_t mask;
@@ -303,10 +305,11 @@ static void main_loop(struct ap_state *state)
     }
 }
 
-void start_worker(void)
+void worker_start()
 {
-    struct ap_state state = { 0 };
     int signal_fd, inotify_fd;
+
+    memset(&state, 0, sizeof(struct ap_state));
 
     state.epoll_fd = epoll_create1(0);
     if (state.epoll_fd == -1) {
@@ -326,5 +329,10 @@ void start_worker(void)
     close(inotify_fd);
     close(signal_fd);
     close(state.epoll_fd);
+}
+
+void worker_add_udp_fd(int fd)
+{
+    epoll_add_fd(&state, fd, FDT_UDP, 1);
 }
 

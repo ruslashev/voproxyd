@@ -1,4 +1,5 @@
 #pragma once
 
-void start_worker(void);
+void worker_start();
+void worker_add_udp_fd(int fd);
 

@@ -94,9 +94,7 @@ int main(int argc, char *argv[])
 
     discovery_do(3000);
 
-    /* asdf */
-
-    start_worker();
+    worker_start();
 
     soap_global_destruct();
     discovery_destruct();
