@@ -17,7 +17,7 @@ struct avl_tree_t
 };
 
 void avl_tree_construct(struct avl_tree_t *tree);
-void avl_tree_destruct(struct avl_tree_t *tree);
+void avl_tree_destruct(struct avl_tree_t *tree, void (*data_destruct_cb)(void*));
 void avl_tree_insert(struct avl_tree_t *tree, int key, void *data);
 void avl_tree_delete(struct avl_tree_t *tree, int key);
 int avl_tree_find(struct avl_tree_t *tree, int key);

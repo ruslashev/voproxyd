@@ -168,14 +168,17 @@ static int find(struct avl_node_t *root, int key)
     return find(root->right, key);
 }
 
-static void destruct(struct avl_node_t *node)
+static void destruct(struct avl_node_t *node, void (*data_destruct_cb)(void*))
 {
     if (node == NULL) {
         return;
     }
 
-    destruct(node->left);
-    destruct(node->right);
+    destruct(node->left, data_destruct_cb);
+    destruct(node->right, data_destruct_cb);
+
+    if (data_destruct_cb != NULL)
+        data_destruct_cb(node->data);
 
     free(node);
 }
@@ -185,9 +188,9 @@ void avl_tree_construct(struct avl_tree_t *tree)
     tree->root = NULL;
 }
 
-void avl_tree_destruct(struct avl_tree_t *tree)
+void avl_tree_destruct(struct avl_tree_t *tree, void (*data_destruct_cb)(void*))
 {
-    destruct(tree->root);
+    destruct(tree->root, data_destruct_cb);
 }
 
 void avl_tree_insert(struct avl_tree_t *tree, int key, void *data)
