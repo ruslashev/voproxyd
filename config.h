@@ -12,15 +12,10 @@ struct config
 {
     const char *username;
     const char *password; /* blame onvif for requiring to pass plaintext passwords */
-    const char *ip;
-    const char *port;
-    char *service_endpoint;
-    int profile_idx;
 };
 
 extern struct config g_config;
 
 char* config_get_config_filename();
 void config_read();
-void config_destruct();
 

@@ -103,7 +103,6 @@ int main(int argc, char *argv[])
     start_worker();
 
     soap_global_destruct();
-    config_destruct();
     discovery_destruct();
 }
 

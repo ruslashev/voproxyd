@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define MAX_STRING_LEN 512
+#define CONFIG_MAX_FILENAME_STRING_LEN 512
 #define CONFIG_NAME_XDG "config"
 #define CONFIG_NAME_HOME ".voproxyd.conf"
 #define CONFIG_NAME_CWD CONFIG_NAME_HOME
@@ -34,7 +34,7 @@ static char* get_xdg_filename()
 {
     char *xdg_config_home = getenv("XDG_CONFIG_HOME");
     char *home = getenv("HOME");
-    char *filename = malloc(MAX_STRING_LEN);
+    char *filename = malloc(CONFIG_MAX_FILENAME_STRING_LEN);
 
     if (!filename)
         die(ERR_ALLOC, "failed to allocate string buffer");
@@ -43,9 +43,11 @@ static char* get_xdg_filename()
         die(ERR_GETENV, "$HOME is not defined");
 
     if (xdg_config_home)
-        snprintf(filename, MAX_STRING_LEN, "%s/%s/%s", xdg_config_home, XDG_DIR_NAME, CONFIG_NAME_XDG);
+        snprintf(filename, CONFIG_MAX_FILENAME_STRING_LEN, "%s/%s/%s", xdg_config_home,
+                XDG_DIR_NAME, CONFIG_NAME_XDG);
     else
-        snprintf(filename, MAX_STRING_LEN, "%s/%s/%s/%s", home, ".config", XDG_DIR_NAME, CONFIG_NAME_XDG);
+        snprintf(filename, CONFIG_MAX_FILENAME_STRING_LEN, "%s/%s/%s/%s", home, ".config",
+                XDG_DIR_NAME, CONFIG_NAME_XDG);
 
     return filename;
 }
@@ -53,7 +55,7 @@ static char* get_xdg_filename()
 static char* get_home_filename()
 {
     char *home = getenv("HOME");
-    char *filename = malloc(MAX_STRING_LEN);
+    char *filename = malloc(CONFIG_MAX_FILENAME_STRING_LEN);
 
     if (!filename)
         die(ERR_ALLOC, "failed to allocate string buffer");
@@ -61,19 +63,19 @@ static char* get_home_filename()
     if (!home)
         die(ERR_GETENV, "$HOME is not defined");
 
-    snprintf(filename, MAX_STRING_LEN, "%s/%s", home, CONFIG_NAME_HOME);
+    snprintf(filename, CONFIG_MAX_FILENAME_STRING_LEN, "%s/%s", home, CONFIG_NAME_HOME);
 
     return filename;
 }
 
 static char* get_cwd_filename()
 {
-    char *filename = malloc(MAX_STRING_LEN);
+    char *filename = malloc(CONFIG_MAX_FILENAME_STRING_LEN);
 
     if (!filename)
         die(ERR_ALLOC, "failed to allocate string buffer");
 
-    if (getcwd(filename, MAX_STRING_LEN) == NULL)
+    if (getcwd(filename, CONFIG_MAX_FILENAME_STRING_LEN) == NULL)
         die(ERR_GETENV, "failed to getcwd");
 
     strcat(filename, "/" CONFIG_NAME_CWD);
@@ -119,21 +121,21 @@ static void create_xdg_dirs()
     if (!home)
         die(ERR_GETENV, "$HOME is not defined");
 
-    directory = malloc(MAX_STRING_LEN);
+    directory = malloc(CONFIG_MAX_FILENAME_STRING_LEN);
     if (!directory)
         die(ERR_ALLOC, "failed to allocate string buffer");
 
     if (xdg_config_home)
-        snprintf(directory, MAX_STRING_LEN, "%s", xdg_config_home);
+        snprintf(directory, CONFIG_MAX_FILENAME_STRING_LEN, "%s", xdg_config_home);
     else
-        snprintf(directory, MAX_STRING_LEN, "%s/%s", home, ".config");
+        snprintf(directory, CONFIG_MAX_FILENAME_STRING_LEN, "%s/%s", home, ".config");
 
     create_directory_if_not_exists(directory);
 
     if (xdg_config_home)
-        snprintf(directory, MAX_STRING_LEN, "%s/%s", xdg_config_home, XDG_DIR_NAME);
+        snprintf(directory, CONFIG_MAX_FILENAME_STRING_LEN, "%s/%s", xdg_config_home, XDG_DIR_NAME);
     else
-        snprintf(directory, MAX_STRING_LEN, "%s/%s/%s", home, ".config", XDG_DIR_NAME);
+        snprintf(directory, CONFIG_MAX_FILENAME_STRING_LEN, "%s/%s/%s", home, ".config", XDG_DIR_NAME);
 
     create_directory_if_not_exists(directory);
 
@@ -204,12 +206,14 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
         g_config.username = strdup(value);
     else if (strcmp(name, "password") == 0)
         g_config.password = strdup(value);
+    /*
     else if (strcmp(name, "ip") == 0)
         g_config.ip = strdup(value);
     else if (strcmp(name, "port") == 0)
         g_config.port = strdup(value);
     else if (strcmp(name, "profile_idx") == 0)
         g_config.profile_idx = atoi(value);
+        */
     else if (strcmp(name, "unmodified") == 0)
         die(ERR_CONFIG, "please edit autocreated config and remove line \"unmodified = true\"");
     else
@@ -226,8 +230,7 @@ void config_read()
         "remove this file to regenerate example config.\n";
     const char *default_port = "80";
 
-    g_config.username = g_config.password = g_config.ip = g_config.port = NULL;
-    g_config.profile_idx = 0;
+    g_config.username = g_config.password = NULL;
 
     if (ini_parse(filename, ini_cb, filename) < 0)
         die(ERR_CONFIG, "failed to parse config file \"%s\"", filename);
@@ -238,27 +241,6 @@ void config_read()
     if (g_config.password == NULL)
         die(ERR_CONFIG, template, filename, "password");
 
-    if (g_config.ip == NULL)
-        die(ERR_CONFIG, template, filename, "ip");
-
-    if (g_config.port == NULL) {
-        g_config.port = strdup(default_port);
-        log("warning: using default port %s. to change add line \"port = ...\" to config.", default_port);
-    }
-
-    g_config.service_endpoint = malloc(MAX_STRING_LEN);
-    if (g_config.service_endpoint == NULL)
-        die(ERR_ALLOC, "failed to allocate service endpoint string");
-
-    if (snprintf(g_config.service_endpoint, MAX_STRING_LEN, "http://%s:%s/onvif/device_service",
-                g_config.ip, g_config.port) >= MAX_STRING_LEN)
-        die(ERR_WRITE, "serivce endpoint string overflow");
-
     free(filename);
-}
-
-void config_destruct()
-{
-    free(g_config.service_endpoint);
 }
 
