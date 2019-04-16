@@ -24,13 +24,14 @@ void address_mngr_add_address()
     avl_tree_insert(address_map, port, instance);
 }
 
-static void destruct_soap_instance(void *addr)
+static void node_destruction_cb(struct avl_node_t *node)
 {
-    soap_instance_deallocate(addr);
+    close(node->key);
+    soap_instance_deallocate(node->addr);
 }
 
 void address_mngr_destruct()
 {
-    avl_tree_destruct(address_map, destruct_soap_instance);
+    avl_tree_destruct(address_map, node_destruction_cb);
 }
 
