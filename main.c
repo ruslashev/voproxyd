@@ -95,10 +95,7 @@ int main(int argc, char *argv[])
 
     discovery_do(3000);
 
-    soap_utils_get_services(g_soap, g_config.service_endpoint, &g_services);
-    soap_utils_get_profiles(g_soap, soap_utils_get_media_xaddr(&g_services), &g_profiles);
-    soap_utils_print_device_info(g_soap, g_config.service_endpoint);
-    soap_utils_list_profiles(&g_profiles);
+    /* asdf */
 
     start_worker();
 
