@@ -1,5 +1,6 @@
 #include "config.h"
 #include "daemonize.h"
+#include "discovery.h"
 #include "errors.h"
 #include "log.h"
 #include "worker.h"
@@ -80,13 +81,17 @@ int main(int argc, char *argv[])
 {
     parse_arguments(argc, argv);
 
-    config_read();
-
     if (g_daemonize) {
         openlog("voproxyd", LOG_NDELAY | LOG_PID, LOG_USER);
 
         daemonize();
     }
+
+    config_read();
+
+    discovery_init();
+
+    discovery_do(3000);
 
     soap_instance_construct();
     soap_utils_get_services(g_soap, g_config.service_endpoint, &g_services);
@@ -98,5 +103,6 @@ int main(int argc, char *argv[])
 
     soap_instance_destruct();
     config_destruct();
+    discovery_destruct();
 }
 

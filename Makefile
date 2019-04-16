@@ -4,6 +4,7 @@ sources = avltree.c \
           buffer.c \
           config.c \
           daemonize.c \
+          discovery.c \
           epoll.c \
           main.c \
           socket.c \
