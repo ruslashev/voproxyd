@@ -2,9 +2,10 @@
 
 #include <stdlib.h>
 
-static void construct_avl_node(struct avl_node_t *node, int key)
+static void construct_avl_node(struct avl_node_t *node, int key, void *data)
 {
     node->key = key;
+    node->data = data;
     node->height = 1;
     node->left = NULL;
     node->right = NULL;
@@ -83,20 +84,20 @@ static struct avl_node_t* balance(struct avl_node_t *x)
     return x;
 }
 
-static struct avl_node_t* insert(struct avl_node_t *x, int key)
+static struct avl_node_t* insert(struct avl_node_t *x, int key, void *data)
 {
     struct avl_node_t *new;
 
     if (x == NULL) {
         new = malloc(sizeof(struct avl_node_t));
-        construct_avl_node(new, key);
+        construct_avl_node(new, key, data);
         return new;
     }
 
     if (key < x->key) {
-        x->left = insert(x->left, key);
+        x->left = insert(x->left, key, data);
     } else {
-        x->right = insert(x->right, key);
+        x->right = insert(x->right, key, data);
     }
 
     return balance(x);
@@ -189,9 +190,9 @@ void avl_tree_destruct(struct avl_tree_t *tree)
     destruct(tree->root);
 }
 
-void avl_tree_insert(struct avl_tree_t *tree, int key)
+void avl_tree_insert(struct avl_tree_t *tree, int key, void *data)
 {
-    tree->root = insert(tree->root, key);
+    tree->root = insert(tree->root, key, data);
 }
 
 void avl_tree_delete(struct avl_tree_t *tree, int key)
