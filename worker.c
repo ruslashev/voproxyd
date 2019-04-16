@@ -6,7 +6,6 @@
 #include "errors.h"
 #include "log.h"
 #include "socket.h"
-#include "tempconfig.h"
 #include "visca.h"
 #include "worker.h"
 #include <errno.h>
@@ -24,17 +23,6 @@
 #define VOPROXYD_STRING_BUFFERS_EXTEND_LENGTH 4096
 #define VOPROXYD_MAX_EPOLL_EVENTS 128
 #define VOPROXYD_MAX_RX_MESSAGE_LENGTH 4096
-
-static int add_udp_socket(struct ap_state *state)
-{
-    int udp_sock_fd;
-
-    socket_create_udp(&udp_sock_fd);
-
-    epoll_add_fd(state, udp_sock_fd, FDT_UDP, 1);
-
-    return udp_sock_fd;
-}
 
 static int add_signal_handler(struct ap_state *state)
 {
@@ -318,21 +306,18 @@ static void main_loop(struct ap_state *state)
 void start_worker(void)
 {
     struct ap_state state = { 0 };
-    int udp_sock_fd, signal_fd, inotify_fd;
+    int signal_fd, inotify_fd;
 
     state.epoll_fd = epoll_create1(0);
     if (state.epoll_fd == -1) {
         die(ERR_EPOLL_CREATE, "epoll_create1() failed: %s", strerror(errno));
     }
 
-    udp_sock_fd = add_udp_socket(&state);
-
     signal_fd = add_signal_handler(&state);
 
     inotify_fd = add_inotify(&state);
 
-    log("epoll fd = %d udp fd = %d sig fd = %d infy fd = %d", state.epoll_fd, udp_sock_fd,
-            signal_fd, inotify_fd);
+    log("epoll fd = %d sig fd = %d infy fd = %d", state.epoll_fd, signal_fd, inotify_fd);
 
     main_loop(&state);
 
@@ -340,7 +325,6 @@ void start_worker(void)
 
     close(inotify_fd);
     close(signal_fd);
-    close(udp_sock_fd);
     close(state.epoll_fd);
 }
 
