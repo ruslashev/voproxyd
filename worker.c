@@ -326,6 +326,7 @@ void worker_init()
     inotify_fd = add_inotify(&state);
 
     log("epoll fd = %d sig fd = %d infy fd = %d", state.epoll_fd, signal_fd, inotify_fd);
+    log(" ");
 }
 
 void worker_start()
