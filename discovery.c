@@ -9,7 +9,7 @@ void discovery_init()
 {
     soap_listen = soap_new1(SOAP_IO_UDP);
 
-    if (!soap_valid_socket(soap_bind(soap_listen, NULL, 0, 100))) {
+    if (!soap_valid_socket(soap_bind(soap_listen, NULL, 0, 1000))) {
         soap_print_fault(soap_listen, stderr);
         soap_die(soap_listen, "failed to bind wsdd listening soap instance");
     }
@@ -18,7 +18,7 @@ void discovery_init()
 void discovery_do(int milliseconds)
 {
     const char *multicast_url = "soap.udp://239.255.255.250:3702";
-    const char *type = NULL, *scope = NULL;
+    const char *type = "tds:Device tdn:NetworkVideoTransmitter", *scope = "onvif://www.onvif.org/";
 
     if (soap_wsdd_Probe(soap_listen, SOAP_WSDD_ADHOC, SOAP_WSDD_TO_TS, multicast_url,
                 soap_wsa_rand_uuid(soap_listen), NULL, type, scope, "") != SOAP_OK) {

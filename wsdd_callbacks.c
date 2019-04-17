@@ -42,7 +42,7 @@ void wsdd_event_ProbeMatches(struct soap *soap, unsigned int instance_id, const 
         log_match(&matches->ProbeMatch[i]);
         log(" ");
 
-        address_mngr_add_address();
+        /* address_mngr_add_address(); */
     }
 }
 

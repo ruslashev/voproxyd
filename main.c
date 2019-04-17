@@ -95,7 +95,6 @@ int main(int argc, char *argv[])
         discovery_do(10000);
         log("ok m8...");
         return 0;
-        config_read();
     }
 
     soap_global_construct();
