@@ -21,7 +21,7 @@ void discovery_do(int milliseconds)
     const char *type = NULL, *scope = NULL;
 
     if (soap_wsdd_Probe(soap_listen, SOAP_WSDD_ADHOC, SOAP_WSDD_TO_TS, multicast_url,
-                soap_wsa_rand_uuid(soap_listen), NULL, type, scope, NULL) != SOAP_OK) {
+                soap_wsa_rand_uuid(soap_listen), NULL, type, scope, "") != SOAP_OK) {
         soap_print_fault(soap_listen, stderr);
         soap_die(soap_listen, "failed to wsdd probe");
     }

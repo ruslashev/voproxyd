@@ -44,6 +44,8 @@ void wsdd_event_ProbeMatches(struct soap *soap, unsigned int instance_id, const 
 soap_wsdd_mode wsdd_event_Resolve(struct soap *soap, const char *message_id, const char *reply_to,
         const char *endpoint_ref, struct wsdd__ResolveMatchType *match)
 {
+    log("wsdd resolve");
+
     return SOAP_WSDD_ADHOC;
 }
 
@@ -62,6 +64,7 @@ void wsdd_event_Hello(struct soap *soap, unsigned int instance_id, const char *s
         const char *endpoint_ref, const char *types, const char *scopes, const char *match_by,
         const char *XAddrs, unsigned int metadata_version)
 {
+    log("wsdd hello");
 }
 
 void wsdd_event_Bye(struct soap *soap, unsigned int instance_id, const char *sequence_id,
@@ -69,5 +72,6 @@ void wsdd_event_Bye(struct soap *soap, unsigned int instance_id, const char *seq
         const char *endpoint_ref, const char *types, const char *scopes, const char *match_by,
         const char *XAddrs, unsigned int *metadata_version)
 {
+    log("wsdd bye");
 }
 

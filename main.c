@@ -89,6 +89,15 @@ int main(int argc, char *argv[])
     }
 
     discovery_init();
+
+    { /* temp */
+        log("doing discovery...");
+        discovery_do(10000);
+        log("ok m8...");
+        return 0;
+        config_read();
+    }
+
     soap_global_construct();
     address_mngr_init();
 
