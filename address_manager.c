@@ -4,11 +4,11 @@
 #include "worker.h"
 #include "log.h"
 
-struct avl_tree_t *address_map;
+struct avl_tree_t address_map;
 
 void address_mngr_init()
 {
-    avl_tree_construct(address_map);
+    avl_tree_construct(&address_map);
 }
 
 static int create_unique_port_from_ip(const char *ip)
@@ -28,7 +28,7 @@ void address_mngr_add_address_by_port(int port, const char *ip)
     worker_add_udp_fd(fd);
 
     log("add address map fd %d -> port %d -> ip %s", fd, port, ip);
-    avl_tree_insert(address_map, fd, instance);
+    avl_tree_insert(&address_map, fd, instance);
 }
 
 void address_mngr_add_address(const char *ip)
@@ -40,7 +40,7 @@ void address_mngr_add_address(const char *ip)
 
 struct soap_instance* address_mngr_get_soap_instance_from_fd(int fd)
 {
-    struct soap_instance* instance = avl_tree_find(address_map, fd);
+    struct soap_instance* instance = avl_tree_find(&address_map, fd);
     if (instance == NULL)
         die(ERR_SOCKET, "address manager: failed to find fd = %d", fd);
 
@@ -70,10 +70,10 @@ static struct soap_instance* find_soap_instance_matching_ip(struct avl_node_t *n
 
 struct soap_instance* address_mngr_find_soap_instance_matching_ip(const char *ip)
 {
-    if (address_map == NULL)
+    if (address_map.root == NULL)
         return NULL;
 
-    return find_soap_instance_matching_ip(address_map->root, ip);
+    return find_soap_instance_matching_ip(address_map.root, ip);
 }
 
 static void node_destruction_cb(struct avl_node_t *node)
@@ -84,6 +84,6 @@ static void node_destruction_cb(struct avl_node_t *node)
 
 void address_mngr_destruct()
 {
-    avl_tree_destruct(address_map, node_destruction_cb);
+    avl_tree_destruct(&address_map, node_destruction_cb);
 }
 
