@@ -24,8 +24,10 @@
 #define VOPROXYD_MAX_EPOLL_EVENTS 128
 #define VOPROXYD_MAX_RX_MESSAGE_LENGTH 4096
 
-static struct ap_state state;
 int g_current_event_fd;
+
+static struct ap_state state;
+static int signal_fd, inotify_fd;
 
 static int add_signal_handler(struct ap_state *state)
 {
@@ -308,10 +310,8 @@ static void main_loop(struct ap_state *state)
     }
 }
 
-void worker_start()
+void worker_init()
 {
-    int signal_fd, inotify_fd;
-
     memset(&state, 0, sizeof(struct ap_state));
 
     g_current_event_fd = 0;
@@ -326,7 +326,10 @@ void worker_start()
     inotify_fd = add_inotify(&state);
 
     log("epoll fd = %d sig fd = %d infy fd = %d", state.epoll_fd, signal_fd, inotify_fd);
+}
 
+void worker_start()
+{
     main_loop(&state);
 
     ll_free_list(&state.tracked_events);
