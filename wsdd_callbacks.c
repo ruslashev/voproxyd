@@ -29,8 +29,13 @@ void wsdd_event_ProbeMatches(struct soap *soap, unsigned int instance_id, const 
         unsigned int message_number, const char *message_id, const char *relates_to,
         struct wsdd__ProbeMatchesType *matches)
 {
-    log("wsdd probe_matches iid %u sid %s mn %u mid %s relates %s", instance_id, sequence_id,
-            message_number, message_id, relates_to);
+    log("wsdd probe_matches");
+    log("iid\t%u", instance_id);
+    log("sid\t%s", sequence_id);
+    log("mn\t%u", message_number);
+    log("mid\t%s", message_id);
+    log("relates\t%s", relates_to);
+    log(" ");
 
     for (int i = 0; i < matches->__sizeProbeMatch; ++i) {
         log("match %d/%d", i + 1, matches->__sizeProbeMatch);
