@@ -96,11 +96,11 @@ static void write_to_xdg_file()
         "username = user\n"
         "password = pass\n"
         "\n"
-        "[ports]\n"
-        "192.168.1.2 = 9002\n"
+        "# [ports]\n"
+        "# 192.168.1.2 = 9002\n"
         "\n"
-        "[192.168.1.2]\n"
-        "profile_idx = 0\n"
+        "# [192.168.1.2]\n"
+        "# profile_idx = 0\n"
         "\n";
 
     f = fopen(filename, "w+");
@@ -207,16 +207,12 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
 {
 #define streq(X, Y) (strcmp((X), (Y)) == 0)
 
-    if (streq(section, "ports")) {
-        struct soap_instance *instance = address_mngr_find_soap_instance_matching_ip(name);
-        if (instance == NULL) {
-            log("config file %s:%d warning: can't find ip \"%s\"", (char*)user, line, name);
-            return 1;
-        }
+    struct soap_instance *instance;
 
+    if (streq(section, "ports")) {
         address_mngr_add_address_by_port(atoi(value), name);
     } else {
-        struct soap_instance *instance = address_mngr_find_soap_instance_matching_ip(section);
+        instance = address_mngr_find_soap_instance_matching_ip(section);
         if (instance == NULL) {
             log("config file %s:%d warning: can't find ip \"%s\"", (char*)user, line, section);
             return 1;
