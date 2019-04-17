@@ -4,7 +4,7 @@
 
 #define MAX_URL_STRING_LEN 256
 
-struct soap_instance* soap_instance_allocate(const char *ip, int port)
+struct soap_instance* soap_instance_allocate(const char *ip, const char *port)
 {
     struct soap_instance *instance = malloc(sizeof(struct soap_instance*));
     if (!instance)
@@ -14,9 +14,7 @@ struct soap_instance* soap_instance_allocate(const char *ip, int port)
     if (instance->service_endpoint == NULL)
         die(ERR_ALLOC, "failed to allocate service endpoint string");
 
-    if (snprintf(instance->service_endpoint, MAX_URL_STRING_LEN, "http://%s:%d/onvif/device_service",
-                ip, port) >= MAX_URL_STRING_LEN)
-        die(ERR_WRITE, "serivce endpoint string overflow");
+    soap_instance_set_endpoint(instance, ip, port);
 
     soap_utils_get_services(g_soap, instance->service_endpoint, &instance->services);
     soap_utils_get_profiles(g_soap, soap_utils_get_media_xaddr(&instance->services), &instance->profiles);
@@ -26,12 +24,6 @@ struct soap_instance* soap_instance_allocate(const char *ip, int port)
     return instance;
 }
 
-void soap_instance_deallocate(struct soap_instance *instance)
-{
-    free(instance->service_endpoint);
-    free(instance);
-}
-
 void soap_instance_print_info(struct soap_instance *instance)
 {
     log("instance addr = %s", instance->service_endpoint);
@@ -39,5 +31,18 @@ void soap_instance_print_info(struct soap_instance *instance)
     soap_utils_print_device_info(g_soap, instance->service_endpoint);
 
     soap_utils_list_profiles(&instance->profiles);
+}
+
+void soap_instance_set_endpoint(struct soap_instance* instance, const char *ip, const char *port)
+{
+    if (snprintf(instance->service_endpoint, MAX_URL_STRING_LEN, "http://%s:%s/onvif/device_service",
+                ip, port) >= MAX_URL_STRING_LEN)
+        die(ERR_WRITE, "serivce endpoint string overflow");
+}
+
+void soap_instance_deallocate(struct soap_instance *instance)
+{
+    free(instance->service_endpoint);
+    free(instance);
 }
 

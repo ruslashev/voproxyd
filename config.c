@@ -100,6 +100,7 @@ static void write_to_xdg_file()
         "# 192.168.1.2 = 9002\n"
         "\n"
         "# [192.168.1.2]\n"
+        "# port = 80\n"
         "# profile_idx = 0\n"
         "\n";
 
@@ -220,6 +221,8 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
 
         if (streq(name, "profile_idx"))
             instance->profile_idx = atoi(value);
+        else if (streq(name, "port"))
+            soap_instance_set_endpoint(instance, section, value);
         else
             log("config file %s:%d warning: unknown option \"%s\"", (char*)user, line, name);
     }

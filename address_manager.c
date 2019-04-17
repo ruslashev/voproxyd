@@ -23,7 +23,7 @@ void address_mngr_add_address_by_port(int port, const char *ip)
 
     fd = socket_create_udp(port);
 
-    instance = soap_instance_allocate(ip, port);
+    instance = soap_instance_allocate(ip, "80"); /* default port */
 
     worker_add_udp_fd(fd);
 
