@@ -18,7 +18,7 @@ void discovery_init()
 void discovery_do(int milliseconds)
 {
     const char *multicast_url = "soap.udp://239.255.255.250:3702";
-    const char *type = "tds:Device tdn:NetworkVideoTransmitter", *scope = "onvif://www.onvif.org/";
+    const char *type = "", *scope = "onvif://www.onvif.org/";
 
     if (soap_wsdd_Probe(soap_listen, SOAP_WSDD_ADHOC, SOAP_WSDD_TO_TS, multicast_url,
                 soap_wsa_rand_uuid(soap_listen), NULL, type, scope, "") != SOAP_OK) {
