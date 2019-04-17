@@ -225,16 +225,16 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
             soap_instance_set_endpoint(instance, section, value);
         else
             log("config file %s:%d warning: unknown option \"%s\"", (char*)user, line, name);
+    } else { /* no section */
+        if (streq(name, "username"))
+            g_config.username = strdup(value);
+        else if (streq(name, "password"))
+            g_config.password = strdup(value);
+        else if (streq(name, "unmodified"))
+            die(ERR_CONFIG, "please edit autocreated config and remove line \"unmodified = true\"");
+        else
+            log("config file %s:%d warning: unknown option \"%s\"", (char*)user, line, name);
     }
-
-    if (streq(name, "username"))
-        g_config.username = strdup(value);
-    else if (streq(name, "password"))
-        g_config.password = strdup(value);
-    else if (streq(name, "unmodified"))
-        die(ERR_CONFIG, "please edit autocreated config and remove line \"unmodified = true\"");
-    else
-        log("config file %s:%d warning: unknown option \"%s\"", (char*)user, line, name);
 
     return 1;
 }
