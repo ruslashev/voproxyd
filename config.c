@@ -211,7 +211,7 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
 
     if (streq(section, "ports")) {
         address_mngr_add_address_by_port(atoi(value), name);
-    } else {
+    } else if (!streq(section, "")) { /* ip section */
         instance = address_mngr_find_soap_instance_matching_ip(section);
         if (instance == NULL) {
             log("config file %s:%d warning: can't find ip \"%s\"", (char*)user, line, section);
@@ -242,7 +242,6 @@ void config_read()
     const char *template =
         "error in config file %s: no %s provided.\n"
         "remove this file to regenerate example config.\n";
-    const char *default_port = "80";
 
     g_config.username = g_config.password = NULL;
 
