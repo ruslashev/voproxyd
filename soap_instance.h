@@ -5,8 +5,8 @@
 struct soap_instance
 {
     char *service_endpoint;
-    services_t services;
-    profiles_t profiles;
+    services_t *services;
+    profiles_t *profiles;
     int profile_idx;
 };
 
