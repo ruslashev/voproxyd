@@ -4,7 +4,7 @@
 
 #define MAX_URL_STRING_LEN 256
 
-struct soap_instance* soap_instance_allocate(const char *ip, const char *port)
+struct soap_instance* soap_instance_allocate(const char *ip, int port)
 {
     struct soap_instance *instance = malloc(sizeof(struct soap_instance*));
     if (!instance)
@@ -14,7 +14,7 @@ struct soap_instance* soap_instance_allocate(const char *ip, const char *port)
     if (instance->service_endpoint == NULL)
         die(ERR_ALLOC, "failed to allocate service endpoint string");
 
-    if (snprintf(instance->service_endpoint, MAX_URL_STRING_LEN, "http://%s:%s/onvif/device_service",
+    if (snprintf(instance->service_endpoint, MAX_URL_STRING_LEN, "http://%s:%d/onvif/device_service",
                 ip, port) >= MAX_URL_STRING_LEN)
         die(ERR_WRITE, "serivce endpoint string overflow");
 

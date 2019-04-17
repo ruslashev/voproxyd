@@ -16,22 +16,26 @@ static int create_unique_port_from_ip(const char *ip)
     return 0; /* idk lol */
 }
 
-void address_mngr_add_address()
+void address_mngr_add_address_by_port(int port, const char *ip)
 {
-    const char *fix_compilation_ip, *fix_compilation_port;
-    int port, fd;
+    int fd;
     struct soap_instance *instance;
-
-    port = create_unique_port_from_ip(fix_compilation_ip);
 
     fd = socket_create_udp(port);
 
-    instance = soap_instance_allocate(fix_compilation_ip, fix_compilation_port);
+    instance = soap_instance_allocate(ip, port);
 
     worker_add_udp_fd(fd);
 
-    log("add address map fd %d -> port %d -> ip %s", fd, port, fix_compilation_ip);
+    log("add address map fd %d -> port %d -> ip %s", fd, port, ip);
     avl_tree_insert(address_map, fd, instance);
+}
+
+void address_mngr_add_address(const char *ip)
+{
+    int port = create_unique_port_from_ip(ip);
+
+    address_mngr_add_address_by_port(port, ip);
 }
 
 struct soap_instance* address_mngr_get_soap_instance_from_fd(int fd)

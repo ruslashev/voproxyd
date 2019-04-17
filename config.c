@@ -1,6 +1,7 @@
 #include "config.h"
 #include "log.h"
 #include "soap_instance.h"
+#include "address_manager.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -94,11 +95,12 @@ static void write_to_xdg_file()
         "\n"
         "username = user\n"
         "password = pass\n"
-        "ip = 192.168.1.1\n"
         "\n"
-        "# optional parameters and their default values:\n"
-        "# port = 80\n"
-        "# profile_idx = 0\n"
+        "[ports]\n"
+        "192.168.1.2 = 9002\n"
+        "\n"
+        "[192.168.1.2]\n"
+        "profile_idx = 0\n"
         "\n";
 
     f = fopen(filename, "w+");
@@ -205,7 +207,15 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
 {
 #define streq(X, Y) (strcmp((X), (Y)) == 0)
 
-    if (section != NULL) {
+    if (streq(section, "ports")) {
+        struct soap_instance *instance = address_mngr_find_soap_instance_matching_ip(name);
+        if (instance == NULL) {
+            log("config file %s:%d warning: can't find ip \"%s\"", (char*)user, line, name);
+            return 1;
+        }
+
+        address_mngr_add_address_by_port(atoi(value), name);
+    } else {
         struct soap_instance *instance = address_mngr_find_soap_instance_matching_ip(section);
         if (instance == NULL) {
             log("config file %s:%d warning: can't find ip \"%s\"", (char*)user, line, section);
@@ -215,7 +225,7 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
         if (streq(name, "profile_idx"))
             instance->profile_idx = atoi(value);
         else
-            log("config file %s:%d warning: unknown option \"%s\"", name, (char*)user, line);
+            log("config file %s:%d warning: unknown option \"%s\"", (char*)user, line, name);
     }
 
     if (streq(name, "username"))
@@ -225,7 +235,7 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
     else if (streq(name, "unmodified"))
         die(ERR_CONFIG, "please edit autocreated config and remove line \"unmodified = true\"");
     else
-        log("config file %s:%d warning: unknown option \"%s\"", name, (char*)user, line);
+        log("config file %s:%d warning: unknown option \"%s\"", (char*)user, line, name);
 
     return 1;
 }
