@@ -114,7 +114,7 @@ void soap_ptz_get_position(float *pan, float *tilt, float *zoom)
     struct _tptz__GetStatus getstatus;
     struct _tptz__GetStatusResponse getstatus_resp;
 
-    get_capabilities();
+    /* get_capabilities(); */
 
     soap_ptz_prelude();
 

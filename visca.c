@@ -450,6 +450,9 @@ void visca_handle_message(const buffer_t *message, const struct event_t *event)
 {
     buffer_t *response, *inquiry_data;
 
+    log("visca_handle_message: new message");
+    print_buffer(message, 16);
+
     if (message->data[0] != 0x81)
         bad_byte(0);
 

@@ -31,6 +31,8 @@ void address_mngr_add_address_by_port(int port, const char *ip)
     avl_tree_insert(&address_map, fd, instance);
 
     soap_instance_print_info(instance);
+
+    log(" ");
 }
 
 void address_mngr_add_address(const char *ip)

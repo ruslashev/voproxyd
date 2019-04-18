@@ -83,7 +83,6 @@ void soap_utils_print_device_info(soap_t *soap, const char *service_endpoint)
     log("FirmwareVersion: %s", device_info.FirmwareVersion);
     log("SerialNumber:    %s", device_info.SerialNumber);
     log("HardwareId:      %s", device_info.HardwareId);
-    log(" ");
 }
 
 void soap_utils_get_snapshot_uri(soap_t *soap, const char *endpoint, char *profile_token,
@@ -147,6 +146,5 @@ void soap_utils_list_profiles(const profiles_t *profiles)
                 str_safe_echo(profiles->Profiles[i].token),
                 profiles->Profiles[i].VideoEncoderConfiguration == NULL ? "(missing)" :
                 str_safe_echo(profiles->Profiles[i].VideoEncoderConfiguration->Name));
-    log(" ");
 }
 
