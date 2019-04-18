@@ -2,6 +2,7 @@
 #include "errors.h"
 #include "log.h"
 #include "socket.h"
+#include "visca.h"
 #include "sony_visca.h"
 #include "sony_visca_commands.h"
 #include "sony_visca_inquiries.h"
@@ -26,44 +27,6 @@ static void visca_header_convert_endianness_hton(struct visca_header_t *header)
     header->payload_type = htons(header->payload_type);
     header->payload_length = htons(header->payload_length);
     header->seq_number = htonl(header->seq_number);
-}
-
-buffer_t* compose_ack()
-{
-    buffer_t *response = cons_buffer(3);
-
-    response->data[0] = 0x90;
-    response->data[1] = 0x40;
-    response->data[2] = 0xff;
-
-    return response;
-}
-
-buffer_t* compose_completition(buffer_t *data)
-{
-    size_t data_len = (data == NULL) ? 0 : data->length;
-    buffer_t *response = cons_buffer(3 + data_len);
-
-    if (3 + data_len > VOIP_MAX_MESSAGE_LENGTH) {
-        log("compose_completition: buffer length too big: %zu", data_len);
-        return NULL;
-    }
-
-    response->data[0] = 0x90;
-    response->data[1] = 0x50;
-
-    for (size_t i = 0; i < data_len; ++i) {
-        response->data[2 + i] = data->data[i];
-    }
-
-    response->data[2 + data_len] = 0xff;
-
-    return response;
-}
-
-buffer_t* compose_empty_completition()
-{
-    return compose_completition(NULL);
 }
 
 buffer_t* compose_control_reply(uint32_t seq_number)

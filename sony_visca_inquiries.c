@@ -2,6 +2,7 @@
 #include "log.h"
 #include "sony_visca.h"
 #include "sony_visca_inquiries.h"
+#include "visca.h"
 
 static buffer_t* dispatch_09_04(const struct message_t *message)
 {

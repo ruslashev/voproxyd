@@ -8,15 +8,16 @@ sources = address_manager.c \
           discovery.c \
           epoll.c \
           main.c \
-          socket.c \
-          sony_visca.c \
-          sony_visca_commands.c \
-          sony_visca_inquiries.c \
-          worker.c \
           soap_global.c \
           soap_instance.c \
           soap_ptz.c \
           soap_utils.c \
+          socket.c \
+          sony_visca.c \
+          sony_visca_commands.c \
+          sony_visca_inquiries.c \
+          visca.c \
+          worker.c \
           wsdd_callbacks.c \
           deps/inih/ini.c \
           $(wildcard deps/onvif/*.c)

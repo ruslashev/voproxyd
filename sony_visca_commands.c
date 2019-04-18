@@ -2,6 +2,7 @@
 #include "log.h"
 #include "sony_visca.h"
 #include "sony_visca_inquiries.h"
+#include "visca.h"
 
 static uint64_t parse_retarded_integer_encoding(const struct message_t *message, size_t start, size_t n)
 {
