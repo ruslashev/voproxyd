@@ -6,7 +6,7 @@
 #include "errors.h"
 #include "log.h"
 #include "socket.h"
-#include "sony_visca.h"
+#include "visca.h"
 #include "worker.h"
 #include <errno.h>
 #include <limits.h>
@@ -94,7 +94,9 @@ static int handle_udp_message(const struct ap_state *state, uint8_t *message, ss
 
     message_buf->data = message;
 
-    /* sony_visca_handle_message(message_buf, state->current_event); */
+    visca_handle_message(message_buf, state->current_event);
+
+    free(message_buf);
 
     return 0;
 }

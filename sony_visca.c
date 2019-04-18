@@ -9,7 +9,7 @@
 #include <netdb.h>
 #include <string.h>
 
-// redefine die() because all errors here are visca protocol errors
+/* redefine die() because all errors here are visca protocol errors */
 #undef die
 #define die(...) die_detail(ERR_VISCA_PROTOCOL, __VA_ARGS__)
 

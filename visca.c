@@ -6,6 +6,22 @@
 #undef die
 #define die(...) die_detail(ERR_VISCA_PROTOCOL, __VA_ARGS__)
 
+#define bad_byte_detail(X, R) \
+    do { \
+        log("%s:%d: unexpected byte 0x%02x", __func__, __LINE__, message->data[X]); \
+        return R; \
+    } while (0)
+#define bad_byte_null(X) bad_byte_detail(X, NULL)
+#define bad_byte(X) bad_byte_detail(X, )
+
+#define check_length_detail(X, R) \
+    if (message->length != (X)) { \
+        log("%s: bad length %zu, expected %d", __func__, message->length, X); \
+        return R; \
+    }
+#define check_length_null(X) check_length_detail(X, NULL)
+#define check_length(X) check_length_detail(X, )
+
 static uint64_t parse_retarded_integer_encoding(const buffer_t *message, size_t start, size_t n)
 {
     uint64_t output = 0;
@@ -420,7 +436,7 @@ static buffer_t* dispatch_queries(const buffer_t *message)
     switch (message->data[2]) {
     case 0x06:
         if (message->data[3] != 0x12)
-            bad_byte(3);
+            bad_byte_null(3);
         return bridge_inq_pan_tilt_position();
         break;
     case 0x04:
