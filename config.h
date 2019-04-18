@@ -10,12 +10,13 @@
 
 struct config
 {
-    const char *username;
-    const char *password; /* blame onvif for requiring to pass plaintext passwords */
+    char *username;
+    char *password; /* blame onvif for requiring to pass plaintext passwords */
 };
 
 extern struct config g_config;
 
 char* config_get_config_filename();
 void config_read();
+void config_destruct();
 

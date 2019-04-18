@@ -260,3 +260,9 @@ void config_read()
     free(filename);
 }
 
+void config_destruct()
+{
+    free(g_config.username);
+    free(g_config.password);
+}
+

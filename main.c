@@ -97,6 +97,7 @@ int main(int argc, char *argv[])
     /* discovery_do(3000); */
     worker_start();
 
+    config_destruct();
     soap_global_destruct();
     discovery_destruct();
     address_mngr_destruct();
