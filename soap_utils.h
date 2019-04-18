@@ -12,6 +12,8 @@
 
 #define soap_utils_int_to_bool(X) ((X) ? xsd__boolean__true_ : xsd__boolean__false_ )
 
+#define soap_utils_bool_to_int(X) ((X) == xsd__boolean__true_ ? 1 : 0 )
+
 #define soap_utils_auth() \
     soap_utils_set_credentials(g_soap, g_config.username, g_config.password);
 

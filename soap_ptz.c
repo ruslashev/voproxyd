@@ -1,6 +1,14 @@
 #include "soap_ptz.h"
 #include "soap_utils.h"
 
+#define soap_ptz_prelude() \
+    soap_t *soap = g_soap; \
+    struct soap_instance *instance = address_mngr_get_soap_instance_from_fd(g_current_event_fd); \
+    const char *ptz_xaddr = soap_utils_get_ptz_xaddr(instance->services); \
+    profile_t *profile = &instance->profiles->Profiles[instance->profile_idx]; \
+    char *profile_token = profile->token; \
+    soap_utils_auth();
+
 void soap_ptz_continuous_move(float pan_x, float pan_y, float zoom)
 {
     struct _tptz__ContinuousMove move;
@@ -74,10 +82,39 @@ void soap_ptz_stop_zoom()
     stop(0, 1);
 }
 
+static void get_capabilities()
+{
+    struct _tptz__GetServiceCapabilities x;
+    struct _tptz__GetServiceCapabilitiesResponse x_resp;
+
+    soap_ptz_prelude();
+
+    log("call getcapabilities");
+
+    if (soap_call___tptz__GetServiceCapabilities(soap, ptz_xaddr, NULL, &x, &x_resp) != SOAP_OK)
+        soap_die(soap, "failed to get capabilities");
+
+    enum xsd__boolean *status_position = x_resp.Capabilities->StatusPosition;
+
+    if (status_position == NULL)
+        log("it's NULL");
+    else {
+        log("try to dereference");
+
+        enum xsd__boolean status_position_what = *status_position;
+
+        log("StatusPosition: %d", soap_utils_bool_to_int(status_position_what));
+
+        /* log("MoveStatus: %d", soap_utils_bool_to_int(x_resp.Capabilities->MoveStatus)); */
+    }
+}
+
 void soap_ptz_get_position(float *pan, float *tilt, float *zoom)
 {
     struct _tptz__GetStatus getstatus;
     struct _tptz__GetStatusResponse getstatus_resp;
+
+    get_capabilities();
 
     soap_ptz_prelude();
 
