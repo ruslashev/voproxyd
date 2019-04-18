@@ -20,6 +20,8 @@ void discovery_do(int milliseconds)
     const char *multicast_url = "soap.udp://239.255.255.250:3702";
     const char *type = "", *scope = "onvif://www.onvif.org/";
 
+    log("starting discovery..");
+
     if (soap_wsdd_Probe(soap_listen, SOAP_WSDD_ADHOC, SOAP_WSDD_TO_TS, multicast_url,
                 soap_wsa_rand_uuid(soap_listen), NULL, type, scope, "") != SOAP_OK) {
         soap_print_fault(soap_listen, stderr);
@@ -27,6 +29,9 @@ void discovery_do(int milliseconds)
     }
 
     soap_wsdd_listen(soap_listen, -milliseconds * 1000);
+
+    log("discovery stop");
+    log(" ");
 }
 
 void discovery_destruct()

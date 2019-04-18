@@ -93,9 +93,7 @@ int main(int argc, char *argv[])
     address_mngr_init();
     discovery_init();
 
-    log("doing discovery..");
     discovery_do(3000);
-    log("stop discovery");
     config_read();
     worker_start();
 

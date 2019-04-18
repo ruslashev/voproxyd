@@ -331,6 +331,7 @@ void worker_init()
 
 void worker_start()
 {
+    log("start main loop");
     main_loop(&state);
 
     ll_free_list(&state.tracked_events);
