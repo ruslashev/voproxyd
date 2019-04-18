@@ -6,7 +6,7 @@
 
 struct soap_instance* soap_instance_allocate(const char *ip, const char *port)
 {
-    struct soap_instance *instance = malloc(sizeof(struct soap_instance*));
+    struct soap_instance *instance = malloc(sizeof(struct soap_instance));
     if (!instance)
         die(ERR_NOMEM, "failed to allocate soap_instance");
 
