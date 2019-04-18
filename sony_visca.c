@@ -2,9 +2,9 @@
 #include "errors.h"
 #include "log.h"
 #include "socket.h"
-#include "visca.h"
-#include "visca_commands.h"
-#include "visca_inquiries.h"
+#include "sony_visca.h"
+#include "sony_visca_commands.h"
+#include "sony_visca_inquiries.h"
 #include <netdb.h>
 #include <string.h>
 
@@ -104,7 +104,7 @@ static void handle_visca_command(const struct message_t *message, const struct e
         return;
     }
 
-    visca_commands_dispatch(message, event);
+    sony_visca_commands_dispatch(message, event);
 
     response = compose_empty_completition();
     visca_send_response(event, response);
@@ -127,7 +127,7 @@ static void handle_visca_inquiry(const struct message_t *message, const struct e
         return;
     }
 
-    inquiry_data = visca_inquiries_dispatch(message);
+    inquiry_data = sony_visca_inquiries_dispatch(message);
 
     if (inquiry_data != NULL) {
         response = compose_completition(inquiry_data);
@@ -202,7 +202,7 @@ static void handle_control_reply(const struct message_t *message, const struct e
     log("visca: handle_control_reply");
 }
 
-void visca_handle_message(const buffer_t *message_buf, const struct event_t *event)
+void sony_visca_handle_message(const buffer_t *message_buf, const struct event_t *event)
 {
     struct message_t message = {
         .header = (struct visca_header_t*)message_buf->data,

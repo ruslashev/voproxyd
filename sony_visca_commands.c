@@ -1,7 +1,7 @@
 #include "bridge_commands.h"
 #include "log.h"
-#include "visca.h"
-#include "visca_inquiries.h"
+#include "sony_visca.h"
+#include "sony_visca_inquiries.h"
 
 static uint64_t parse_retarded_integer_encoding(const struct message_t *message, size_t start, size_t n)
 {
@@ -942,7 +942,7 @@ static void dispatch_7e(const struct message_t *message, const struct event_t *e
     }
 }
 
-void visca_commands_dispatch(const struct message_t *message, const struct event_t *event)
+void sony_visca_commands_dispatch(const struct message_t *message, const struct event_t *event)
 {
     switch (message->payload[2]) {
         case 0x04:

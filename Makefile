@@ -9,9 +9,9 @@ sources = address_manager.c \
           epoll.c \
           main.c \
           socket.c \
-          visca.c \
-          visca_commands.c \
-          visca_inquiries.c \
+          sony_visca.c \
+          sony_visca_commands.c \
+          sony_visca_inquiries.c \
           worker.c \
           soap_global.c \
           soap_instance.c \

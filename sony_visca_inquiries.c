@@ -1,7 +1,7 @@
 #include "bridge_inquiries.h"
 #include "log.h"
-#include "visca.h"
-#include "visca_inquiries.h"
+#include "sony_visca.h"
+#include "sony_visca_inquiries.h"
 
 static buffer_t* dispatch_09_04(const struct message_t *message)
 {
@@ -391,7 +391,7 @@ static buffer_t* dispatch_01(const struct message_t *message)
     return NULL;
 }
 
-buffer_t* visca_inquiries_dispatch(const struct message_t *message)
+buffer_t* sony_visca_inquiries_dispatch(const struct message_t *message)
 {
     switch (message->payload[1]) {
         case 0x01:
