@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     address_mngr_init();
     discovery_init();
 
-    discovery_do(3000);
+    /* discovery_do(3000); */
     config_read();
     worker_start();
 

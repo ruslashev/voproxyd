@@ -189,8 +189,7 @@ static buffer_t* dispatch_09_06(const struct message_t *message)
 {
     switch (message->payload[3]) {
         case 0x12:
-            bridge_inq_pan_tilt_position();
-            return cons_buffer(9);
+            return bridge_inq_pan_tilt_position();
         case 0x10:
             bridge_inq_pan_tilt_status();
             return cons_buffer(2);

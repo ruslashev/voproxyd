@@ -1,5 +1,6 @@
 #include "bridge_inquiries.h"
 #include "log.h"
+#include "soap_ptz.h"
 
 void bridge_inq_color_bg()
 {
@@ -331,9 +332,17 @@ void bridge_inq_pan_tilt_limit()
     log("bridge_inq_pan_tilt_limit STUB");
 }
 
-void bridge_inq_pan_tilt_position()
+buffer_t* bridge_inq_pan_tilt_position()
 {
-    log("bridge_inq_pan_tilt_position STUB");
+    float pan, tilt;
+
+    log("bridge_inq_pan_tilt_position");
+
+    soap_ptz_get_position(&pan, &tilt, NULL);
+
+    log("we got pan %.2f tilt %.2f", pan, tilt);
+
+    return cons_buffer(9);
 }
 
 void bridge_inq_pan_tilt_ramp_curve()

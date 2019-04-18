@@ -1,5 +1,7 @@
 #pragma once
 
+#include "buffer.h"
+
 void bridge_inq_color_bg();
 void bridge_inq_color_b_gain();
 void bridge_inq_color_br();
@@ -66,7 +68,7 @@ void bridge_inq_menu_display_status();
 void bridge_inq_noise_reduction_manual_setting();
 void bridge_inq_noise_reduction_mode_level();
 void bridge_inq_pan_tilt_limit();
-void bridge_inq_pan_tilt_position();
+buffer_t* bridge_inq_pan_tilt_position();
 void bridge_inq_pan_tilt_ramp_curve();
 void bridge_inq_pan_tilt_slow_mode();
 void bridge_inq_pan_tilt_status();
