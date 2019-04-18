@@ -22,6 +22,8 @@ soap_wsdd_mode wsdd_event_Probe(struct soap *soap, const char *message_id, const
         const char *types, const char *scopes, const char *match_by,
         struct wsdd__ProbeMatchesType *matches)
 {
+    log("wsdd probe");
+
     return SOAP_WSDD_ADHOC;
 }
 
@@ -78,5 +80,30 @@ void wsdd_event_Bye(struct soap *soap, unsigned int instance_id, const char *seq
         const char *XAddrs, unsigned int *metadata_version)
 {
     log("wsdd bye");
+}
+
+int SOAP_ENV__Fault(struct soap *soap, char *faultcode, char *faultstring, char *faultactor,
+        struct SOAP_ENV__Detail *detail, struct SOAP_ENV__Code *SOAP_ENV__Code,
+        struct SOAP_ENV__Reason *SOAP_ENV__Reason, char *SOAP_ENV__Node, char *SOAP_ENV__Role,
+        struct SOAP_ENV__Detail *SOAP_ENV__Detail)
+{
+    log("soap_env__fault");
+
+    soap_fault(soap);
+
+    soap->fault->faultcode = faultcode;
+    soap->fault->faultstring = faultstring;
+    soap->fault->faultactor = faultactor;
+    soap->fault->detail = detail;
+
+    soap->fault->SOAP_ENV__Code = SOAP_ENV__Code;
+    soap->fault->SOAP_ENV__Reason = SOAP_ENV__Reason;
+    soap->fault->SOAP_ENV__Node = SOAP_ENV__Node;
+    soap->fault->SOAP_ENV__Role = SOAP_ENV__Role;
+    soap->fault->SOAP_ENV__Detail = SOAP_ENV__Detail;
+
+    soap->error = SOAP_FAULT;
+
+    return soap_send_empty_response(soap, SOAP_OK);
 }
 
