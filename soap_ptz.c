@@ -74,3 +74,25 @@ void soap_ptz_stop_zoom()
     stop(0, 1);
 }
 
+void soap_ptz_get_position(float *pan, float *tilt, float *zoom)
+{
+    struct _tptz__GetStatus getstatus;
+    struct _tptz__GetStatusResponse getstatus_resp;
+
+    soap_ptz_prelude();
+
+    getstatus.ProfileToken = profile_token;
+
+    log("call getstatus");
+
+    if (soap_call___tptz__GetStatus(soap, ptz_xaddr, NULL, &getstatus, &getstatus_resp) != SOAP_OK)
+        soap_die(soap, "failed to get status");
+
+    if (pan)
+        *pan = getstatus_resp.PTZStatus->Position->PanTilt->x;
+    if (tilt)
+        *tilt = getstatus_resp.PTZStatus->Position->PanTilt->y;
+    if (zoom)
+        *zoom = getstatus_resp.PTZStatus->Position->Zoom->x;
+}
+
