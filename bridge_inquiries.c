@@ -342,7 +342,7 @@ buffer_t* bridge_inq_pan_tilt_position()
 
     log("we got pan %.2f tilt %.2f", pan, tilt);
 
-    return cons_buffer(9);
+    return cons_buffer(8);
 }
 
 void bridge_inq_pan_tilt_ramp_curve()
@@ -438,5 +438,140 @@ void bridge_inq_tally_on()
 void bridge_inq_zoom_position()
 {
     log("bridge_inq_zoom_position STUB");
+}
+
+void bridge_inq_zoom_pos()
+{
+    log("bridge_inq_zoom_pos STUB");
+}
+
+void bridge_inq_focus_af_mode()
+{
+    log("bridge_inq_focus_af_mode STUB");
+}
+
+void bridge_inq_focus_pos()
+{
+    log("bridge_inq_focus_pos STUB");
+}
+
+void bridge_inq_wb_mode()
+{
+    log("bridge_inq_wb_mode STUB");
+}
+
+void bridge_inq_r_gain()
+{
+    log("bridge_inq_r_gain STUB");
+}
+
+void bridge_inq_ae_mode()
+{
+    log("bridge_inq_ae_mode STUB");
+}
+
+void bridge_inq_shutter_pos()
+{
+    log("bridge_inq_shutter_pos STUB");
+}
+
+void bridge_inq_iris_pos()
+{
+    log("bridge_inq_iris_pos STUB");
+}
+
+void bridge_inq_bright_pos()
+{
+    log("bridge_inq_bright_pos STUB");
+}
+
+void bridge_inq_exp_comp_mode()
+{
+    log("bridge_inq_exp_comp_mode STUB");
+}
+
+void bridge_inq_exp_comp_pos()
+{
+    log("bridge_inq_exp_comp_pos STUB");
+}
+
+void bridge_inq_backlight_mode()
+{
+    log("bridge_inq_backlight_mode STUB");
+}
+
+void bridge_inq_noise2_d_mode()
+{
+    log("bridge_inq_noise2_d_mode STUB");
+}
+
+void bridge_inq_noise2_d_l()
+{
+    log("bridge_inq_noise2_d_l STUB");
+}
+
+void bridge_inq_noise3_d_l()
+{
+    log("bridge_inq_noise3_d_l STUB");
+}
+
+void bridge_inq_flicker_mode()
+{
+    log("bridge_inq_flicker_mode STUB");
+}
+
+void bridge_inq_aperture_mode()
+{
+    log("bridge_inq_aperture_mode STUB");
+}
+
+void bridge_inq_aperture()
+{
+    log("bridge_inq_aperture STUB");
+}
+
+void bridge_inq_picture_effect_mode()
+{
+    log("bridge_inq_picture_effect_mode STUB");
+}
+
+void bridge_inq_lr_reverse()
+{
+    log("bridge_inq_lr_reverse STUB");
+}
+
+void bridge_inq_picture_flip()
+{
+    log("bridge_inq_picture_flip STUB");
+}
+
+void bridge_inq_color_gain()
+{
+    log("bridge_inq_color_gain STUB");
+}
+
+void bridge_inq_gain_limit()
+{
+    log("bridge_inq_gain_limit STUB");
+}
+
+void bridge_inq_flip()
+{
+    log("bridge_inq_flip STUB");
+}
+
+void bridge_inq_af_zone()
+{
+    log("bridge_inq_af_zone STUB");
+}
+
+void bridge_inq_color_hue()
+{
+    log("bridge_inq_color_hue STUB");
+}
+
+void bridge_inq_awb_sensitivity()
+{
+    log("bridge_inq_awb_sensitivity STUB");
 }
 
