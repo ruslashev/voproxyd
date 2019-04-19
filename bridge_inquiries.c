@@ -367,6 +367,20 @@ static void tilt_to_retarded_integer_encoding(float degrees, int t[4])
 
 buffer_t* bridge_inq_pan_tilt_position()
 {
+    buffer_t *preset_response = cons_buffer(8);
+
+    preset_response[0] = 0x00;
+    preset_response[1] = 0x00;
+    preset_response[2] = 0x00;
+    preset_response[3] = 0x00;
+    preset_response[4] = 0x00;
+    preset_response[5] = 0x00;
+    preset_response[6] = 0x00;
+    preset_response[7] = 0x01;
+
+    return preset_response;
+
+#if 0
     float pan, tilt;
     int p[5], t[4];
     buffer_t *response = cons_buffer(9);
@@ -391,6 +405,7 @@ buffer_t* bridge_inq_pan_tilt_position()
     response->data[8] = t[3];
 
     return response;
+#endif
 }
 
 void bridge_inq_pan_tilt_ramp_curve()
