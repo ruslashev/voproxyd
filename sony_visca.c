@@ -53,7 +53,7 @@ static void handle_visca_command(const struct message_t *message, const struct e
 
     log("visca: handle_visca_command");
 
-    visca_send_response(event, response);
+    visca_send_response_quiet(event, response);
     free(response);
 
     if (message->payload_length < 5) {
@@ -70,7 +70,7 @@ static void handle_visca_command(const struct message_t *message, const struct e
     sony_visca_commands_dispatch(message, event);
 
     response = compose_empty_completition();
-    visca_send_response(event, response);
+    visca_send_response_quiet(event, response);
     free(response);
 }
 
