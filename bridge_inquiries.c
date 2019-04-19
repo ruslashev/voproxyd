@@ -332,9 +332,44 @@ void bridge_inq_pan_tilt_limit()
     log("bridge_inq_pan_tilt_limit STUB");
 }
 
+static void pan_to_retarded_integer_encoding(float degrees, int p[5])
+{
+    const float onedegree = 235.9f;
+    unsigned int value = 0;
+
+    if (degrees > 0)
+        value = degrees * onedegree + 0.5f;
+    else if (degrees < 0)
+        value = -degrees * onedegree + 0x100000 + 0.5f;
+
+    p[0] = 0;
+    p[1] = (value & 0xf000) >> 12;
+    p[2] = (value & 0x0f00) >> 8;
+    p[3] = (value & 0x00f0) >> 4;
+    p[4] = (value & 0x000f) >> 0;
+}
+
+static void tilt_to_retarded_integer_encoding(float degrees, int t[4])
+{
+    const float onedegree = 235.9f;
+    unsigned int value = 0;
+
+    if (degrees > 0)
+        value = degrees * onedegree + 0.5f;
+    else if (degrees < 0)
+        value = -degrees * onedegree + 0x10000 + 0.5f;
+
+    t[0] = (value & 0xf000) >> 12;
+    t[1] = (value & 0x0f00) >> 8;
+    t[2] = (value & 0x00f0) >> 4;
+    t[3] = (value & 0x000f) >> 0;
+}
+
 buffer_t* bridge_inq_pan_tilt_position()
 {
     float pan, tilt;
+    int p[5], t[4];
+    buffer_t *response = cons_buffer(9);
 
     log("bridge_inq_pan_tilt_position");
 
@@ -342,7 +377,20 @@ buffer_t* bridge_inq_pan_tilt_position()
 
     log("we got pan %.2f tilt %.2f", pan, tilt);
 
-    return cons_buffer(8);
+    pan_to_retarded_integer_encoding(pan * 180.f, p);
+    pan_to_retarded_integer_encoding(tilt * 180.f, t);
+
+    response->data[0] = p[0];
+    response->data[1] = p[1];
+    response->data[2] = p[2];
+    response->data[3] = p[3];
+    response->data[4] = p[4];
+    response->data[5] = t[0];
+    response->data[6] = t[1];
+    response->data[7] = t[2];
+    response->data[8] = t[3];
+
+    return response;
 }
 
 void bridge_inq_pan_tilt_ramp_curve()
