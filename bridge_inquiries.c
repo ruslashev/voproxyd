@@ -369,14 +369,14 @@ buffer_t* bridge_inq_pan_tilt_position()
 {
     buffer_t *preset_response = cons_buffer(8);
 
-    preset_response[0] = 0x00;
-    preset_response[1] = 0x00;
-    preset_response[2] = 0x00;
-    preset_response[3] = 0x00;
-    preset_response[4] = 0x00;
-    preset_response[5] = 0x00;
-    preset_response[6] = 0x00;
-    preset_response[7] = 0x01;
+    preset_response->data[0] = 0x00;
+    preset_response->data[1] = 0x00;
+    preset_response->data[2] = 0x00;
+    preset_response->data[3] = 0x00;
+    preset_response->data[4] = 0x00;
+    preset_response->data[5] = 0x00;
+    preset_response->data[6] = 0x00;
+    preset_response->data[7] = 0x01;
 
     return preset_response;
 
