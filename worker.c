@@ -7,10 +7,13 @@
 #include "log.h"
 #include "socket.h"
 #include "visca.h"
+#include "sony_visca.h"
 #include "worker.h"
+#include <arpa/inet.h>
 #include <errno.h>
 #include <limits.h>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +21,7 @@
 #include <sys/epoll.h>
 #include <sys/inotify.h>
 #include <sys/signalfd.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #define VOPROXYD_STRING_BUFFERS_EXTEND_LENGTH 4096
@@ -95,6 +99,7 @@ static int handle_udp_message(const struct ap_state *state, uint8_t *message, ss
     message_buf->data = message;
 
     visca_handle_message(message_buf, state->current_event);
+    /* sony_visca_handle_message(message_buf, state->current_event); */
 
     free(message_buf);
 
@@ -155,9 +160,11 @@ static int epoll_handle_read_queue_udp(struct ap_state *state)
             (struct sockaddr*)&addr, &addr_len);
 
     state->current_event->addr = (struct sockaddr*)&addr;
+    state->current_event->addr_len = addr_len;
 
     if (!(message_length == -1 && errno == EAGAIN))
-        log("recvfrom fd = %d message_length = %zd", state->current, message_length);
+        log("recvfrom fd = %d addr = %s:%d message_length = %zd", state->current,
+                inet_ntoa(addr.sin_addr), ntohs(addr.sin_port), message_length);
 
     if (message_length == 0) {
         log("close connection on socket fd = %d", state->current);

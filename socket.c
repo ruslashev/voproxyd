@@ -51,11 +51,18 @@ int socket_create_udp(int port)
 {
     int fd;
     struct sockaddr_in addr = { 0 };
+    int enable = 1;
 
     fd = socket(AF_INET, (unsigned)SOCK_DGRAM | (unsigned)SOCK_NONBLOCK, 0);
     if (fd == -1) {
         die(ERR_SOCKET, "failed to create socket: %s", strerror(errno));
     }
+
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == -1)
+        die(ERR_SOCKET, "setsockopt() failed: %s", strerror(errno));
+
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int)) == -1)
+        die(ERR_SOCKET, "setsockopt() failed: %s", strerror(errno));
 
     addr.sin_family = AF_INET;
     addr.sin_port = htons((uint16_t)port);
@@ -114,10 +121,9 @@ int socket_send_message_tcp(int fd, const void *message, ssize_t length)
     return total_sent == length;
 }
 
-int socket_send_message_udp(int fd, const buffer_t *message, struct sockaddr *addr)
+int socket_send_message_udp(int fd, const buffer_t *message, struct sockaddr *addr, socklen_t addr_len)
 {
     ssize_t total = message->length, total_sent = 0, remaining = total, sent;
-    socklen_t addr_len = sizeof(struct sockaddr_in);
 
     while (total_sent < total) {
         sent = sendto(fd, message + total_sent, remaining, 0, addr, addr_len);
@@ -139,7 +145,7 @@ int socket_send_message_udp(int fd, const buffer_t *message, struct sockaddr *ad
 
 int socket_send_message_udp_event(const struct event_t *event, const buffer_t *message)
 {
-    return (message == NULL) ? 0 : socket_send_message_udp(event->fd, message, event->addr);
+    return (message == NULL) ? 0 : socket_send_message_udp(event->fd, message, event->addr, event->addr_len);
 }
 
 void socket_handle_error(int sock_fd)

@@ -18,6 +18,7 @@ struct event_t
     int fd;
     int type;
     struct sockaddr *addr;
+    socklen_t addr_len;
 };
 
 struct tracking_ll_t
