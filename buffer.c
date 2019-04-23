@@ -37,15 +37,14 @@ static int print_byte(char *writebuf, uint8_t x, int base)
     return 8;
 }
 
-void print_bytes(const void *bytes, size_t len, int base)
+static void print_bytes(const char *msg, const void *bytes, size_t len, int base)
 {
     size_t i;
     int bi = 0;
     char writebuf[4096] = { 0 };
 
-    if (base != 2 && base != 16) {
+    if (base != 2 && base != 16)
         die(ERR_UNSPECIFIED, "print_bytes: base can be 2 or 16, not %d", base);
-    }
 
     for (i = 0; i < len; ++i) {
         bi += print_byte(writebuf + bi, ((unsigned char*)bytes)[i], base);
@@ -54,11 +53,19 @@ void print_bytes(const void *bytes, size_t len, int base)
 
     writebuf[bi] = 0;
 
-    log("%s", writebuf);
+    if (msg != NULL)
+        log("%s: %s", msg, writebuf);
+    else
+        log("%s", writebuf);
+}
+
+void print_buffer_msg(const char *msg, const buffer_t *buffer, int base)
+{
+    print_bytes(msg, buffer->data, buffer->length, base);
 }
 
 void print_buffer(const buffer_t *buffer, int base)
 {
-    print_bytes(buffer->data, buffer->length, base);
+    print_bytes(NULL, buffer->data, buffer->length, base);
 }
 
