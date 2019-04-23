@@ -96,6 +96,8 @@ static int handle_udp_message(const struct ap_state *state, uint8_t *message, ss
 {
     buffer_t *message_buf = cons_buffer(length);
 
+    free(message_buf->data);
+
     message_buf->data = message;
 
     visca_handle_message(message_buf, state->current_event);

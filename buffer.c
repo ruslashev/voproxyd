@@ -15,6 +15,12 @@ buffer_t* cons_buffer(size_t length)
     return out;
 }
 
+void free_buffer(buffer_t *buffer)
+{
+    free(buffer->data);
+    free(buffer);
+}
+
 static int print_byte(char *writebuf, uint8_t x, int base)
 {
     int len = 8, i = 0;

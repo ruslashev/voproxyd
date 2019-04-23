@@ -462,13 +462,13 @@ void visca_handle_message(const buffer_t *message, const struct event_t *event)
 
         response = compose_ack();
         visca_send_response(event, response);
-        free(response);
+        free_buffer(response);
 
         dispatch_commands(message, event);
 
         response = compose_empty_completition();
         visca_send_response(event, response);
-        free(response);
+        free_buffer(response);
 
         break;
     case 0x09:
@@ -483,8 +483,8 @@ void visca_handle_message(const buffer_t *message, const struct event_t *event)
 
         response = compose_completition(inquiry_data);
         visca_send_response(event, response);
-        free(response);
-        free(inquiry_data);
+        free_buffer(response);
+        free_buffer(inquiry_data);
 
         break;
     default:
