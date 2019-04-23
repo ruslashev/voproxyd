@@ -126,7 +126,7 @@ int socket_send_message_udp(int fd, const buffer_t *message, struct sockaddr *ad
     ssize_t total = message->length, total_sent = 0, remaining = total, sent;
 
     while (total_sent < total) {
-        sent = sendto(fd, message + total_sent, remaining, 0, addr, addr_len);
+        sent = sendto(fd, message->data + total_sent, remaining, 0, addr, addr_len);
         if (sent == -1) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 continue;
