@@ -371,6 +371,8 @@ buffer_t* bridge_inq_pan_tilt_position()
 {
     buffer_t *preset_response = cons_buffer(8);
 
+    log("bridge_inq_pan_tilt_position");
+
     preset_response->data[0] = 0x00;
     preset_response->data[1] = 0x00;
     preset_response->data[2] = 0x00;

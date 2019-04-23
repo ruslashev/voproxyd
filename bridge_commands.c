@@ -812,13 +812,15 @@ void bridge_cmd_memory_recall(uint8_t num)
 
 void bridge_cmd_pan_tilt_relative_position(int pan_speed, int tilt_speed, int pan_pos, int tilt_pos)
 {
-    log("bridge_cmd_pan_tilt_relative_position pan_speed=%d, tilt_speed=%d, pan_pos=%d, tilt_pos=%d"
+    log("bridge_cmd_pan_tilt_relative_position pan_speed=%d, tilt_speed=%d, pan_pos=%d, tilt_pos=%d "
             "STUB", pan_speed, tilt_speed, pan_pos, tilt_pos);
 }
 
 void bridge_cmd_pan_tilt_absolute_position(int pan_speed, int tilt_speed, int pan_pos, int tilt_pos)
 {
-    log("bridge_cmd_pan_tilt_absolute_position pan_speed=%d, tilt_speed=%d, pan_pos=%d, tilt_pos=%d"
+    log("bridge_cmd_pan_tilt_absolute_position pan_speed=%d, tilt_speed=%d, pan_pos=%d, tilt_pos=%d "
             "STUB", pan_speed, tilt_speed, pan_pos, tilt_pos);
+
+    /* TODO me tomorrow, look here */
 }
 
