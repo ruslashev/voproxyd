@@ -232,9 +232,11 @@ void bridge_inq_focus_near_limit()
     log("bridge_inq_focus_near_limit STUB");
 }
 
-void bridge_inq_focus_position()
+buffer_t* bridge_inq_focus_position()
 {
-    log("bridge_inq_focus_position STUB");
+    log("bridge_inq_focus_position");
+
+    return cons_buffer_with_value(4, 0x1);
 }
 
 void bridge_inq_focus_sensitivity()
@@ -498,24 +500,16 @@ void bridge_inq_tally_on()
     log("bridge_inq_tally_on STUB");
 }
 
-void bridge_inq_zoom_position()
+buffer_t* bridge_inq_zoom_position()
 {
-    log("bridge_inq_zoom_position STUB");
-}
+    log("bridge_inq_zoom_position");
 
-void bridge_inq_zoom_pos()
-{
-    log("bridge_inq_zoom_pos STUB");
+    return cons_buffer_with_value(4, 0x1);
 }
 
 void bridge_inq_focus_af_mode()
 {
     log("bridge_inq_focus_af_mode STUB");
-}
-
-void bridge_inq_focus_pos()
-{
-    log("bridge_inq_focus_pos STUB");
 }
 
 void bridge_inq_wb_mode()

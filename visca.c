@@ -346,14 +346,12 @@ static buffer_t* dispatch_queries_04(const buffer_t *message)
 {
     switch (message->data[3]) {
     case 0x47:
-        bridge_inq_zoom_pos();
-        return cons_buffer(4);
+        return bridge_inq_zoom_position();
     case 0x38:
         bridge_inq_focus_af_mode();
         return cons_buffer(1);
     case 0x48:
-        bridge_inq_focus_pos();
-        return cons_buffer(4);
+        return bridge_inq_focus_position();
     case 0x35:
         bridge_inq_wb_mode();
         return cons_buffer(1);
