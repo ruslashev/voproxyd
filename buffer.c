@@ -1,18 +1,25 @@
 #include "buffer.h"
 #include "log.h"
+#include <string.h>
 
-buffer_t* cons_buffer(size_t length)
+buffer_t* cons_buffer_with_value(size_t length, uint8_t value)
 {
     buffer_t *out = malloc(sizeof(buffer_t));
-    if (out == NULL) {
+    if (out == NULL)
         die(ERR_ALLOC, "failed to allocate memory for buffer_t");
-    }
 
     out->length = length;
 
-    out->data = calloc(length, 1);
+    out->data = malloc(length);
+
+    memset(out->data, value, length);
 
     return out;
+}
+
+buffer_t* cons_buffer(size_t length)
+{
+    return cons_buffer_with_value(length, 0);
 }
 
 void free_buffer(buffer_t *buffer)
