@@ -32,6 +32,16 @@ static uint64_t parse_retarded_integer_encoding(const buffer_t *message, size_t 
     return output;
 }
 
+static uint64_t parse_sane_integer_encoding(const buffer_t *message, size_t start, size_t n)
+{
+    uint64_t output = 0;
+
+    for (size_t i = 0; i < n; ++i)
+        output = (output << 8u) | (message->data[start + i] & 0xffu);
+
+    return output;
+}
+
 buffer_t* compose_ack()
 {
     buffer_t *response = cons_buffer(3);
@@ -254,18 +264,14 @@ static void dispatch_commands_04(const buffer_t *message, const struct event_t *
 static void ptd_abs_rel(const buffer_t *message, int rel)
 {
     uint8_t pan_speed, tilt_speed;
-    uint64_t pan_pos, tilt_pos;
+    uint64_t preset;
 
     pan_speed = message->data[4];
     tilt_speed = message->data[5];
 
-    pan_pos = parse_retarded_integer_encoding(message, 6, 4);
-    tilt_pos = parse_retarded_integer_encoding(message, 10, 4);
+    preset = parse_sane_integer_encoding(message, 6, 8);
 
-    if (rel)
-        bridge_cmd_pan_tilt_relative_position(pan_speed, tilt_speed, pan_pos, tilt_pos);
-    else
-        bridge_cmd_pan_tilt_absolute_position(pan_speed, tilt_speed, pan_pos, tilt_pos);
+    bridge_cmd_pan_tilt_absolute_preset(pan_speed, tilt_speed, preset);
 }
 
 static void dispatch_commands_06(const buffer_t *message, const struct event_t *event)

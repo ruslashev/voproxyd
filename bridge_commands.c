@@ -824,3 +824,11 @@ void bridge_cmd_pan_tilt_absolute_position(int pan_speed, int tilt_speed, int pa
     /* TODO me tomorrow, look here */
 }
 
+void bridge_cmd_pan_tilt_absolute_preset(int pan_speed, int tilt_speed, int preset)
+{
+    log("bridge_cmd_pan_tilt_absolute_preset pan_speed=%d, tilt_speed=%d, preset=%d", pan_speed,
+            tilt_speed, preset);
+
+    soap_ptz_goto_preset(pan_speed, tilt_speed, preset);
+}
+

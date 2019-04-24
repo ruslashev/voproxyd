@@ -1,6 +1,8 @@
 #include "bridge_inquiries.h"
 #include "log.h"
 #include "soap_ptz.h"
+#include "address_manager.h"
+#include "worker.h"
 
 void bridge_inq_color_bg()
 {
@@ -370,8 +372,14 @@ static void tilt_to_retarded_integer_encoding(float degrees, int t[4])
 buffer_t* bridge_inq_pan_tilt_position()
 {
     buffer_t *preset_response = cons_buffer(8);
+    struct soap_instance *instance = address_mngr_get_soap_instance_from_fd(g_current_event_fd);
 
     log("bridge_inq_pan_tilt_position");
+
+    if ((++instance->current_preset) > instance->preset_range_max)
+        instance->current_preset = instance->preset_range_min;
+
+    soap_ptz_set_preset(instance->current_preset);
 
     preset_response->data[0] = 0x00;
     preset_response->data[1] = 0x00;
@@ -379,8 +387,8 @@ buffer_t* bridge_inq_pan_tilt_position()
     preset_response->data[3] = 0x00;
     preset_response->data[4] = 0x00;
     preset_response->data[5] = 0x00;
-    preset_response->data[6] = 0x00;
-    preset_response->data[7] = 0x01;
+    preset_response->data[6] = (instance->current_preset & 0xff00) >> 8u;
+    preset_response->data[7] = instance->current_preset & 0xff;
 
     return preset_response;
 
