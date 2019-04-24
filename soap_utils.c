@@ -38,9 +38,6 @@ void soap_utils_get_services(soap_t *soap, const char *endpoint, services_t *ser
 
     soap_utils_auth();
 
-    /* TODO: removeme */
-    /* soap_default__tds__GetServices(soap, &get_services_trt); */
-
     get_services_trt.IncludeCapability = xsd__boolean__false_;
 
     if (soap_call___tds__GetServices(soap, endpoint, NULL, &get_services_trt, services) != SOAP_OK
