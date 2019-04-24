@@ -223,6 +223,10 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
             instance->profile_idx = atoi(value);
         else if (streq(name, "port"))
             soap_instance_set_endpoint(instance, section, value);
+        else if (streq(name, "preset_range_min"))
+            instance->preset_range_min = atoi(value);
+        else if (streq(name, "preset_range_max"))
+            instance->preset_range_max = atoi(value);
         else
             log("config file %s:%d warning: unknown option \"%s\"", (char*)user, line, name);
     } else { /* no section */

@@ -29,6 +29,10 @@ struct soap_instance* soap_instance_allocate(const char *ip, const char *port)
 
     instance->profile_idx = 0;
 
+    instance->current_preset = 0;
+    instance->preset_range_min = 1;
+    instance->preset_range_max = 3;
+
     return instance;
 }
 
