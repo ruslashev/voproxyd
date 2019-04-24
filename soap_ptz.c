@@ -133,3 +133,45 @@ void soap_ptz_get_position(float *pan, float *tilt, float *zoom)
         *zoom = getstatus_resp.PTZStatus->Position->Zoom->x;
 }
 
+void soap_ptz_set_preset(int preset)
+{
+    struct _tptz__SetPreset x;
+    struct _tptz__SetPresetResponse x_resp;
+    char preset_token[64];
+
+    soap_ptz_prelude();
+
+    snprintf(preset_token, 64, "%d", preset);
+
+    x.ProfileToken = profile_token;
+    x.PresetName = NULL;
+    x.PresetToken = preset_token;
+
+    log("call setpreset");
+
+    if (soap_call___tptz__SetPreset(soap, ptz_xaddr, NULL, &x, &x_resp) != SOAP_OK)
+        soap_die(soap, "failed to set preset");
+}
+
+void soap_ptz_goto_preset(int pan_speed, int tilt_speed, int preset)
+{
+    struct _tptz__GotoPreset x;
+    struct _tptz__GotoPresetResponse x_resp;
+    char preset_token[64];
+
+    soap_ptz_prelude();
+
+    snprintf(preset_token, 64, "%d", preset);
+
+    x.ProfileToken = profile_token;
+    x.PresetToken = preset_token;
+    x.Speed->PanTilt->x = pan_speed;
+    x.Speed->PanTilt->y = tilt_speed;
+    x.Speed->Zoom->x = 1.f;
+
+    log("call gotopreset");
+
+    if (soap_call___tptz__GotoPreset(soap, ptz_xaddr, NULL, &x, &x_resp) != SOAP_OK)
+        soap_die(soap, "failed to goto preset");
+}
+
