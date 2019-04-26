@@ -826,9 +826,13 @@ void bridge_cmd_pan_tilt_absolute_position(int pan_speed, int tilt_speed, int pa
 
 void bridge_cmd_pan_tilt_absolute_preset(int pan_speed, int tilt_speed, int preset)
 {
-    log("bridge_cmd_pan_tilt_absolute_preset pan_speed=%d, tilt_speed=%d, preset=%d", pan_speed,
-            tilt_speed, preset);
+    /* speeds from 0 to 24 in visca */
+    float pan_speed_conv = (float)pan_speed / 24.f,
+          tilt_speed_conv = (float)tilt_speed / 24.f;
 
-    soap_ptz_goto_preset(pan_speed, tilt_speed, preset);
+    log("bridge_cmd_pan_tilt_absolute_preset pan_speed=%d -> %.2f, tilt_speed=%d -> %.2f, preset=%d",
+            pan_speed, pan_speed_conv, tilt_speed, tilt_speed_conv, preset);
+
+    soap_ptz_goto_preset(pan_speed_conv, tilt_speed_conv, preset);
 }
 
