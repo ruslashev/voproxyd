@@ -11,5 +11,5 @@ void soap_ptz_stop_pantilt();
 void soap_ptz_stop_zoom();
 void soap_ptz_get_position(float *pan, float *tilt, float *zoom);
 void soap_ptz_set_preset(int preset);
-void soap_ptz_goto_preset(int pan_speed, int tilt_speed, int preset);
+void soap_ptz_goto_preset(float pan_speed, float tilt_speed, int preset);
 

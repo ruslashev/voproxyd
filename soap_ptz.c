@@ -153,8 +153,11 @@ void soap_ptz_set_preset(int preset)
         soap_die(soap, "failed to set preset");
 }
 
-void soap_ptz_goto_preset(int pan_speed, int tilt_speed, int preset)
+void soap_ptz_goto_preset(float pan_speed, float tilt_speed, int preset)
 {
+    struct tt__Vector1D zoom_speed;
+    struct tt__Vector2D pantilt_speed;
+    struct tt__PTZSpeed speed_container;
     struct _tptz__GotoPreset x;
     struct _tptz__GotoPresetResponse x_resp;
     char preset_token[64];
@@ -165,9 +168,16 @@ void soap_ptz_goto_preset(int pan_speed, int tilt_speed, int preset)
 
     x.ProfileToken = profile_token;
     x.PresetToken = preset_token;
-    x.Speed->PanTilt->x = pan_speed;
-    x.Speed->PanTilt->y = tilt_speed;
-    x.Speed->Zoom->x = 1.f;
+
+    zoom_speed.x = 1.f;
+
+    pantilt_speed.x = pan_speed;
+    pantilt_speed.y = tilt_speed;
+
+    speed_container.Zoom = &zoom_speed;
+    speed_container.PanTilt = &pantilt_speed;
+
+    x.Speed = &speed_container;
 
     log("call gotopreset");
 
