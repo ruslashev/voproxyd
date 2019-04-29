@@ -10,21 +10,22 @@
 #include <math.h>
 
 extern int g_daemonize;
-extern int g_log_output_fd;
+extern FILE *g_log_output_file;
 
 #define _log_syslog(...) syslog(LOG_NOTICE, __VA_ARGS__)
-#define _log_stdout(...) \
+#define _log_stream(...) \
     do { \
-        dprintf(g_log_output_fd, __VA_ARGS__); \
-        dprintf(g_log_output_fd, "\n"); \
+        fprintf(g_log_output_file, __VA_ARGS__); \
+        fprintf(g_log_output_file, "\n"); \
+        fflush(g_log_output_file); \
     } while (0)
 
 #define log(...) \
     do { \
-        if (g_daemonize) \
+        if (g_daemonize && g_log_output_file == stdout) \
             _log_syslog(__VA_ARGS__); \
         else \
-            _log_stdout(__VA_ARGS__); \
+            _log_stream(__VA_ARGS__); \
     } while (0)
 
 #define die_detail(X, ...) do { log(__VA_ARGS__); exit(X); } while (0)

@@ -16,7 +16,7 @@
 #include <unistd.h>
 
 int g_daemonize = 0;
-int g_log_output_fd = STDOUT_FILENO;
+FILE *g_log_output_file;
 
 static void usage(const char *progname)
 {
@@ -62,8 +62,7 @@ static void parse_arguments(int argc, char *argv[])
             exit(EXIT_SUCCESS);
             break;
         case 'l':
-            g_log_output_fd = open(optarg, O_WRONLY | O_APPEND | O_CREAT,
-                    S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            g_log_output_file = fopen(optarg, "a");
             break;
         default:
             usage(argv[0]);
@@ -98,6 +97,8 @@ static void print_greeting()
 
 int main(int argc, char *argv[])
 {
+    g_log_output_file = stdout;
+
     parse_arguments(argc, argv);
 
     if (g_daemonize) {
