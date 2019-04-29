@@ -13,8 +13,7 @@ struct soap_instance
     int preset_range_max;
 };
 
-struct soap_instance* soap_instance_allocate(const char *ip, const char *port);
+struct soap_instance* soap_instance_allocate(const char *address);
 void soap_instance_print_info(struct soap_instance *instance);
-void soap_instance_set_endpoint(struct soap_instance* instance, const char *ip, const char *port);
 void soap_instance_deallocate(struct soap_instance *instance);
 
