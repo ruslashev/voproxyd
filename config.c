@@ -100,7 +100,6 @@ static void write_to_xdg_file()
         "# 192.168.1.2 = 9002\n"
         "\n"
         "# [192.168.1.2]\n"
-        "# port = 80\n"
         "# profile_idx = 0\n"
         "\n";
 
@@ -210,9 +209,9 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
 
     struct soap_instance *instance;
 
-    if (streq(section, "ports")) {
+    if (streq(section, "ports"))
         address_mngr_add_address_by_port(atoi(value), name);
-    } else if (!streq(section, "")) { /* ip section */
+    else if (!streq(section, "")) { /* ip section */
         instance = address_mngr_find_soap_instance_matching_ip(section);
         if (instance == NULL) {
             log("config file %s:%d warning: can't find ip \"%s\"", (char*)user, line, section);
@@ -221,8 +220,6 @@ static int ini_cb(void *user, const char *section, const char *name, const char 
 
         if (streq(name, "profile_idx"))
             instance->profile_idx = atoi(value);
-        else if (streq(name, "port"))
-            soap_instance_set_endpoint(instance, section, value);
         else if (streq(name, "preset_range_min"))
             instance->preset_range_min = atoi(value);
         else if (streq(name, "preset_range_max"))
