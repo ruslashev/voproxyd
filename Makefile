@@ -67,7 +67,7 @@ endif
 example_sources = onvif_example/main.c soap_utils.c $(wildcard deps/onvif/*.c)
 example_objs = $(example_sources:%=$(build_dir)/%.o)
 example_binname = example
-inih_url = https://raw.githubusercontent.com/benhoyt/inih/master
+inih_url = https://raw.githubusercontent.com/benhoyt/inih/1d07c4790659fa39af7b662438dd73ed1a97e0b5/
 
 all: $(binname)
 
@@ -102,6 +102,7 @@ deps/inih/ini.c:
 	@mkdir -p deps/inih
 	@wget -q -O deps/inih/ini.c $(inih_url)/ini.c
 	@wget -q -O deps/inih/ini.h $(inih_url)/ini.h
+	@patch -p1 deps/inih/ini.c deps/inih-disallow-semicolons.patch
 
 prepare-onvif: unzip-gsoap compile-gsoap install-gsoap wsdl2h soapcpp soapcpp-wsdd \
     copy-gsoap-sources move-nsmaps

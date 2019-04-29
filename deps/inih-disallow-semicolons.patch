@@ -1,0 +1,16 @@
+180,182c180,182
+<             /* Not a comment, must be a name[=:]value pair */
+<             end = find_chars_or_comment(start, "=:");
+<             if (*end == '=' || *end == ':') {
+---
+>             /* Not a comment, must be a name[=]value pair */
+>             end = find_chars_or_comment(start, "=");
+>             if (*end == '=') {
+194c194
+<                 /* Valid name[=:]value pair found, call handler */
+---
+>                 /* Valid name[=]value pair found, call handler */
+200c200
+<                 /* No '=' or ':' found on name[=:]value line */
+---
+>                 /* No '=' found on name[=]value line */
