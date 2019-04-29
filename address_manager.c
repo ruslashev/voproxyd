@@ -16,18 +16,18 @@ static int create_unique_port_from_ip(const char *ip)
     return 0; /* idk lol */
 }
 
-void address_mngr_add_address_by_port(int port, const char *camera_ip, const char *camera_port)
+void address_mngr_add_address_by_port(int port, const char *ip)
 {
     int fd;
     struct soap_instance *instance;
 
     fd = socket_create_udp(port);
 
-    instance = soap_instance_allocate(camera_ip, camera_port);
+    instance = soap_instance_allocate(ip, "80"); /* default port */
 
     worker_add_udp_fd(fd);
 
-    log("add address map fd %d -> port %d -> ip %s", fd, port, camera_ip);
+    log("add address map fd %d -> port %d -> ip %s", fd, port, ip);
     avl_tree_insert(&address_map, fd, instance);
 
     soap_instance_print_info(instance);
@@ -35,16 +35,11 @@ void address_mngr_add_address_by_port(int port, const char *camera_ip, const cha
     log(" ");
 }
 
-void address_mngr_add_address_by_port_default(int port, const char *camera_ip)
-{
-    address_mngr_add_address_by_port(port, camera_ip, "80"); /* default port */
-}
-
 void address_mngr_add_address(const char *ip)
 {
     int port = create_unique_port_from_ip(ip);
 
-    address_mngr_add_address_by_port_default(port, ip);
+    address_mngr_add_address_by_port(port, ip);
 }
 
 struct soap_instance* address_mngr_get_soap_instance_from_fd(int fd)

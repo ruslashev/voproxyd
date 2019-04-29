@@ -31,7 +31,6 @@ struct soap_instance* soap_instance_allocate(const char *address)
 
     set_endpoint(instance, address);
 
-    log("getting services for %s", instance->service_endpoint);
     soap_utils_get_services(g_soap, instance->service_endpoint, instance->services);
     soap_utils_get_profiles(g_soap, soap_utils_get_media_xaddr(instance->services), instance->profiles);
 
