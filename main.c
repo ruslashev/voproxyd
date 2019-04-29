@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 int g_daemonize = 0;
+int g_log_output_fd = STDOUT_FILENO;
 
 static void usage(const char *progname)
 {
@@ -46,11 +47,12 @@ static void parse_arguments(int argc, char *argv[])
     struct option const long_options[] = {
         { "daemonize",  optional_argument, NULL, 'd' },
         { "help",       no_argument,       NULL, 'h' },
+        { "log",        required_argument, NULL, 'l' },
         { 0,            0,                 0,    0   }
     };
     int opt = 0, option_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "d::h", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "d::hl:", long_options, &option_index)) != -1) {
         switch (opt) {
         case 'd':
             parse_daemonize();
@@ -58,6 +60,10 @@ static void parse_arguments(int argc, char *argv[])
         case 'h':
             usage(argv[0]);
             exit(EXIT_SUCCESS);
+            break;
+        case 'l':
+            g_log_output_fd = open(optarg, O_WRONLY | O_APPEND | O_CREAT,
+                    S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
             break;
         default:
             usage(argv[0]);

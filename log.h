@@ -10,9 +10,14 @@
 #include <math.h>
 
 extern int g_daemonize;
+extern int g_log_output_fd;
 
 #define _log_syslog(...) syslog(LOG_NOTICE, __VA_ARGS__)
-#define _log_stdout(...) do { printf(__VA_ARGS__); puts(""); } while (0)
+#define _log_stdout(...) \
+    do { \
+        dprintf(g_log_output_fd, __VA_ARGS__); \
+        dprintf(g_log_output_fd, "\n"); \
+    } while (0)
 
 #define log(...) \
     do { \
