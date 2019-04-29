@@ -84,6 +84,18 @@ static void parse_arguments(int argc, char *argv[])
     }
 }
 
+static void print_greeting()
+{
+    time_t t = time(NULL);
+    struct tm *tl = localtime(&t);
+    char greeting[512];
+
+    strftime(greeting, sizeof(greeting), "voproxyd started on %F %T", tl);
+
+    log("%s", greeting);
+    log(" ");
+}
+
 int main(int argc, char *argv[])
 {
     parse_arguments(argc, argv);
@@ -93,6 +105,8 @@ int main(int argc, char *argv[])
 
         daemonize();
     }
+
+    print_greeting();
 
     worker_init();
     soap_global_construct();
