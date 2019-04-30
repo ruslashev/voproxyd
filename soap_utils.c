@@ -32,7 +32,7 @@ char* soap_utils_get_ptz_xaddr(services_t *services)
     return find_xaddr(services, SOAP_NAMESPACE_OF_tptz);
 }
 
-void soap_utils_get_services(soap_t *soap, const char *endpoint, services_t *services)
+int soap_utils_get_services(soap_t *soap, const char *endpoint, services_t *services)
 {
     struct _tds__GetServices get_services_trt;
 
@@ -41,8 +41,13 @@ void soap_utils_get_services(soap_t *soap, const char *endpoint, services_t *ser
     get_services_trt.IncludeCapability = xsd__boolean__false_;
 
     if (soap_call___tds__GetServices(soap, endpoint, NULL, &get_services_trt, services) != SOAP_OK
-            || services->Service == NULL)
-        soap_die(soap, "failed to get services");
+            || services->Service == NULL) {
+        log("failed to get services:");
+        soap_utils_log_error(soap);
+        return 1;
+    }
+
+    return 0;
 }
 
 void soap_utils_get_profiles(soap_t *soap, const char *media_xaddr, profiles_t *profiles)

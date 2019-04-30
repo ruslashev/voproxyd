@@ -24,6 +24,8 @@ void address_mngr_add_address_by_port(int port, const char *address)
     fd = socket_create_udp(port);
 
     instance = soap_instance_allocate(address);
+    if (instance == NULL)
+        return;
 
     worker_add_udp_fd(fd);
 

@@ -20,7 +20,7 @@
 void soap_utils_set_credentials(soap_t *soap, const char *username, const char *pwd);
 char* soap_utils_get_media_xaddr(services_t *services);
 char* soap_utils_get_ptz_xaddr(services_t *services);
-void soap_utils_get_services(soap_t *soap, const char *service_endpoint, services_t *services);
+int soap_utils_get_services(soap_t *soap, const char *service_endpoint, services_t *services);
 void soap_utils_get_profiles(soap_t *soap, const char *media_xaddr, profiles_t *profiles);
 void soap_utils_get_device_information(soap_t *soap, const char *service_endpoint,
         device_info_t *device_info);
