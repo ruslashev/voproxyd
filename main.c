@@ -17,11 +17,13 @@
 
 int g_daemonize = 0;
 FILE *g_log_output_file;
+int g_timestamps = 0;
 
 static void usage(const char *progname)
 {
     assert(progname != NULL);
-    printf("Usage: %s [-h,--help] [-d,--daemonize]\n", progname);
+    printf("Usage: %s [-h,--help] [-d,--daemonize] [-l,--log=<filename>] [-t,--timestamps]\n",
+            progname);
 }
 
 static void parse_daemonize()
@@ -48,11 +50,12 @@ static void parse_arguments(int argc, char *argv[])
         { "daemonize",  optional_argument, NULL, 'd' },
         { "help",       no_argument,       NULL, 'h' },
         { "log",        required_argument, NULL, 'l' },
+        { "timestamps", no_argument,       NULL, 't' },
         { 0,            0,                 0,    0   }
     };
     int opt = 0, option_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "d::hl:", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "d::hl:t", long_options, &option_index)) != -1) {
         switch (opt) {
         case 'd':
             parse_daemonize();
@@ -63,6 +66,9 @@ static void parse_arguments(int argc, char *argv[])
             break;
         case 'l':
             g_log_output_file = fopen(optarg, "a");
+            break;
+        case 't':
+            g_timestamps = 1;
             break;
         default:
             usage(argv[0]);
