@@ -118,10 +118,11 @@ int main(int argc, char *argv[])
     worker_init();
     soap_global_construct();
     address_mngr_init();
-    discovery_init();
+    /* discovery_init(); */
 
     /* discovery_do(3000); */
     config_read();
+    worker_do_external_discovery();
     worker_start();
 
     config_destruct();

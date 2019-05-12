@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 
+#include "address_manager.h"
 #include "buffer.h"
 #include "config.h"
 #include "epoll.h"
@@ -292,9 +293,59 @@ static void epoll_handle_inotify(int inotify_fd)
     }
 }
 
-static void command_output_ready(const char *output)
+static void command_output_ready(const char *output, int exit_code)
 {
-    log("command output: '%s'", output);
+    char *output_copy, *it;
+
+    if (exit_code != 0 || strstr(output, "not found") != NULL) {
+        log("error: failed to do discovery using external tools.\n"
+                "to use it make sure to install python package WSDiscovery:\n"
+                "\n"
+                "    pip3 install --user WSDiscovery\n"
+                "\n"
+                "command output: '%s'", output);
+        return;
+    }
+
+    log("command output: '%s' exit code = %d", output, exit_code);
+    log(" ");
+
+    if (strlen(output) > 4096)
+        die(ERR_PIPE, "worker: error: command output is too long");
+
+    output_copy = malloc(strlen(output) + 1);
+    if (!output_copy)
+        die(ERR_NOMEM, "failed to malloc(%zd)", strlen(output));
+
+    strncpy(output_copy, output, strlen(output));
+
+    output_copy[strlen(output)] = '\0';
+
+    it = strtok(output_copy, "\n");
+    while (it != NULL) {
+        log("extracted address: '%s'", it);
+
+        address_mngr_add_address(it);
+
+        it = strtok(NULL, "\n");
+        log(" ");
+    }
+
+    free(output_copy);
+}
+
+static int get_waitpid_exit_code(int waitpid_status)
+{
+    if (WIFEXITED(waitpid_status))
+        return WEXITSTATUS(waitpid_status);
+
+    if (WIFSIGNALED(waitpid_status))
+        return WTERMSIG(waitpid_status);
+
+    if (WIFSTOPPED(waitpid_status))
+        return WSTOPSIG(waitpid_status);
+
+    return -1;
 }
 
 static void run_command(struct ap_state *state, const char *command)
@@ -382,7 +433,7 @@ static void epoll_handle_pipe_queue(struct ap_state *state)
             die(ERR_WAITPID, "waitpid() of pid = %d failed: %s", state->current_event->child_pid,
                     strerror(errno));
 
-        command_output_ready(state->current_event->command_output);
+        command_output_ready(state->current_event->command_output, get_waitpid_exit_code(proc_status));
         free(state->current_event->command_output);
 
         epoll_close_fd(state, state->current);
@@ -410,7 +461,7 @@ static void epoll_handle_hangup(struct ap_state *state)
         die(ERR_WAITPID, "waitpid() of pid = %d failed: %s", state->current_event->child_pid,
                 strerror(errno));
 
-    command_output_ready(state->current_event->command_output);
+    command_output_ready(state->current_event->command_output, get_waitpid_exit_code(proc_status));
     free(state->current_event->command_output);
 
     epoll_close_fd(state, state->current);
@@ -517,5 +568,10 @@ void worker_start()
 void worker_add_udp_fd(int fd)
 {
     epoll_add_fd(&state, fd, FDT_UDP, 1);
+}
+
+void worker_do_external_discovery()
+{
+    run_command(&state, "discovery | grep 192 | cut -d' ' -f 3");
 }
 
