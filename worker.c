@@ -572,6 +572,7 @@ void worker_add_udp_fd(int fd)
 
 void worker_do_external_discovery()
 {
+    log("starting external discovery...");
     run_command(&state, "discover | grep 192 | cut -d' ' -f 3");
 }
 

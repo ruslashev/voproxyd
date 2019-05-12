@@ -13,9 +13,20 @@ void address_mngr_init()
 
 static int create_unique_port_from_ip(const char *address)
 {
-    in_addr_t addr = inet_network(address);
+    const char *it = address;
+    int bytes[4] = { 0 };
+    int idx = 0;
 
-    return ((addr & 0xff00) >> 8) * 100 + (addr & 0xff);
+    while (*it != '\0') {
+        if (isdigit(*it)) {
+            bytes[idx] *= 10;
+            bytes[idx] += *it - '0';
+        } else
+            ++idx;
+        ++it;
+    }
+
+    return bytes[3] * 100 + bytes[4];
 }
 
 void address_mngr_add_address_by_port(int port, const char *address)
