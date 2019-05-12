@@ -13,7 +13,9 @@ void address_mngr_init()
 
 static int create_unique_port_from_ip(const char *address)
 {
-    return 0; /* idk lol */
+    in_addr_t addr = inet_network(address);
+
+    return ((addr & 0xff00) >> 8) * 100 + (addr & 0xff);
 }
 
 void address_mngr_add_address_by_port(int port, const char *address)
@@ -40,6 +42,8 @@ void address_mngr_add_address_by_port(int port, const char *address)
 void address_mngr_add_address(const char *address)
 {
     int port = create_unique_port_from_ip(address);
+
+    log("address manager: address '%s' assigned port %d", address, port);
 
     address_mngr_add_address_by_port(port, address);
 }
