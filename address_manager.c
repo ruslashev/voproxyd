@@ -14,8 +14,7 @@ void address_mngr_init()
 static int create_unique_port_from_ip(const char *address)
 {
     const char *it = address;
-    int bytes[4] = { 0 };
-    int idx = 0;
+    int bytes[4] = { 0 }, idx = 0, byte3, byte4, first_part, offset;
 
     while (*it != '\0') {
         if (isdigit(*it)) {
@@ -26,7 +25,16 @@ static int create_unique_port_from_ip(const char *address)
         ++it;
     }
 
-    return bytes[3] * 100 + bytes[4];
+    byte3 = bytes[2];
+    byte4 = bytes[3];
+
+    first_part = byte3;
+    if (byte3 >= 100 && byte4 >= 100)
+        first_part = byte3 % 100;
+
+    offset = byte4 < 100 ? 100 : 1000;
+
+    return first_part * offset + byte4;
 }
 
 void address_mngr_add_address_by_port(int port, const char *address)
