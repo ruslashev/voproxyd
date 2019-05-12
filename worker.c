@@ -11,6 +11,7 @@
 #include "worker.h"
 #include <arpa/inet.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -22,16 +23,50 @@
 #include <sys/inotify.h>
 #include <sys/signalfd.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #define VOPROXYD_STRING_BUFFERS_EXTEND_LENGTH 4096
 #define VOPROXYD_MAX_EPOLL_EVENTS 128
 #define VOPROXYD_MAX_RX_MESSAGE_LENGTH 4096
+#define VOPROXYD_SHELL_PATH "/bin/sh"
+#define VOPROXYD_PIPE_READ_BUFFER_LENGTH 8192
+#define VOPROXYD_STRING_BUFFERS_INITIAL_LENGTH 16384
 
 int g_current_event_fd;
 
 static struct ap_state state;
 static int signal_fd, inotify_fd;
+
+static void string_ensure_fits_substring(char **hay, size_t *hay_buf_length, size_t needle_length)
+{
+    size_t hay_length = strlen(*hay);
+    char *hay_resized;
+
+    while (hay_length + needle_length + 1 > *hay_buf_length) {
+        *hay_buf_length += VOPROXYD_STRING_BUFFERS_EXTEND_LENGTH;
+
+        hay_resized = realloc(*hay, *hay_buf_length);
+        if (hay_resized == NULL) {
+            free(*hay);
+            die(ERR_NOMEM, "realloc of size %zd failed", *hay_buf_length);
+        }
+
+        *hay = hay_resized;
+    }
+}
+
+static void string_concat(char **string, size_t *length, const char *buffer)
+{
+    size_t old_string_length = strlen(*string), buffer_length = strlen(buffer);
+
+    string_ensure_fits_substring(string, length, buffer_length);
+
+    memcpy(*string + old_string_length, buffer, buffer_length);
+
+    (*string)[old_string_length + buffer_length] = '\0';
+}
 
 static int add_signal_handler(struct ap_state *state)
 {
@@ -257,6 +292,130 @@ static void epoll_handle_inotify(int inotify_fd)
     }
 }
 
+static void command_output_ready(const char *output)
+{
+    log("command output: '%s'", output);
+}
+
+static void run_command(struct ap_state *state, const char *command)
+{
+    int pipe_fds[2];
+    pid_t pid;
+
+    if (pipe2(pipe_fds, O_CLOEXEC | O_NONBLOCK) == -1)
+        die(ERR_PIPE, "pipe2() failed: %s", strerror(errno));
+
+    pid = fork();
+
+    if (pid == -1)
+        die(ERR_FORK, "Failed to fork process: %s", strerror(errno));
+
+    if (pid == 0) {
+        if (dup2(pipe_fds[1], STDOUT_FILENO) == -1)
+            die(ERR_DUP, "failed to dup2 stdout: %s", strerror(errno));
+
+        if (dup2(pipe_fds[1], STDERR_FILENO) == -1)
+            die(ERR_DUP, "failed to dup2 stderr: %s", strerror(errno));
+
+        execl(VOPROXYD_SHELL_PATH, "sh", "-c", command, (char*)NULL);
+
+        die(ERR_EXEC, "execl() failed: %s", strerror(errno));
+    }
+
+    close(pipe_fds[1]);
+
+    epoll_add_fd(state, pipe_fds[0], FDT_PIPE, 1);
+
+    /* dumb */
+    for (struct tracking_ll_t *it = state->tracked_events; it != NULL; it = it->next)
+        if (it->event->type == FDT_PIPE && it->event->fd == pipe_fds[0]) {
+            it->event->child_pid = pid;
+
+            it->event->command_output_len = VOPROXYD_STRING_BUFFERS_INITIAL_LENGTH;
+
+            it->event->command_output = malloc(it->event->command_output_len * sizeof(char));
+            if (!it->event->command_output)
+                die(ERR_NOMEM, "failed to malloc(%zd)", it->event->command_output_len);
+
+            it->event->command_output[0] = '\0';
+        }
+}
+
+static void epoll_handle_pipe(struct ap_state *state, int *continue_reading)
+{
+    char read_buffer[VOPROXYD_PIPE_READ_BUFFER_LENGTH];
+    ssize_t bytes_read;
+
+    bytes_read = read(state->current, read_buffer, VOPROXYD_PIPE_READ_BUFFER_LENGTH);
+
+    *continue_reading = 0;
+
+    if (bytes_read == 0)
+        return;
+
+    if (bytes_read > 0) {
+        read_buffer[bytes_read] = '\0';
+        string_concat(&state->current_event->command_output,
+                &state->current_event->command_output_len, read_buffer);
+        *continue_reading = 1;
+        return;
+    }
+
+    if (errno == EAGAIN || errno == EWOULDBLOCK)
+        return;
+
+    die(ERR_READ, "error reading: %s", strerror(errno));
+}
+
+static void epoll_handle_pipe_queue(struct ap_state *state)
+{
+    int continue_reading = 1;
+    int proc_status;
+
+    while (continue_reading)
+        epoll_handle_pipe(state, &continue_reading);
+
+    if (state->close_after_read) {
+        state->close_after_read = 0;
+
+        if (waitpid(state->current_event->child_pid, &proc_status, WUNTRACED) == -1)
+            die(ERR_WAITPID, "waitpid() of pid = %d failed: %s", state->current_event->child_pid,
+                    strerror(errno));
+
+        command_output_ready(state->current_event->command_output);
+        free(state->current_event->command_output);
+
+        epoll_close_fd(state, state->current);
+    }
+
+    log("read pipe buffer");
+}
+
+static void epoll_handle_hangup(struct ap_state *state)
+{
+    int proc_status;
+    pid_t pid;
+
+    log("hangup on fd = %d", state->current);
+
+    if (state->current_event->type != FDT_PIPE) {
+        log("closing on hangup non-pipe fd = %d of type %d", state->current,
+                state->current_event->type);
+        epoll_close_fd(state, state->current);
+        return;
+    }
+
+    pid = waitpid(state->current_event->child_pid, &proc_status, WUNTRACED);
+    if (pid == -1)
+        die(ERR_WAITPID, "waitpid() of pid = %d failed: %s", state->current_event->child_pid,
+                strerror(errno));
+
+    command_output_ready(state->current_event->command_output);
+    free(state->current_event->command_output);
+
+    epoll_close_fd(state, state->current);
+}
+
 static void epoll_handle_event(struct ap_state *state, const struct epoll_event *event, int *running)
 {
     int continue_reading = 1, client_fd;
@@ -271,8 +430,9 @@ static void epoll_handle_event(struct ap_state *state, const struct epoll_event 
 
     epoll_handle_event_errors(state, event);
 
-    if ((event->events & (unsigned)EPOLLHUP)) {
-        log("hangup on fd = %d", state->current);
+    if ((event->events & (unsigned)EPOLLHUP) && !(event->events & (unsigned)EPOLLIN)) {
+        epoll_handle_hangup(state);
+        return;
     }
 
     state->close_after_read = !!((event->events & (unsigned)EPOLLHUP) |
@@ -293,6 +453,9 @@ static void epoll_handle_event(struct ap_state *state, const struct epoll_event 
             break;
         case FDT_INOTIFY:
             epoll_handle_inotify(state->current);
+            break;
+        case FDT_PIPE:
+            epoll_handle_pipe_queue(state);
             break;
         default:
             die(ERR_EPOLL_EVENT, "epoll_handle_event: unknown event type %d",
@@ -327,10 +490,9 @@ void worker_init()
 
     g_current_event_fd = 0;
 
-    state.epoll_fd = epoll_create1(0);
-    if (state.epoll_fd == -1) {
+    state.epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+    if (state.epoll_fd == -1)
         die(ERR_EPOLL_CREATE, "epoll_create1() failed: %s", strerror(errno));
-    }
 
     signal_fd = add_signal_handler(&state);
 

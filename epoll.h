@@ -11,6 +11,7 @@ enum fd_type
     FDT_UDP,
     FDT_SIGNAL,
     FDT_INOTIFY,
+    FDT_PIPE,
 };
 
 struct event_t
@@ -19,6 +20,9 @@ struct event_t
     int type;
     struct sockaddr *addr;
     socklen_t addr_len;
+    int child_pid;
+    char *command_output;
+    size_t command_output_len;
 };
 
 struct tracking_ll_t
