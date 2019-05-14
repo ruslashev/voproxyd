@@ -40,6 +40,7 @@ int g_current_event_fd;
 
 static struct ap_state state;
 static int signal_fd, inotify_fd, timer_fd;
+static int can_do_discovery = 1;
 
 static void string_ensure_fits_substring(char **hay, size_t *hay_buf_length, size_t needle_length)
 {
@@ -128,7 +129,7 @@ static int add_timer(struct ap_state *state)
     memset(&new, 0, sizeof(struct itimerspec));
     memset(&old, 0, sizeof(struct itimerspec));
 
-    ts.tv_sec = 1;
+    ts.tv_sec = 30;
     ts.tv_nsec = 0;
 
     new.it_value = ts;
@@ -330,6 +331,7 @@ static void command_output_ready(const char *output, int exit_code)
                 "    pip3 install --user WSDiscovery\n"
                 "\n"
                 "command output: '%s'", output);
+        can_do_discovery = 0;
         return;
     }
 
@@ -473,6 +475,7 @@ static void epoll_handle_timer(struct ap_state *state)
     uint64_t value;
 
     log("timer tick");
+    worker_do_external_discovery();
 
     read(state->current, &value, 8);
 }
@@ -613,6 +616,9 @@ void worker_add_udp_fd(int fd)
 
 void worker_do_external_discovery()
 {
+    if (!can_do_discovery)
+        return;
+
     log("starting external discovery...");
     run_command(&state, "discover | grep 192 | cut -d' ' -f 3");
 }

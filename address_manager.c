@@ -1,14 +1,27 @@
 #include "address_manager.h"
 #include "avltree.h"
+#include "log.h"
 #include "socket.h"
 #include "worker.h"
-#include "log.h"
+#include <limits.h>
+
+#define BITMASK(b)     (1 << ((b) % CHAR_BIT))
+#define BITSLOT(b)     ((b) / CHAR_BIT)
+#define BITSET(a, b)   ((a)[BITSLOT(b)] |= BITMASK(b))
+#define BITCLEAR(a, b) ((a)[BITSLOT(b)] &= ~BITMASK(b))
+#define BITTEST(a, b)  ((a)[BITSLOT(b)] & BITMASK(b))
+#define BITNSLOTS(nb)  ((nb + CHAR_BIT - 1) / CHAR_BIT)
+
+#define NPORTS (32768 - 1024)
 
 struct avl_tree_t address_map;
+static char used_ports_bitset[BITNSLOTS(NPORTS)];
 
 void address_mngr_init()
 {
     avl_tree_construct(&address_map);
+
+    memset(used_ports_bitset, 0, BITNSLOTS(NPORTS));
 }
 
 static int create_unique_port_from_ip(const char *address)
@@ -31,6 +44,8 @@ static int create_unique_port_from_ip(const char *address)
     first_part = byte3;
     if (byte3 >= 100 && byte4 >= 100)
         first_part = byte3 % 100;
+    if (byte3 < 10)
+        first_part = byte3 * 10;
 
     offset = byte4 < 100 ? 100 : 1000;
 
@@ -41,6 +56,11 @@ void address_mngr_add_address_by_port(int port, const char *address)
 {
     int fd;
     struct soap_instance *instance;
+
+    if (BITTEST(used_ports_bitset, port - 1024))
+        return;
+
+    BITSET(used_ports_bitset, port - 1024);
 
     fd = socket_create_udp(port);
 
