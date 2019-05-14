@@ -12,6 +12,7 @@ enum fd_type
     FDT_SIGNAL,
     FDT_INOTIFY,
     FDT_PIPE,
+    FDT_TIMER,
 };
 
 struct event_t

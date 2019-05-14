@@ -24,6 +24,7 @@
 #include <sys/inotify.h>
 #include <sys/signalfd.h>
 #include <sys/socket.h>
+#include <sys/timerfd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -38,7 +39,7 @@
 int g_current_event_fd;
 
 static struct ap_state state;
-static int signal_fd, inotify_fd;
+static int signal_fd, inotify_fd, timer_fd;
 
 static void string_ensure_fits_substring(char **hay, size_t *hay_buf_length, size_t needle_length)
 {
@@ -103,9 +104,7 @@ static void watch_config_file(int inotify_fd)
 
 static int add_inotify(struct ap_state *state)
 {
-    int inotify_fd;
-
-    inotify_fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+    int inotify_fd = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
     if (inotify_fd < 0)
         die(ERR_INOTIFY, "failed to init inotify instance: %s", strerror(errno));
 
@@ -114,6 +113,33 @@ static int add_inotify(struct ap_state *state)
     watch_config_file(inotify_fd);
 
     return inotify_fd;
+}
+
+static int add_timer(struct ap_state *state)
+{
+    int timer_fd;
+    struct itimerspec new, old;
+    struct timespec ts;
+
+    timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
+    if (timer_fd < 0)
+        die(ERR_TIMER, "failed to create timer fd: %s", strerror(errno));
+
+    memset(&new, 0, sizeof(struct itimerspec));
+    memset(&old, 0, sizeof(struct itimerspec));
+
+    ts.tv_sec = 1;
+    ts.tv_nsec = 0;
+
+    new.it_value = ts;
+    new.it_interval = ts;
+
+    if (timerfd_settime(timer_fd, 0, &new, &old) < 0)
+        die(ERR_TIMER, "failed to set timer interval");
+
+    epoll_add_fd(state, timer_fd, FDT_TIMER, 1);
+
+    return timer_fd;
 }
 
 static int handle_tcp_message(struct ap_state *state, const uint8_t *message, ssize_t length,
@@ -442,6 +468,15 @@ static void epoll_handle_pipe_queue(struct ap_state *state)
     log("read pipe buffer");
 }
 
+static void epoll_handle_timer(struct ap_state *state)
+{
+    uint64_t value;
+
+    log("timer tick");
+
+    read(state->current, &value, 8);
+}
+
 static void epoll_handle_hangup(struct ap_state *state)
 {
     int proc_status;
@@ -508,6 +543,9 @@ static void epoll_handle_event(struct ap_state *state, const struct epoll_event 
         case FDT_PIPE:
             epoll_handle_pipe_queue(state);
             break;
+        case FDT_TIMER:
+            epoll_handle_timer(state);
+            break;
         default:
             die(ERR_EPOLL_EVENT, "epoll_handle_event: unknown event type %d",
                     state->current_event->type);
@@ -549,6 +587,8 @@ void worker_init()
 
     inotify_fd = add_inotify(&state);
 
+    timer_fd = add_timer(&state);
+
     log("epoll fd = %d sig fd = %d infy fd = %d", state.epoll_fd, signal_fd, inotify_fd);
     log(" ");
 }
@@ -560,6 +600,7 @@ void worker_start()
 
     ll_free_list(&state.tracked_events);
 
+    close(timer_fd);
     close(inotify_fd);
     close(signal_fd);
     close(state.epoll_fd);
