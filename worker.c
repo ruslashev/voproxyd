@@ -324,7 +324,8 @@ static void command_output_ready(const char *output, int exit_code)
 {
     char *output_copy, *it;
 
-    if (exit_code != 0 || strstr(output, "not found") != NULL) {
+    if (exit_code != 0 || strstr(output, "not found") != NULL
+            || strstr(output, "ERROR") != NULL) {
         log("error: failed to do discovery using external tools.\n"
                 "to use it make sure to install python package WSDiscovery:\n"
                 "\n"
