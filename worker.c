@@ -71,6 +71,29 @@ static void string_concat(char **string, size_t *length, const char *buffer)
     (*string)[old_string_length + buffer_length] = '\0';
 }
 
+static void print_mem_usage()
+{
+    FILE* file;
+    char buffer[1024] = "";
+    int curr_real, curr_virt;
+
+    file = fopen("/proc/self/status", "r");
+    if (!file)
+        die(ERR_OPEN, "failed to open /proc/self/status");
+
+    while (fscanf(file, " %1023s", buffer) == 1) {
+        if (strcmp(buffer, "VmRSS:") == 0)
+            fscanf(file, " %d", &curr_real);
+        if (strcmp(buffer, "VmSize:") == 0)
+            fscanf(file, " %d", &curr_virt);
+    }
+
+    fclose(file);
+
+    log("current real: %d", curr_real);
+    log("current virt: %d", curr_virt);
+}
+
 static int add_signal_handler(struct ap_state *state)
 {
     sigset_t mask;
@@ -477,6 +500,7 @@ static void epoll_handle_timer(struct ap_state *state)
 
     log("timer tick");
     worker_do_external_discovery();
+    print_mem_usage();
 
     read(state->current, &value, 8);
 }
