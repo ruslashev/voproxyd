@@ -194,48 +194,6 @@ static int handle_udp_message(const struct ap_state *state, uint8_t *message, ss
     return 0;
 }
 
-/*
-static int epoll_handle_read_queue_tcp(struct ap_state *state)
-{
-    ssize_t message_length;
-    uint8_t rx_message[VOPROXYD_MAX_RX_MESSAGE_LENGTH];
-    int close = 0;
-
-    log("about to read on fd = %d", state->current);
-
-    message_length = read(state->current, rx_message, sizeof(rx_message));
-
-    log("read on fd = %d message_length = %zd %s", state->current, message_length,
-            (errno == EAGAIN || errno == EWOULDBLOCK) ? "(eagain | ewouldblock)" : "");
-
-    if (message_length == 0) {
-        log("close connection on socket fd = %d", state->current);
-        epoll_close_fd(state, state->current);
-        return 0;
-    }
-
-    if (message_length != -1) {
-        handle_tcp_message(state, rx_message, message_length, &close);
-
-        if (close || state->close_after_read) {
-            state->close_after_read = 0;
-            epoll_close_fd(state, state->current);
-            return 0;
-        }
-
-        return 1;
-    }
-
-    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        errno = 0;
-        return 0;
-    }
-
-    epoll_close_fd(state, state->current);
-    die(ERR_READ, "error reading on socket fd = %d: %s", state->current, strerror(errno));
-}
-*/
-
 static int epoll_handle_read_queue_udp(struct ap_state *state)
 {
     ssize_t message_length;
