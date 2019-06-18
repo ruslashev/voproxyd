@@ -23,7 +23,7 @@ sources = address_manager.c \
           $(wildcard deps/onvif/*.c)
 cflags = -Wall -Wextra -g -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \
          -Wno-unused-but-set-variable -Wno-misleading-indentation -Wno-deprecated-declarations \
-         -DWITH_OPENSSL -DWITH_DOM -DWITH_ZLIB -I deps/onvif
+         -DWITH_OPENSSL -DWITH_DOM -DWITH_ZLIB -DWITH_SOCKET_CLOSE_ON_EXIT -I deps/onvif
 ldflags = -L deps/gsoap-install/lib -lssl -lcrypto -lz
 binname = voproxyd
 wsdls = https://www.onvif.org/ver10/device/wsdl/devicemgmt.wsdl \
