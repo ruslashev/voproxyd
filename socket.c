@@ -25,8 +25,8 @@ int socket_create_tcp(const char *port)
         die(ERR_GETADDRINFO, "gettaddrinfo() failed: %s", gai_strerror(err));
     }
 
-    fd = socket(ai_result->ai_family, (unsigned)ai_result->ai_socktype | (unsigned)SOCK_NONBLOCK,
-            ai_result->ai_protocol);
+    fd = socket(ai_result->ai_family, (unsigned)ai_result->ai_socktype | (unsigned)SOCK_NONBLOCK
+            | (unsigned)SOCK_CLOEXEC, ai_result->ai_protocol);
     if (fd == -1) {
         freeaddrinfo(ai_result);
         die(ERR_SOCKET, "socket() failed: %s", strerror(errno));
@@ -53,7 +53,7 @@ int socket_create_udp(int port)
     struct sockaddr_in addr = { 0 };
     int enable = 1;
 
-    fd = socket(AF_INET, (unsigned)SOCK_DGRAM | (unsigned)SOCK_NONBLOCK, 0);
+    fd = socket(AF_INET, (unsigned)SOCK_DGRAM | (unsigned)SOCK_NONBLOCK | (unsigned)SOCK_CLOEXEC, 0);
     if (fd == -1) {
         die(ERR_SOCKET, "failed to create socket: %s", strerror(errno));
     }
@@ -82,7 +82,7 @@ int socket_accept(int sock_fd)
     socklen_t addr_len = sizeof(struct sockaddr);
     char host_str[NI_MAXHOST], serv_str[NI_MAXSERV];
 
-    client_fd = accept4(sock_fd, &addr, &addr_len, SOCK_NONBLOCK);
+    client_fd = accept4(sock_fd, &addr, &addr_len, SOCK_NONBLOCK | SOCK_CLOEXEC);
     if (client_fd == -1) {
         die(ERR_ACCEPT, "accept4() failed: %s", strerror(errno));
     }
