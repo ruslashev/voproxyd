@@ -34,7 +34,7 @@
 #define VOPROXYD_MAX_RX_MESSAGE_LENGTH 4096
 #define VOPROXYD_SHELL_PATH "/bin/sh"
 #define VOPROXYD_PIPE_READ_BUFFER_LENGTH 8192
-#define VOPROXYD_STRING_BUFFERS_INITIAL_LENGTH 16384
+#define VOPROXYD_STRING_BUFFERS_INITIAL_LENGTH 1024
 
 int g_current_event_fd;
 
@@ -428,6 +428,19 @@ static void epoll_handle_pipe(struct ap_state *state, int *continue_reading)
     die(ERR_READ, "error reading: %s", strerror(errno));
 }
 
+static void free_command(struct ap_state *state)
+{
+    free(state->current_event->command_output);
+
+    epoll_close_fd(state, state->current);
+
+    for (struct tracking_ll_t *it = state->tracked_events; it != NULL; it = it->next)
+        if (it->event->type == FDT_PIPE && it->event->fd == state->current) {
+            ll_delete_node(&state->tracked_events, it);
+            break;
+        }
+}
+
 static void epoll_handle_pipe_queue(struct ap_state *state)
 {
     int continue_reading = 1;
@@ -444,9 +457,8 @@ static void epoll_handle_pipe_queue(struct ap_state *state)
                     strerror(errno));
 
         command_output_ready(state->current_event->command_output, get_waitpid_exit_code(proc_status));
-        free(state->current_event->command_output);
 
-        epoll_close_fd(state, state->current);
+        free_command(state);
     }
 
     log("read pipe buffer");
@@ -483,9 +495,8 @@ static void epoll_handle_hangup(struct ap_state *state)
                 strerror(errno));
 
     command_output_ready(state->current_event->command_output, get_waitpid_exit_code(proc_status));
-    free(state->current_event->command_output);
 
-    epoll_close_fd(state, state->current);
+    free_command(state);
 }
 
 static void epoll_handle_event(struct ap_state *state, const struct epoll_event *event, int *running)
